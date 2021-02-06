@@ -1,0 +1,2 @@
+Delay.c:16:6:msDelay_Loop	4	static
+Delay.c:21:6:msDelay	16	static,ignoring_inline_asm

@@ -1,0 +1,4 @@
+AHT10.c:20:6:AHT10_Init	4	static
+AHT10.c:24:6:AHT10_SoftReset	16	static
+AHT10.c:35:10:AHT10	4	static
+AHT10.c:40:6:AHT10_ReadData	24	static
