@@ -5,8 +5,8 @@ DS18B20.c:52:13:OneWire_WriteByte	24	static
 DS18B20.c:61:16:OneWire_ReadBit	16	static
 DS18B20.c:78:16:ds18b20_getDevider	16	static
 DS18B20.c:89:17:readTemperature	16	static
-DS18B20.c:110:6:DS18B20_Init	16	static
-DS18B20.c:121:6:DS18B20_SetResolution	16	static
-DS18B20.c:132:6:DS18B20_StartConvertTemperature	8	static
-DS18B20.c:139:10:DS18B20_ReadTemperature	8	static
-DS18B20.c:148:9:DS18B20_GetTemperatureSign	4	static
+DS18B20.c:115:6:DS18B20_Init	16	static
+DS18B20.c:126:6:DS18B20_SetResolution	16	static
+DS18B20.c:137:6:DS18B20_StartConvertTemperature	8	static
+DS18B20.c:144:10:DS18B20_ReadTemperature	8	static
+DS18B20.c:153:9:DS18B20_GetTemperatureSign	4	static

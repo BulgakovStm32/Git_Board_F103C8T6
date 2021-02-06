@@ -23,8 +23,8 @@ void DMA1_ChX_Init(uint32_t *perifAddr, uint8_t *pBuff, uint16_t len){
 						 DMA_CCR_MINC    |            // MINC: Memory increment mode  - Memory increment mode enabled.
 						 DMA_CCR_DIR;                 // DIR: Data transfer direction - 1: Read from memory.
 
-	DMA1_Channel6->CPAR  = perifAddr; //(uint32_t)&TIM3->CCR1;//Куда копировать данные.
-	DMA1_Channel6->CMAR  = (uint32_t)pBuff;		 //Отуда копировать данные.
+	DMA1_Channel6->CPAR  = (uint32_t)perifAddr; //(uint32_t)&TIM3->CCR1;//Адрес периферии, Куда копировать данные.
+	DMA1_Channel6->CMAR  = (uint32_t)pBuff;		 //Адрес памяти, Откуда копировать данные.
 	DMA1_Channel6->CNDTR = len;                  //Количество опереций передачи данных.
 	DMA1_Channel6->CCR  |= DMA_CCR_EN;           //разрешить работу канала
 }

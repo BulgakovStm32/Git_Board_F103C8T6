@@ -575,7 +575,10 @@ int main(void){
 
 			//Вывод темперартуры.
 			Lcd_String(1, 4);
-			Lcd_Print("AHT10_T = ");
+			Lcd_Print("AHT10_T =");
+			if(AHT10_GetTemperatureSign() == AHT10_SIGN_NEGATIVE)Lcd_Chr('-');
+			else                    							 Lcd_Chr('+');
+
 			Lcd_BinToDec(AHT10()->Temperature / 10, 2, LCD_CHAR_SIZE_NORM);
 			Lcd_Chr('.');
 			Lcd_BinToDec(AHT10()->Temperature % 10, 1, LCD_CHAR_SIZE_NORM);

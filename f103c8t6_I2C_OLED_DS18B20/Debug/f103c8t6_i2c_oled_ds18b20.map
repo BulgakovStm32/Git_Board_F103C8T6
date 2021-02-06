@@ -74,6 +74,7 @@ Discarded input sections
  .group         0x0000000000000000        0xc My/Application/AHT10.o
  .group         0x0000000000000000        0xc My/Application/AHT10.o
  .group         0x0000000000000000        0xc My/Application/AHT10.o
+ .group         0x0000000000000000        0xc My/Application/AHT10.o
  .text          0x0000000000000000        0x0 My/Application/AHT10.o
  .data          0x0000000000000000        0x0 My/Application/AHT10.o
  .bss           0x0000000000000000        0x0 My/Application/AHT10.o
@@ -279,7 +280,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x22 My/Application/DS18B20.o
  .debug_macro   0x0000000000000000       0x4c My/Application/DS18B20.o
  .debug_macro   0x0000000000000000       0xfa My/Application/DS18B20.o
- .debug_macro   0x0000000000000000       0x10 My/Application/DS18B20.o
+ .debug_macro   0x0000000000000000       0x1c My/Application/DS18B20.o
  .group         0x0000000000000000        0xc My/Application/Delay.o
  .group         0x0000000000000000        0xc My/Application/Delay.o
  .group         0x0000000000000000        0xc My/Application/Delay.o
@@ -376,7 +377,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Application/Delay.o
  .debug_macro   0x0000000000000000       0xfa My/Application/Delay.o
  .debug_macro   0x0000000000000000       0x6a My/Application/Delay.o
- .debug_macro   0x0000000000000000       0x10 My/Application/Delay.o
+ .debug_macro   0x0000000000000000       0x1c My/Application/Delay.o
  .group         0x0000000000000000        0xc My/Application/Filters.o
  .group         0x0000000000000000        0xc My/Application/Filters.o
  .group         0x0000000000000000        0xc My/Application/Filters.o
@@ -435,21 +436,21 @@ Discarded input sections
                 0x0000000000000000       0x74 My/Application/Filters.o
  .text.runMiddleArifmOptim
                 0x0000000000000000       0x74 My/Application/Filters.o
- .bss.avrCount.6579
+ .bss.avrCount.6582
                 0x0000000000000000        0x1 My/Application/Filters.o
- .bss.sum.6580  0x0000000000000000        0x4 My/Application/Filters.o
- .bss.avrOldValue.6581
+ .bss.sum.6583  0x0000000000000000        0x4 My/Application/Filters.o
+ .bss.avrOldValue.6584
                 0x0000000000000000        0x2 My/Application/Filters.o
- .bss.Dacc.6585
+ .bss.Dacc.6588
                 0x0000000000000000        0x4 My/Application/Filters.o
- .bss.Dout.6586
+ .bss.Dout.6589
                 0x0000000000000000        0x2 My/Application/Filters.o
- .bss.filterBuf.6590
+ .bss.filterBuf.6593
                 0x0000000000000000       0x80 My/Application/Filters.o
- .bss.t.6603    0x0000000000000000        0x2 My/Application/Filters.o
- .bss.average.6605
+ .bss.t.6606    0x0000000000000000        0x2 My/Application/Filters.o
+ .bss.average.6608
                 0x0000000000000000        0x4 My/Application/Filters.o
- .bss.arr.6604  0x0000000000000000       0x20 My/Application/Filters.o
+ .bss.arr.6607  0x0000000000000000       0x20 My/Application/Filters.o
  .debug_macro   0x0000000000000000      0xa60 My/Application/Filters.o
  .debug_macro   0x0000000000000000       0x22 My/Application/Filters.o
  .debug_macro   0x0000000000000000       0x22 My/Application/Filters.o
@@ -494,7 +495,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Application/Filters.o
  .debug_macro   0x0000000000000000       0xfa My/Application/Filters.o
  .debug_macro   0x0000000000000000       0x6a My/Application/Filters.o
- .debug_macro   0x0000000000000000       0x10 My/Application/Filters.o
+ .debug_macro   0x0000000000000000       0x1c My/Application/Filters.o
  .group         0x0000000000000000        0xc My/Application/LcdGraphic.o
  .group         0x0000000000000000        0xc My/Application/LcdGraphic.o
  .group         0x0000000000000000        0xc My/Application/LcdGraphic.o
@@ -607,7 +608,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x40 My/Application/LcdGraphic.o
  .debug_macro   0x0000000000000000       0xfa My/Application/LcdGraphic.o
  .debug_macro   0x0000000000000000       0x6a My/Application/LcdGraphic.o
- .debug_macro   0x0000000000000000       0x10 My/Application/LcdGraphic.o
+ .debug_macro   0x0000000000000000       0x1c My/Application/LcdGraphic.o
  .debug_macro   0x0000000000000000       0x16 My/Application/LcdGraphic.o
  .debug_macro   0x0000000000000000       0x35 My/Application/LcdGraphic.o
  .debug_macro   0x0000000000000000       0x20 My/Application/LcdGraphic.o
@@ -728,10 +729,10 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Application/Lcd_TIC32.o
  .debug_macro   0x0000000000000000       0xfa My/Application/Lcd_TIC32.o
  .debug_macro   0x0000000000000000       0x6a My/Application/Lcd_TIC32.o
- .debug_macro   0x0000000000000000       0x10 My/Application/Lcd_TIC32.o
+ .debug_macro   0x0000000000000000       0x1c My/Application/Lcd_TIC32.o
  .debug_macro   0x0000000000000000       0x22 My/Application/Lcd_TIC32.o
- .debug_line    0x0000000000000000      0xaae My/Application/Lcd_TIC32.o
- .debug_str     0x0000000000000000    0x58f9c My/Application/Lcd_TIC32.o
+ .debug_line    0x0000000000000000      0xab5 My/Application/Lcd_TIC32.o
+ .debug_str     0x0000000000000000    0x58fc9 My/Application/Lcd_TIC32.o
  .comment       0x0000000000000000       0x7c My/Application/Lcd_TIC32.o
  .debug_frame   0x0000000000000000       0x74 My/Application/Lcd_TIC32.o
  .ARM.attributes
@@ -857,10 +858,10 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x22 My/Application/Lcd_i2c_1602.o
  .debug_macro   0x0000000000000000       0x4c My/Application/Lcd_i2c_1602.o
  .debug_macro   0x0000000000000000       0x6a My/Application/Lcd_i2c_1602.o
- .debug_macro   0x0000000000000000       0x10 My/Application/Lcd_i2c_1602.o
+ .debug_macro   0x0000000000000000       0x1c My/Application/Lcd_i2c_1602.o
  .debug_macro   0x0000000000000000       0xf4 My/Application/Lcd_i2c_1602.o
- .debug_line    0x0000000000000000      0xb05 My/Application/Lcd_i2c_1602.o
- .debug_str     0x0000000000000000    0x58ff4 My/Application/Lcd_i2c_1602.o
+ .debug_line    0x0000000000000000      0xb0c My/Application/Lcd_i2c_1602.o
+ .debug_str     0x0000000000000000    0x59021 My/Application/Lcd_i2c_1602.o
  .comment       0x0000000000000000       0x7c My/Application/Lcd_i2c_1602.o
  .debug_frame   0x0000000000000000      0x158 My/Application/Lcd_i2c_1602.o
  .ARM.attributes
@@ -958,7 +959,7 @@ Discarded input sections
                 0x0000000000000000       0xa8 My/Drivers/dma_ST.o
  .text.DMA1_ChX_Init
                 0x0000000000000000       0x60 My/Drivers/dma_ST.o
- .debug_info    0x0000000000000000      0xc57 My/Drivers/dma_ST.o
+ .debug_info    0x0000000000000000      0xb46 My/Drivers/dma_ST.o
  .debug_abbrev  0x0000000000000000      0x1dc My/Drivers/dma_ST.o
  .debug_aranges
                 0x0000000000000000       0x20 My/Drivers/dma_ST.o
@@ -1008,9 +1009,9 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/dma_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/dma_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/dma_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/dma_ST.o
- .debug_line    0x0000000000000000      0xa20 My/Drivers/dma_ST.o
- .debug_str     0x0000000000000000    0x58feb My/Drivers/dma_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/dma_ST.o
+ .debug_line    0x0000000000000000      0xa27 My/Drivers/dma_ST.o
+ .debug_str     0x0000000000000000    0x58fdd My/Drivers/dma_ST.o
  .comment       0x0000000000000000       0x7c My/Drivers/dma_ST.o
  .debug_frame   0x0000000000000000       0x38 My/Drivers/dma_ST.o
  .ARM.attributes
@@ -1077,15 +1078,15 @@ Discarded input sections
                 0x0000000000000000      0x11c My/Drivers/gpio_ST.o
  .text.Gpio_GetState
                 0x0000000000000000       0x44 My/Drivers/gpio_ST.o
- .bss.mScount.6584
+ .bss.mScount.6587
                 0x0000000000000000        0x1 My/Drivers/gpio_ST.o
- .bss.cycle.6585
+ .bss.cycle.6588
                 0x0000000000000000        0x1 My/Drivers/gpio_ST.o
- .bss.GpioAIDRtemp.6586
+ .bss.GpioAIDRtemp.6589
                 0x0000000000000000        0x6 My/Drivers/gpio_ST.o
- .bss.GpioBIDRtemp.6587
+ .bss.GpioBIDRtemp.6590
                 0x0000000000000000        0x6 My/Drivers/gpio_ST.o
- .bss.GpioCIDRtemp.6588
+ .bss.GpioCIDRtemp.6591
                 0x0000000000000000        0x6 My/Drivers/gpio_ST.o
  .debug_macro   0x0000000000000000      0xa60 My/Drivers/gpio_ST.o
  .debug_macro   0x0000000000000000       0x22 My/Drivers/gpio_ST.o
@@ -1130,7 +1131,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/gpio_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/gpio_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/gpio_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/gpio_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/gpio_ST.o
  .group         0x0000000000000000        0xc My/Drivers/i2c_ST.o
  .group         0x0000000000000000        0xc My/Drivers/i2c_ST.o
  .group         0x0000000000000000        0xc My/Drivers/i2c_ST.o
@@ -1230,7 +1231,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/i2c_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/i2c_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/i2c_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/i2c_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/i2c_ST.o
  .group         0x0000000000000000        0xc My/Drivers/spi_ST.o
  .group         0x0000000000000000        0xc My/Drivers/spi_ST.o
  .group         0x0000000000000000        0xc My/Drivers/spi_ST.o
@@ -1340,7 +1341,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/spi_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/spi_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/spi_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/spi_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/spi_ST.o
  .group         0x0000000000000000        0xc My/Drivers/sys_ST.o
  .group         0x0000000000000000        0xc My/Drivers/sys_ST.o
  .group         0x0000000000000000        0xc My/Drivers/sys_ST.o
@@ -1446,7 +1447,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/sys_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/sys_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/sys_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/sys_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/sys_ST.o
  .debug_macro   0x0000000000000000       0x28 My/Drivers/sys_ST.o
  .group         0x0000000000000000        0xc My/Drivers/sys_tick_ST.o
  .group         0x0000000000000000        0xc My/Drivers/sys_tick_ST.o
@@ -1543,7 +1544,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/sys_tick_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/sys_tick_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/sys_tick_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/sys_tick_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/sys_tick_ST.o
  .group         0x0000000000000000        0xc My/Drivers/timers_ST.o
  .group         0x0000000000000000        0xc My/Drivers/timers_ST.o
  .group         0x0000000000000000        0xc My/Drivers/timers_ST.o
@@ -1650,9 +1651,9 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Drivers/timers_ST.o
  .debug_macro   0x0000000000000000       0xfa My/Drivers/timers_ST.o
  .debug_macro   0x0000000000000000       0x6a My/Drivers/timers_ST.o
- .debug_macro   0x0000000000000000       0x10 My/Drivers/timers_ST.o
- .debug_line    0x0000000000000000      0xa43 My/Drivers/timers_ST.o
- .debug_str     0x0000000000000000    0x58ff1 My/Drivers/timers_ST.o
+ .debug_macro   0x0000000000000000       0x1c My/Drivers/timers_ST.o
+ .debug_line    0x0000000000000000      0xa4a My/Drivers/timers_ST.o
+ .debug_str     0x0000000000000000    0x5901e My/Drivers/timers_ST.o
  .comment       0x0000000000000000       0x7c My/Drivers/timers_ST.o
  .debug_frame   0x0000000000000000       0x50 My/Drivers/timers_ST.o
  .ARM.attributes
@@ -1776,7 +1777,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Main/main.o
  .debug_macro   0x0000000000000000       0xfa My/Main/main.o
  .debug_macro   0x0000000000000000       0x6a My/Main/main.o
- .debug_macro   0x0000000000000000       0x10 My/Main/main.o
+ .debug_macro   0x0000000000000000       0x1c My/Main/main.o
  .group         0x0000000000000000        0xc My/MiddleLevel/Encoder.o
  .group         0x0000000000000000        0xc My/MiddleLevel/Encoder.o
  .group         0x0000000000000000        0xc My/MiddleLevel/Encoder.o
@@ -1874,7 +1875,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/MiddleLevel/Encoder.o
  .debug_macro   0x0000000000000000       0xfa My/MiddleLevel/Encoder.o
  .debug_macro   0x0000000000000000       0x6a My/MiddleLevel/Encoder.o
- .debug_macro   0x0000000000000000       0x10 My/MiddleLevel/Encoder.o
+ .debug_macro   0x0000000000000000       0x1c My/MiddleLevel/Encoder.o
  .group         0x0000000000000000        0xc My/MiddleLevel/LM6063D.o
  .group         0x0000000000000000        0xc My/MiddleLevel/LM6063D.o
  .group         0x0000000000000000        0xc My/MiddleLevel/LM6063D.o
@@ -1986,10 +1987,10 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/MiddleLevel/LM6063D.o
  .debug_macro   0x0000000000000000       0xfa My/MiddleLevel/LM6063D.o
  .debug_macro   0x0000000000000000       0x6a My/MiddleLevel/LM6063D.o
- .debug_macro   0x0000000000000000       0x10 My/MiddleLevel/LM6063D.o
+ .debug_macro   0x0000000000000000       0x1c My/MiddleLevel/LM6063D.o
  .debug_macro   0x0000000000000000       0x46 My/MiddleLevel/LM6063D.o
- .debug_line    0x0000000000000000      0xab6 My/MiddleLevel/LM6063D.o
- .debug_str     0x0000000000000000    0x58ff1 My/MiddleLevel/LM6063D.o
+ .debug_line    0x0000000000000000      0xabd My/MiddleLevel/LM6063D.o
+ .debug_str     0x0000000000000000    0x5901e My/MiddleLevel/LM6063D.o
  .comment       0x0000000000000000       0x7c My/MiddleLevel/LM6063D.o
  .debug_frame   0x0000000000000000       0xbc My/MiddleLevel/LM6063D.o
  .ARM.attributes
@@ -2101,9 +2102,9 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/OLED/fonts.o
  .debug_macro   0x0000000000000000       0xfa My/OLED/fonts.o
  .debug_macro   0x0000000000000000       0x6a My/OLED/fonts.o
- .debug_macro   0x0000000000000000       0x10 My/OLED/fonts.o
- .debug_line    0x0000000000000000      0xa04 My/OLED/fonts.o
- .debug_str     0x0000000000000000    0x58f48 My/OLED/fonts.o
+ .debug_macro   0x0000000000000000       0x1c My/OLED/fonts.o
+ .debug_line    0x0000000000000000      0xa0b My/OLED/fonts.o
+ .debug_str     0x0000000000000000    0x58f75 My/OLED/fonts.o
  .comment       0x0000000000000000       0x7c My/OLED/fonts.o
  .ARM.attributes
                 0x0000000000000000       0x33 My/OLED/fonts.o
@@ -2227,7 +2228,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/OLED/ssd1306.o
  .debug_macro   0x0000000000000000       0xfa My/OLED/ssd1306.o
  .debug_macro   0x0000000000000000       0x6a My/OLED/ssd1306.o
- .debug_macro   0x0000000000000000       0x10 My/OLED/ssd1306.o
+ .debug_macro   0x0000000000000000       0x1c My/OLED/ssd1306.o
  .debug_macro   0x0000000000000000       0x16 My/OLED/ssd1306.o
  .debug_macro   0x0000000000000000       0x35 My/OLED/ssd1306.o
  .debug_macro   0x0000000000000000       0x20 My/OLED/ssd1306.o
@@ -2354,10 +2355,10 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x4c My/Sheduler/Scheduler.o
  .debug_macro   0x0000000000000000       0xfa My/Sheduler/Scheduler.o
  .debug_macro   0x0000000000000000       0x6a My/Sheduler/Scheduler.o
+ .debug_macro   0x0000000000000000       0x1c My/Sheduler/Scheduler.o
  .debug_macro   0x0000000000000000       0x10 My/Sheduler/Scheduler.o
- .debug_macro   0x0000000000000000       0x10 My/Sheduler/Scheduler.o
- .debug_line    0x0000000000000000      0xb90 My/Sheduler/Scheduler.o
- .debug_str     0x0000000000000000    0x59001 My/Sheduler/Scheduler.o
+ .debug_line    0x0000000000000000      0xb97 My/Sheduler/Scheduler.o
+ .debug_str     0x0000000000000000    0x5902e My/Sheduler/Scheduler.o
  .comment       0x0000000000000000       0x7c My/Sheduler/Scheduler.o
  .debug_frame   0x0000000000000000      0x130 My/Sheduler/Scheduler.o
  .ARM.attributes
@@ -2477,7 +2478,7 @@ LOAD e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32
                 0x0000000008000000                g_pfnVectors
                 0x0000000008000130                . = ALIGN (0x4)
 
-.text           0x0000000008000130     0x1d18
+.text           0x0000000008000130     0x1d64
                 0x0000000008000130                . = ALIGN (0x4)
  *(.text)
  .text          0x0000000008000130       0x40 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
@@ -2488,330 +2489,333 @@ LOAD e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32
  .text.AHT10    0x00000000080001a8       0x14 My/Application/AHT10.o
                 0x00000000080001a8                AHT10
  .text.AHT10_ReadData
-                0x00000000080001bc       0xd4 My/Application/AHT10.o
+                0x00000000080001bc       0xf4 My/Application/AHT10.o
                 0x00000000080001bc                AHT10_ReadData
+ .text.AHT10_GetTemperatureSign
+                0x00000000080002b0       0x14 My/Application/AHT10.o
+                0x00000000080002b0                AHT10_GetTemperatureSign
  .text.Blink_Loop
-                0x0000000008000290      0x104 My/Application/Blink.o
-                0x0000000008000290                Blink_Loop
- .text.Blink    0x0000000008000394       0x38 My/Application/Blink.o
-                0x0000000008000394                Blink
- .text.usDelay  0x00000000080003cc       0x2a My/Application/DS18B20.o
- *fill*         0x00000000080003f6        0x2 
+                0x00000000080002c4      0x104 My/Application/Blink.o
+                0x00000000080002c4                Blink_Loop
+ .text.Blink    0x00000000080003c8       0x38 My/Application/Blink.o
+                0x00000000080003c8                Blink
+ .text.usDelay  0x0000000008000400       0x2a My/Application/DS18B20.o
+ *fill*         0x000000000800042a        0x2 
  .text.OneWire_Reset
-                0x00000000080003f8       0x54 My/Application/DS18B20.o
+                0x000000000800042c       0x54 My/Application/DS18B20.o
  .text.OneWire_WriteBit
-                0x000000000800044c       0x58 My/Application/DS18B20.o
+                0x0000000008000480       0x58 My/Application/DS18B20.o
  .text.OneWire_WriteByte
-                0x00000000080004a4       0x3a My/Application/DS18B20.o
- *fill*         0x00000000080004de        0x2 
+                0x00000000080004d8       0x3a My/Application/DS18B20.o
+ *fill*         0x0000000008000512        0x2 
  .text.OneWire_ReadBit
-                0x00000000080004e0       0x54 My/Application/DS18B20.o
+                0x0000000008000514       0x54 My/Application/DS18B20.o
  .text.ds18b20_getDevider
-                0x0000000008000534       0x30 My/Application/DS18B20.o
+                0x0000000008000568       0x30 My/Application/DS18B20.o
  .text.readTemperature
-                0x0000000008000564       0x88 My/Application/DS18B20.o
+                0x0000000008000598       0x88 My/Application/DS18B20.o
  .text.DS18B20_Init
-                0x00000000080005ec       0x54 My/Application/DS18B20.o
-                0x00000000080005ec                DS18B20_Init
+                0x0000000008000620       0x54 My/Application/DS18B20.o
+                0x0000000008000620                DS18B20_Init
  .text.DS18B20_SetResolution
-                0x0000000008000640       0x58 My/Application/DS18B20.o
-                0x0000000008000640                DS18B20_SetResolution
+                0x0000000008000674       0x58 My/Application/DS18B20.o
+                0x0000000008000674                DS18B20_SetResolution
  .text.DS18B20_StartConvertTemperature
-                0x0000000008000698       0x20 My/Application/DS18B20.o
-                0x0000000008000698                DS18B20_StartConvertTemperature
+                0x00000000080006cc       0x20 My/Application/DS18B20.o
+                0x00000000080006cc                DS18B20_StartConvertTemperature
  .text.DS18B20_ReadTemperature
-                0x00000000080006b8       0x28 My/Application/DS18B20.o
-                0x00000000080006b8                DS18B20_ReadTemperature
+                0x00000000080006ec       0x28 My/Application/DS18B20.o
+                0x00000000080006ec                DS18B20_ReadTemperature
  .text.DS18B20_GetTemperatureSign
-                0x00000000080006e0       0x14 My/Application/DS18B20.o
-                0x00000000080006e0                DS18B20_GetTemperatureSign
+                0x0000000008000714       0x14 My/Application/DS18B20.o
+                0x0000000008000714                DS18B20_GetTemperatureSign
  .text.msDelay_Loop
-                0x00000000080006f4       0x1c My/Application/Delay.o
-                0x00000000080006f4                msDelay_Loop
- .text.msDelay  0x0000000008000710       0x2c My/Application/Delay.o
-                0x0000000008000710                msDelay
+                0x0000000008000728       0x1c My/Application/Delay.o
+                0x0000000008000728                msDelay_Loop
+ .text.msDelay  0x0000000008000744       0x2c My/Application/Delay.o
+                0x0000000008000744                msDelay
  .text.Filter_EMA
-                0x000000000800073c       0x34 My/Application/Filters.o
-                0x000000000800073c                Filter_EMA
+                0x0000000008000770       0x34 My/Application/Filters.o
+                0x0000000008000770                Filter_EMA
  .text.ClearTextBuf
-                0x0000000008000770       0x30 My/Application/LcdGraphic.o
+                0x00000000080007a4       0x30 My/Application/LcdGraphic.o
  .text.Lcd_Update
-                0x00000000080007a0       0x14 My/Application/LcdGraphic.o
-                0x00000000080007a0                Lcd_Update
+                0x00000000080007d4       0x14 My/Application/LcdGraphic.o
+                0x00000000080007d4                Lcd_Update
  .text.Lcd_pVideoBuffer
-                0x00000000080007b4       0x14 My/Application/LcdGraphic.o
-                0x00000000080007b4                Lcd_pVideoBuffer
+                0x00000000080007e8       0x14 My/Application/LcdGraphic.o
+                0x00000000080007e8                Lcd_pVideoBuffer
  .text.Lcd_Clear
-                0x00000000080007c8       0x30 My/Application/LcdGraphic.o
-                0x00000000080007c8                Lcd_Clear
+                0x00000000080007fc       0x30 My/Application/LcdGraphic.o
+                0x00000000080007fc                Lcd_Clear
  .text.Lcd_GotoXYFont
-                0x00000000080007f8       0x50 My/Application/LcdGraphic.o
-                0x00000000080007f8                Lcd_GotoXYFont
- .text.Lcd_Chr  0x0000000008000848       0x68 My/Application/LcdGraphic.o
-                0x0000000008000848                Lcd_Chr
+                0x000000000800082c       0x50 My/Application/LcdGraphic.o
+                0x000000000800082c                Lcd_GotoXYFont
+ .text.Lcd_Chr  0x000000000800087c       0x68 My/Application/LcdGraphic.o
+                0x000000000800087c                Lcd_Chr
  .text.Lcd_String
-                0x00000000080008b0       0x6c My/Application/LcdGraphic.o
-                0x00000000080008b0                Lcd_String
+                0x00000000080008e4       0x6c My/Application/LcdGraphic.o
+                0x00000000080008e4                Lcd_String
  .text.Lcd_ChrBold
-                0x000000000800091c      0x190 My/Application/LcdGraphic.o
-                0x000000000800091c                Lcd_ChrBold
+                0x0000000008000950      0x190 My/Application/LcdGraphic.o
+                0x0000000008000950                Lcd_ChrBold
  .text.Lcd_ChrBig
-                0x0000000008000aac      0x164 My/Application/LcdGraphic.o
-                0x0000000008000aac                Lcd_ChrBig
+                0x0000000008000ae0      0x164 My/Application/LcdGraphic.o
+                0x0000000008000ae0                Lcd_ChrBig
  .text.Lcd_Print
-                0x0000000008000c10       0x3a My/Application/LcdGraphic.o
-                0x0000000008000c10                Lcd_Print
- *fill*         0x0000000008000c4a        0x2 
+                0x0000000008000c44       0x3a My/Application/LcdGraphic.o
+                0x0000000008000c44                Lcd_Print
+ *fill*         0x0000000008000c7e        0x2 
  .text.Lcd_BinToDec
-                0x0000000008000c4c      0x124 My/Application/LcdGraphic.o
-                0x0000000008000c4c                Lcd_BinToDec
+                0x0000000008000c80      0x124 My/Application/LcdGraphic.o
+                0x0000000008000c80                Lcd_BinToDec
  .text.SystemInit
-                0x0000000008000d70       0x68 My/CMSIS/src/system_stm32f1xx.o
-                0x0000000008000d70                SystemInit
+                0x0000000008000da4       0x68 My/CMSIS/src/system_stm32f1xx.o
+                0x0000000008000da4                SystemInit
  .text.Gpio_Init
-                0x0000000008000dd8       0x64 My/Drivers/gpio_ST.o
-                0x0000000008000dd8                Gpio_Init
+                0x0000000008000e0c       0x64 My/Drivers/gpio_ST.o
+                0x0000000008000e0c                Gpio_Init
  .text.I2C_Init
-                0x0000000008000e3c       0xd0 My/Drivers/i2c_ST.o
-                0x0000000008000e3c                I2C_Init
+                0x0000000008000e70       0xd0 My/Drivers/i2c_ST.o
+                0x0000000008000e70                I2C_Init
  .text.I2C_StartAndSendDeviceAddr
-                0x0000000008000f0c       0xc4 My/Drivers/i2c_ST.o
-                0x0000000008000f0c                I2C_StartAndSendDeviceAddr
+                0x0000000008000f40       0xc4 My/Drivers/i2c_ST.o
+                0x0000000008000f40                I2C_StartAndSendDeviceAddr
  .text.I2C_SendData
-                0x0000000008000fd0       0x48 My/Drivers/i2c_ST.o
-                0x0000000008000fd0                I2C_SendData
+                0x0000000008001004       0x48 My/Drivers/i2c_ST.o
+                0x0000000008001004                I2C_SendData
  .text.I2C_ReadData
-                0x0000000008001018       0xc4 My/Drivers/i2c_ST.o
-                0x0000000008001018                I2C_ReadData
+                0x000000000800104c       0xc4 My/Drivers/i2c_ST.o
+                0x000000000800104c                I2C_ReadData
  .text.I2C_Stop
-                0x00000000080010dc       0x2c My/Drivers/i2c_ST.o
-                0x00000000080010dc                I2C_Stop
+                0x0000000008001110       0x2c My/Drivers/i2c_ST.o
+                0x0000000008001110                I2C_Stop
  .text.I2C_Write
-                0x0000000008001108       0xa6 My/Drivers/i2c_ST.o
-                0x0000000008001108                I2C_Write
+                0x000000000800113c       0xa6 My/Drivers/i2c_ST.o
+                0x000000000800113c                I2C_Write
  .text.I2C_Read
-                0x00000000080011ae      0x158 My/Drivers/i2c_ST.o
-                0x00000000080011ae                I2C_Read
- *fill*         0x0000000008001306        0x2 
+                0x00000000080011e2      0x158 My/Drivers/i2c_ST.o
+                0x00000000080011e2                I2C_Read
+ *fill*         0x000000000800133a        0x2 
  .text.I2C_Int_Handler
-                0x0000000008001308       0xcc My/Drivers/i2c_ST.o
+                0x000000000800133c       0xcc My/Drivers/i2c_ST.o
  .text.I2C1_EV_IRQHandler
-                0x00000000080013d4        0xc My/Drivers/i2c_ST.o
-                0x00000000080013d4                I2C1_EV_IRQHandler
+                0x0000000008001408        0xc My/Drivers/i2c_ST.o
+                0x0000000008001408                I2C1_EV_IRQHandler
  .text.I2C2_EV_IRQHandler
-                0x00000000080013e0       0x2c My/Drivers/i2c_ST.o
-                0x00000000080013e0                I2C2_EV_IRQHandler
+                0x0000000008001414       0x2c My/Drivers/i2c_ST.o
+                0x0000000008001414                I2C2_EV_IRQHandler
  .text.SPI2_IRQHandler
-                0x000000000800140c       0x38 My/Drivers/spi_ST.o
-                0x000000000800140c                SPI2_IRQHandler
+                0x0000000008001440       0x38 My/Drivers/spi_ST.o
+                0x0000000008001440                SPI2_IRQHandler
  .text.Init_RCC
-                0x0000000008001444      0x100 My/Drivers/sys_ST.o
+                0x0000000008001478      0x100 My/Drivers/sys_ST.o
  .text.Sys_Init
-                0x0000000008001544       0x5c My/Drivers/sys_ST.o
-                0x0000000008001544                Sys_Init
+                0x0000000008001578       0x5c My/Drivers/sys_ST.o
+                0x0000000008001578                Sys_Init
  .text.NMI_Handler
-                0x00000000080015a0        0xc My/Drivers/sys_ST.o
-                0x00000000080015a0                NMI_Handler
+                0x00000000080015d4        0xc My/Drivers/sys_ST.o
+                0x00000000080015d4                NMI_Handler
  .text.HardFault_Handler
-                0x00000000080015ac        0xc My/Drivers/sys_ST.o
-                0x00000000080015ac                HardFault_Handler
+                0x00000000080015e0        0xc My/Drivers/sys_ST.o
+                0x00000000080015e0                HardFault_Handler
  .text.MemManage_Handler
-                0x00000000080015b8        0xc My/Drivers/sys_ST.o
-                0x00000000080015b8                MemManage_Handler
+                0x00000000080015ec        0xc My/Drivers/sys_ST.o
+                0x00000000080015ec                MemManage_Handler
  .text.BusFault_Handler
-                0x00000000080015c4        0xc My/Drivers/sys_ST.o
-                0x00000000080015c4                BusFault_Handler
+                0x00000000080015f8        0xc My/Drivers/sys_ST.o
+                0x00000000080015f8                BusFault_Handler
  .text.UsageFault_Handler
-                0x00000000080015d0        0xc My/Drivers/sys_ST.o
-                0x00000000080015d0                UsageFault_Handler
+                0x0000000008001604        0xc My/Drivers/sys_ST.o
+                0x0000000008001604                UsageFault_Handler
  .text.SVC_Handler
-                0x00000000080015dc        0xc My/Drivers/sys_ST.o
-                0x00000000080015dc                SVC_Handler
+                0x0000000008001610        0xc My/Drivers/sys_ST.o
+                0x0000000008001610                SVC_Handler
  .text.SysTick_Init
-                0x00000000080015e8       0x28 My/Drivers/sys_tick_ST.o
-                0x00000000080015e8                SysTick_Init
+                0x000000000800161c       0x28 My/Drivers/sys_tick_ST.o
+                0x000000000800161c                SysTick_Init
  .text.IncrementOnEachPass
-                0x0000000008001610       0x44 My/Main/main.o
-                0x0000000008001610                IncrementOnEachPass
+                0x0000000008001644       0x44 My/Main/main.o
+                0x0000000008001644                IncrementOnEachPass
  .text.Time_Calculation
-                0x0000000008001654       0x6c My/Main/main.o
-                0x0000000008001654                Time_Calculation
+                0x0000000008001688       0x6c My/Main/main.o
+                0x0000000008001688                Time_Calculation
  .text.Led_Blink
-                0x00000000080016c0       0x2c My/Main/main.o
-                0x00000000080016c0                Led_Blink
+                0x00000000080016f4       0x2c My/Main/main.o
+                0x00000000080016f4                Led_Blink
  .text.Temperature_Get
-                0x00000000080016ec       0x3c My/Main/main.o
-                0x00000000080016ec                Temperature_Get
- .text.tic      0x0000000008001728       0x3c My/Main/main.o
-                0x0000000008001728                tic
- .text.main     0x0000000008001764      0x2cc My/Main/main.o
-                0x0000000008001764                main
+                0x0000000008001720       0x3c My/Main/main.o
+                0x0000000008001720                Temperature_Get
+ .text.tic      0x000000000800175c       0x3c My/Main/main.o
+                0x000000000800175c                tic
+ .text.main     0x0000000008001798      0x2e4 My/Main/main.o
+                0x0000000008001798                main
  .text.SysTick_Handler
-                0x0000000008001a30       0x48 My/Main/main.o
-                0x0000000008001a30                SysTick_Handler
+                0x0000000008001a7c       0x48 My/Main/main.o
+                0x0000000008001a7c                SysTick_Handler
  .text.Encoder_Turn
-                0x0000000008001a78       0x78 My/MiddleLevel/Encoder.o
+                0x0000000008001ac4       0x78 My/MiddleLevel/Encoder.o
  .text.Encoder_Loop
-                0x0000000008001af0      0x128 My/MiddleLevel/Encoder.o
- .text.Encoder  0x0000000008001c18       0x14 My/MiddleLevel/Encoder.o
-                0x0000000008001c18                Encoder
+                0x0000000008001b3c      0x128 My/MiddleLevel/Encoder.o
+ .text.Encoder  0x0000000008001c64       0x14 My/MiddleLevel/Encoder.o
+                0x0000000008001c64                Encoder
  .text.ssd1306_I2C_WriteDataBuf
-                0x0000000008001c2c       0x28 My/OLED/ssd1306.o
+                0x0000000008001c78       0x28 My/OLED/ssd1306.o
  .text.ssd1306_I2C_WriteCMD
-                0x0000000008001c54       0x28 My/OLED/ssd1306.o
+                0x0000000008001ca0       0x28 My/OLED/ssd1306.o
  .text.SSD1306_Init
-                0x0000000008001c7c       0xc8 My/OLED/ssd1306.o
-                0x0000000008001c7c                SSD1306_Init
+                0x0000000008001cc8       0xc8 My/OLED/ssd1306.o
+                0x0000000008001cc8                SSD1306_Init
  .text.SSD1306_UpdateScreen
-                0x0000000008001d44       0x4c My/OLED/ssd1306.o
-                0x0000000008001d44                SSD1306_UpdateScreen
+                0x0000000008001d90       0x4c My/OLED/ssd1306.o
+                0x0000000008001d90                SSD1306_UpdateScreen
  .text.Reset_Handler
-                0x0000000008001d90       0x54 Startup/startup_stm32f103c8tx.o
-                0x0000000008001d90                Reset_Handler
+                0x0000000008001ddc       0x54 Startup/startup_stm32f103c8tx.o
+                0x0000000008001ddc                Reset_Handler
  .text.Default_Handler
-                0x0000000008001de4        0x2 Startup/startup_stm32f103c8tx.o
-                0x0000000008001de4                EXTI2_IRQHandler
-                0x0000000008001de4                TIM8_TRG_COM_IRQHandler
-                0x0000000008001de4                TIM8_CC_IRQHandler
-                0x0000000008001de4                DebugMon_Handler
-                0x0000000008001de4                TIM1_CC_IRQHandler
-                0x0000000008001de4                TIM6_IRQHandler
-                0x0000000008001de4                PVD_IRQHandler
-                0x0000000008001de4                SDIO_IRQHandler
-                0x0000000008001de4                PendSV_Handler
-                0x0000000008001de4                EXTI3_IRQHandler
-                0x0000000008001de4                USB_HP_CAN_TX_IRQHandler
-                0x0000000008001de4                EXTI0_IRQHandler
-                0x0000000008001de4                ADC1_2_IRQHandler
-                0x0000000008001de4                SPI1_IRQHandler
-                0x0000000008001de4                CAN_SCE_IRQHandler
-                0x0000000008001de4                TAMPER_IRQHandler
-                0x0000000008001de4                TIM8_UP_IRQHandler
-                0x0000000008001de4                DMA2_Channel2_IRQHandler
-                0x0000000008001de4                DMA1_Channel4_IRQHandler
-                0x0000000008001de4                USART3_IRQHandler
-                0x0000000008001de4                RTC_IRQHandler
-                0x0000000008001de4                DMA1_Channel7_IRQHandler
-                0x0000000008001de4                UART5_IRQHandler
-                0x0000000008001de4                ADC3_IRQHandler
-                0x0000000008001de4                TIM4_IRQHandler
-                0x0000000008001de4                CAN_RX1_IRQHandler
-                0x0000000008001de4                DMA2_Channel1_IRQHandler
-                0x0000000008001de4                DMA1_Channel6_IRQHandler
-                0x0000000008001de4                UART4_IRQHandler
-                0x0000000008001de4                TIM3_IRQHandler
-                0x0000000008001de4                RCC_IRQHandler
-                0x0000000008001de4                TIM1_TRG_COM_IRQHandler
-                0x0000000008001de4                DMA1_Channel1_IRQHandler
-                0x0000000008001de4                Default_Handler
-                0x0000000008001de4                EXTI15_10_IRQHandler
-                0x0000000008001de4                TIM7_IRQHandler
-                0x0000000008001de4                TIM5_IRQHandler
-                0x0000000008001de4                EXTI9_5_IRQHandler
-                0x0000000008001de4                USB_LP_CAN_RX0_IRQHandler
-                0x0000000008001de4                DMA1_Channel5_IRQHandler
-                0x0000000008001de4                EXTI4_IRQHandler
-                0x0000000008001de4                DMA1_Channel3_IRQHandler
-                0x0000000008001de4                FSMC_IRQHandler
-                0x0000000008001de4                TIM1_UP_IRQHandler
-                0x0000000008001de4                WWDG_IRQHandler
-                0x0000000008001de4                TIM2_IRQHandler
-                0x0000000008001de4                TIM1_BRK_IRQHandler
-                0x0000000008001de4                EXTI1_IRQHandler
-                0x0000000008001de4                RTCAlarm_IRQHandler
-                0x0000000008001de4                DMA2_Channel4_5_IRQHandler
-                0x0000000008001de4                USART2_IRQHandler
-                0x0000000008001de4                I2C2_ER_IRQHandler
-                0x0000000008001de4                DMA1_Channel2_IRQHandler
-                0x0000000008001de4                TIM8_BRK_IRQHandler
-                0x0000000008001de4                FLASH_IRQHandler
-                0x0000000008001de4                USART1_IRQHandler
-                0x0000000008001de4                SPI3_IRQHandler
-                0x0000000008001de4                I2C1_ER_IRQHandler
-                0x0000000008001de4                DMA2_Channel3_IRQHandler
- *fill*         0x0000000008001de6        0x2 
+                0x0000000008001e30        0x2 Startup/startup_stm32f103c8tx.o
+                0x0000000008001e30                EXTI2_IRQHandler
+                0x0000000008001e30                TIM8_TRG_COM_IRQHandler
+                0x0000000008001e30                TIM8_CC_IRQHandler
+                0x0000000008001e30                DebugMon_Handler
+                0x0000000008001e30                TIM1_CC_IRQHandler
+                0x0000000008001e30                TIM6_IRQHandler
+                0x0000000008001e30                PVD_IRQHandler
+                0x0000000008001e30                SDIO_IRQHandler
+                0x0000000008001e30                PendSV_Handler
+                0x0000000008001e30                EXTI3_IRQHandler
+                0x0000000008001e30                USB_HP_CAN_TX_IRQHandler
+                0x0000000008001e30                EXTI0_IRQHandler
+                0x0000000008001e30                ADC1_2_IRQHandler
+                0x0000000008001e30                SPI1_IRQHandler
+                0x0000000008001e30                CAN_SCE_IRQHandler
+                0x0000000008001e30                TAMPER_IRQHandler
+                0x0000000008001e30                TIM8_UP_IRQHandler
+                0x0000000008001e30                DMA2_Channel2_IRQHandler
+                0x0000000008001e30                DMA1_Channel4_IRQHandler
+                0x0000000008001e30                USART3_IRQHandler
+                0x0000000008001e30                RTC_IRQHandler
+                0x0000000008001e30                DMA1_Channel7_IRQHandler
+                0x0000000008001e30                UART5_IRQHandler
+                0x0000000008001e30                ADC3_IRQHandler
+                0x0000000008001e30                TIM4_IRQHandler
+                0x0000000008001e30                CAN_RX1_IRQHandler
+                0x0000000008001e30                DMA2_Channel1_IRQHandler
+                0x0000000008001e30                DMA1_Channel6_IRQHandler
+                0x0000000008001e30                UART4_IRQHandler
+                0x0000000008001e30                TIM3_IRQHandler
+                0x0000000008001e30                RCC_IRQHandler
+                0x0000000008001e30                TIM1_TRG_COM_IRQHandler
+                0x0000000008001e30                DMA1_Channel1_IRQHandler
+                0x0000000008001e30                Default_Handler
+                0x0000000008001e30                EXTI15_10_IRQHandler
+                0x0000000008001e30                TIM7_IRQHandler
+                0x0000000008001e30                TIM5_IRQHandler
+                0x0000000008001e30                EXTI9_5_IRQHandler
+                0x0000000008001e30                USB_LP_CAN_RX0_IRQHandler
+                0x0000000008001e30                DMA1_Channel5_IRQHandler
+                0x0000000008001e30                EXTI4_IRQHandler
+                0x0000000008001e30                DMA1_Channel3_IRQHandler
+                0x0000000008001e30                FSMC_IRQHandler
+                0x0000000008001e30                TIM1_UP_IRQHandler
+                0x0000000008001e30                WWDG_IRQHandler
+                0x0000000008001e30                TIM2_IRQHandler
+                0x0000000008001e30                TIM1_BRK_IRQHandler
+                0x0000000008001e30                EXTI1_IRQHandler
+                0x0000000008001e30                RTCAlarm_IRQHandler
+                0x0000000008001e30                DMA2_Channel4_5_IRQHandler
+                0x0000000008001e30                USART2_IRQHandler
+                0x0000000008001e30                I2C2_ER_IRQHandler
+                0x0000000008001e30                DMA1_Channel2_IRQHandler
+                0x0000000008001e30                TIM8_BRK_IRQHandler
+                0x0000000008001e30                FLASH_IRQHandler
+                0x0000000008001e30                USART1_IRQHandler
+                0x0000000008001e30                SPI3_IRQHandler
+                0x0000000008001e30                I2C1_ER_IRQHandler
+                0x0000000008001e30                DMA2_Channel3_IRQHandler
+ *fill*         0x0000000008001e32        0x2 
  .text.__libc_init_array
-                0x0000000008001de8       0x48 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libc_nano.a(lib_a-init.o)
-                0x0000000008001de8                __libc_init_array
+                0x0000000008001e34       0x48 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libc_nano.a(lib_a-init.o)
+                0x0000000008001e34                __libc_init_array
  *(.glue_7)
- .glue_7        0x0000000008001e30        0x0 linker stubs
+ .glue_7        0x0000000008001e7c        0x0 linker stubs
  *(.glue_7t)
- .glue_7t       0x0000000008001e30        0x0 linker stubs
+ .glue_7t       0x0000000008001e7c        0x0 linker stubs
  *(.eh_frame)
- .eh_frame      0x0000000008001e30        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
+ .eh_frame      0x0000000008001e7c        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
  *(.init)
- .init          0x0000000008001e30        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crti.o
-                0x0000000008001e30                _init
- .init          0x0000000008001e34        0x8 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtn.o
+ .init          0x0000000008001e7c        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crti.o
+                0x0000000008001e7c                _init
+ .init          0x0000000008001e80        0x8 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtn.o
  *(.fini)
- .fini          0x0000000008001e3c        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crti.o
-                0x0000000008001e3c                _fini
- .fini          0x0000000008001e40        0x8 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtn.o
-                0x0000000008001e48                . = ALIGN (0x4)
-                0x0000000008001e48                _etext = .
+ .fini          0x0000000008001e88        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crti.o
+                0x0000000008001e88                _fini
+ .fini          0x0000000008001e8c        0x8 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtn.o
+                0x0000000008001e94                . = ALIGN (0x4)
+                0x0000000008001e94                _etext = .
 
-.vfp11_veneer   0x0000000008001e48        0x0
- .vfp11_veneer  0x0000000008001e48        0x0 linker stubs
+.vfp11_veneer   0x0000000008001e94        0x0
+ .vfp11_veneer  0x0000000008001e94        0x0 linker stubs
 
-.v4_bx          0x0000000008001e48        0x0
- .v4_bx         0x0000000008001e48        0x0 linker stubs
+.v4_bx          0x0000000008001e94        0x0
+ .v4_bx         0x0000000008001e94        0x0 linker stubs
 
-.iplt           0x0000000008001e48        0x0
- .iplt          0x0000000008001e48        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
+.iplt           0x0000000008001e94        0x0
+ .iplt          0x0000000008001e94        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
 
-.rodata         0x0000000008001e48      0x548
-                0x0000000008001e48                . = ALIGN (0x4)
+.rodata         0x0000000008001e94      0x548
+                0x0000000008001e94                . = ALIGN (0x4)
  *(.rodata)
- .rodata        0x0000000008001e48       0x47 My/Main/main.o
+ .rodata        0x0000000008001e94       0x47 My/Main/main.o
  *(.rodata*)
- *fill*         0x0000000008001e8f        0x1 
+ *fill*         0x0000000008001edb        0x1 
  .rodata.Ascii_Tab_12864
-                0x0000000008001e90      0x500 My/Application/Ascii_Tab_12864.o
-                0x0000000008001e90                Ascii_Tab_12864
-                0x0000000008002390                . = ALIGN (0x4)
+                0x0000000008001edc      0x500 My/Application/Ascii_Tab_12864.o
+                0x0000000008001edc                Ascii_Tab_12864
+                0x00000000080023dc                . = ALIGN (0x4)
 
-.rel.dyn        0x0000000008002390        0x0
- .rel.iplt      0x0000000008002390        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
+.rel.dyn        0x00000000080023dc        0x0
+ .rel.iplt      0x00000000080023dc        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
 
-.ARM.extab      0x0000000008002390        0x0
-                0x0000000008002390                . = ALIGN (0x4)
+.ARM.extab      0x00000000080023dc        0x0
+                0x00000000080023dc                . = ALIGN (0x4)
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x0000000008002390                . = ALIGN (0x4)
+                0x00000000080023dc                . = ALIGN (0x4)
 
-.ARM            0x0000000008002390        0x0
-                0x0000000008002390                . = ALIGN (0x4)
-                0x0000000008002390                __exidx_start = .
+.ARM            0x00000000080023dc        0x0
+                0x00000000080023dc                . = ALIGN (0x4)
+                0x00000000080023dc                __exidx_start = .
  *(.ARM.exidx*)
-                0x0000000008002390                __exidx_end = .
-                0x0000000008002390                . = ALIGN (0x4)
+                0x00000000080023dc                __exidx_end = .
+                0x00000000080023dc                . = ALIGN (0x4)
 
-.preinit_array  0x0000000008002390        0x0
-                0x0000000008002390                . = ALIGN (0x4)
-                0x0000000008002390                PROVIDE (__preinit_array_start = .)
+.preinit_array  0x00000000080023dc        0x0
+                0x00000000080023dc                . = ALIGN (0x4)
+                0x00000000080023dc                PROVIDE (__preinit_array_start = .)
  *(.preinit_array*)
-                0x0000000008002390                PROVIDE (__preinit_array_end = .)
-                0x0000000008002390                . = ALIGN (0x4)
+                0x00000000080023dc                PROVIDE (__preinit_array_end = .)
+                0x00000000080023dc                . = ALIGN (0x4)
 
-.init_array     0x0000000008002390        0x4
-                0x0000000008002390                . = ALIGN (0x4)
-                0x0000000008002390                PROVIDE (__init_array_start = .)
+.init_array     0x00000000080023dc        0x4
+                0x00000000080023dc                . = ALIGN (0x4)
+                0x00000000080023dc                PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  *(.init_array*)
- .init_array    0x0000000008002390        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
-                0x0000000008002394                PROVIDE (__init_array_end = .)
-                0x0000000008002394                . = ALIGN (0x4)
+ .init_array    0x00000000080023dc        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
+                0x00000000080023e0                PROVIDE (__init_array_end = .)
+                0x00000000080023e0                . = ALIGN (0x4)
 
-.fini_array     0x0000000008002394        0x4
-                0x0000000008002394                . = ALIGN (0x4)
+.fini_array     0x00000000080023e0        0x4
+                0x00000000080023e0                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array*)
- .fini_array    0x0000000008002394        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
+ .fini_array    0x00000000080023e0        0x4 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
                 [!provide]                        PROVIDE (__fini_array_end = .)
-                0x0000000008002398                . = ALIGN (0x4)
-                0x0000000008002398                _sidata = LOADADDR (.data)
+                0x00000000080023e4                . = ALIGN (0x4)
+                0x00000000080023e4                _sidata = LOADADDR (.data)
 
-.data           0x0000000020000000       0x10 load address 0x0000000008002398
+.data           0x0000000020000000       0x10 load address 0x00000000080023e4
                 0x0000000020000000                . = ALIGN (0x4)
                 0x0000000020000000                _sdata = .
  *(.data)
@@ -2826,27 +2830,29 @@ LOAD e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32
                 0x0000000020000010                . = ALIGN (0x4)
                 0x0000000020000010                _edata = .
 
-.igot.plt       0x0000000020000010        0x0 load address 0x00000000080023a8
+.igot.plt       0x0000000020000010        0x0 load address 0x00000000080023f4
  .igot.plt      0x0000000020000010        0x0 e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
                 0x0000000020000010                . = ALIGN (0x4)
 
-.bss            0x0000000020000010      0x508 load address 0x00000000080023a8
+.bss            0x0000000020000010      0x508 load address 0x00000000080023f4
                 0x0000000020000010                _sbss = .
                 0x0000000020000010                __bss_start__ = _sbss
  *(.bss)
  .bss           0x0000000020000010       0x1c e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtbegin.o
  *(.bss*)
  .bss.AHT10Str  0x000000002000002c        0x4 My/Application/AHT10.o
- .bss.BlinkReg  0x0000000020000030        0x2 My/Application/Blink.o
- .bss.blinkCount.6579
-                0x0000000020000032        0x2 My/Application/Blink.o
  .bss.TemperatureSign
-                0x0000000020000034        0x1 My/Application/DS18B20.o
-                0x0000000020000034                TemperatureSign
- *fill*         0x0000000020000035        0x3 
+                0x0000000020000030        0x1 My/Application/AHT10.o
+ *fill*         0x0000000020000031        0x1 
+ .bss.BlinkReg  0x0000000020000032        0x2 My/Application/Blink.o
+ .bss.blinkCount.6582
+                0x0000000020000034        0x2 My/Application/Blink.o
+ .bss.TemperatureSign
+                0x0000000020000036        0x1 My/Application/DS18B20.o
+ *fill*         0x0000000020000037        0x1 
  .bss.msCounter
                 0x0000000020000038        0x4 My/Application/Delay.o
- .bss.filVal.6609
+ .bss.filVal.6612
                 0x000000002000003c        0x2 My/Application/Filters.o
  *fill*         0x000000002000003e        0x2 
  .bss.lcdTextBuf
@@ -2872,20 +2878,20 @@ LOAD e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32
                 0x000000002000046c        0x4 My/Main/main.o
  .bss.DS1307Str
                 0x0000000020000470       0x40 My/Main/main.o
- .bss.oldState.6592
+ .bss.oldState.6595
                 0x00000000200004b0        0x2 My/Main/main.o
- .bss.oldState.6606
+ .bss.oldState.6609
                 0x00000000200004b2        0x2 My/Main/main.o
- .bss.msCountForDS18B20.6690
+ .bss.msCountForDS18B20.6693
                 0x00000000200004b4        0x2 My/Main/main.o
  .bss.EncoderStateReg
                 0x00000000200004b6        0x1 My/MiddleLevel/Encoder.o
- .bss.msCount.6596
+ .bss.msCount.6599
                 0x00000000200004b7        0x1 My/MiddleLevel/Encoder.o
- .bss.cycle.6595
+ .bss.cycle.6598
                 0x00000000200004b8        0x1 My/MiddleLevel/Encoder.o
  *fill*         0x00000000200004b9        0x3 
- .bss.but.6597  0x00000000200004bc        0x6 My/MiddleLevel/Encoder.o
+ .bss.but.6600  0x00000000200004bc        0x6 My/MiddleLevel/Encoder.o
  *fill*         0x00000000200004c2        0x2 
  .bss.pVideoBuffer
                 0x00000000200004c4        0x4 My/OLED/ssd1306.o
@@ -2899,7 +2905,7 @@ LOAD e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32
                 0x0000000020000518                __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x0000000020000518      0x200 load address 0x00000000080023a8
+                0x0000000020000518      0x200 load address 0x00000000080023f4
                 0x0000000020000518                . = ALIGN (0x8)
                 [!provide]                        PROVIDE (end = .)
                 [!provide]                        PROVIDE (_end = .)
@@ -2960,24 +2966,24 @@ LOAD e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32
                 0x00000000000003c8       0x1d e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7-m/crtn.o
 OUTPUT(f103c8t6_i2c_oled_ds18b20.elf elf32-littlearm)
 
-.debug_info     0x0000000000000000     0xbdc3
- .debug_info    0x0000000000000000      0xb80 My/Application/AHT10.o
- .debug_info    0x0000000000000b80       0x5c My/Application/Ascii_Tab_12864.o
- .debug_info    0x0000000000000bdc      0xaac My/Application/Blink.o
- .debug_info    0x0000000000001688      0xd5c My/Application/DS18B20.o
- .debug_info    0x00000000000023e4      0xa5f My/Application/Delay.o
- .debug_info    0x0000000000002e43      0xbec My/Application/Filters.o
- .debug_info    0x0000000000003a2f     0x10dd My/Application/LcdGraphic.o
- .debug_info    0x0000000000004b0c      0x3e5 My/CMSIS/src/system_stm32f1xx.o
- .debug_info    0x0000000000004ef1      0xc79 My/Drivers/gpio_ST.o
- .debug_info    0x0000000000005b6a      0xf19 My/Drivers/i2c_ST.o
- .debug_info    0x0000000000006a83      0xc73 My/Drivers/spi_ST.o
- .debug_info    0x00000000000076f6      0xc81 My/Drivers/sys_ST.o
- .debug_info    0x0000000000008377      0xa79 My/Drivers/sys_tick_ST.o
- .debug_info    0x0000000000008df0     0x110c My/Main/main.o
- .debug_info    0x0000000000009efc      0xc6d My/MiddleLevel/Encoder.o
- .debug_info    0x000000000000ab69     0x1238 My/OLED/ssd1306.o
- .debug_info    0x000000000000bda1       0x22 Startup/startup_stm32f103c8tx.o
+.debug_info     0x0000000000000000     0xbdf7
+ .debug_info    0x0000000000000000      0xbb4 My/Application/AHT10.o
+ .debug_info    0x0000000000000bb4       0x5c My/Application/Ascii_Tab_12864.o
+ .debug_info    0x0000000000000c10      0xaac My/Application/Blink.o
+ .debug_info    0x00000000000016bc      0xd5c My/Application/DS18B20.o
+ .debug_info    0x0000000000002418      0xa5f My/Application/Delay.o
+ .debug_info    0x0000000000002e77      0xbec My/Application/Filters.o
+ .debug_info    0x0000000000003a63     0x10dd My/Application/LcdGraphic.o
+ .debug_info    0x0000000000004b40      0x3e5 My/CMSIS/src/system_stm32f1xx.o
+ .debug_info    0x0000000000004f25      0xc79 My/Drivers/gpio_ST.o
+ .debug_info    0x0000000000005b9e      0xf19 My/Drivers/i2c_ST.o
+ .debug_info    0x0000000000006ab7      0xc73 My/Drivers/spi_ST.o
+ .debug_info    0x000000000000772a      0xc81 My/Drivers/sys_ST.o
+ .debug_info    0x00000000000083ab      0xa79 My/Drivers/sys_tick_ST.o
+ .debug_info    0x0000000000008e24     0x110c My/Main/main.o
+ .debug_info    0x0000000000009f30      0xc6d My/MiddleLevel/Encoder.o
+ .debug_info    0x000000000000ab9d     0x1238 My/OLED/ssd1306.o
+ .debug_info    0x000000000000bdd5       0x22 Startup/startup_stm32f103c8tx.o
 
 .debug_abbrev   0x0000000000000000     0x21f9
  .debug_abbrev  0x0000000000000000      0x1ff My/Application/AHT10.o
@@ -2998,185 +3004,186 @@ OUTPUT(f103c8t6_i2c_oled_ds18b20.elf elf32-littlearm)
  .debug_abbrev  0x0000000000001ef4      0x2f3 My/OLED/ssd1306.o
  .debug_abbrev  0x00000000000021e7       0x12 Startup/startup_stm32f103c8tx.o
 
-.debug_aranges  0x0000000000000000      0x578
+.debug_aranges  0x0000000000000000      0x580
  .debug_aranges
-                0x0000000000000000       0x38 My/Application/AHT10.o
+                0x0000000000000000       0x40 My/Application/AHT10.o
  .debug_aranges
-                0x0000000000000038       0x18 My/Application/Ascii_Tab_12864.o
+                0x0000000000000040       0x18 My/Application/Ascii_Tab_12864.o
  .debug_aranges
-                0x0000000000000050       0x28 My/Application/Blink.o
+                0x0000000000000058       0x28 My/Application/Blink.o
  .debug_aranges
-                0x0000000000000078       0x78 My/Application/DS18B20.o
+                0x0000000000000080       0x78 My/Application/DS18B20.o
  .debug_aranges
-                0x00000000000000f0       0x28 My/Application/Delay.o
+                0x00000000000000f8       0x28 My/Application/Delay.o
  .debug_aranges
-                0x0000000000000118       0x40 My/Application/Filters.o
+                0x0000000000000120       0x40 My/Application/Filters.o
  .debug_aranges
-                0x0000000000000158       0xd8 My/Application/LcdGraphic.o
+                0x0000000000000160       0xd8 My/Application/LcdGraphic.o
  .debug_aranges
-                0x0000000000000230       0x28 My/CMSIS/src/system_stm32f1xx.o
+                0x0000000000000238       0x28 My/CMSIS/src/system_stm32f1xx.o
  .debug_aranges
-                0x0000000000000258       0x30 My/Drivers/gpio_ST.o
+                0x0000000000000260       0x30 My/Drivers/gpio_ST.o
  .debug_aranges
-                0x0000000000000288       0x78 My/Drivers/i2c_ST.o
+                0x0000000000000290       0x78 My/Drivers/i2c_ST.o
  .debug_aranges
-                0x0000000000000300       0x48 My/Drivers/spi_ST.o
+                0x0000000000000308       0x48 My/Drivers/spi_ST.o
  .debug_aranges
-                0x0000000000000348       0x80 My/Drivers/sys_ST.o
+                0x0000000000000350       0x80 My/Drivers/sys_ST.o
  .debug_aranges
-                0x00000000000003c8       0x20 My/Drivers/sys_tick_ST.o
+                0x00000000000003d0       0x20 My/Drivers/sys_tick_ST.o
  .debug_aranges
-                0x00000000000003e8       0x80 My/Main/main.o
+                0x00000000000003f0       0x80 My/Main/main.o
  .debug_aranges
-                0x0000000000000468       0x38 My/MiddleLevel/Encoder.o
+                0x0000000000000470       0x38 My/MiddleLevel/Encoder.o
  .debug_aranges
-                0x00000000000004a0       0xb0 My/OLED/ssd1306.o
+                0x00000000000004a8       0xb0 My/OLED/ssd1306.o
  .debug_aranges
-                0x0000000000000550       0x28 Startup/startup_stm32f103c8tx.o
+                0x0000000000000558       0x28 Startup/startup_stm32f103c8tx.o
 
-.debug_ranges   0x0000000000000000      0x468
- .debug_ranges  0x0000000000000000       0x28 My/Application/AHT10.o
- .debug_ranges  0x0000000000000028       0x18 My/Application/Blink.o
- .debug_ranges  0x0000000000000040       0x68 My/Application/DS18B20.o
- .debug_ranges  0x00000000000000a8       0x18 My/Application/Delay.o
- .debug_ranges  0x00000000000000c0       0x30 My/Application/Filters.o
- .debug_ranges  0x00000000000000f0       0xc8 My/Application/LcdGraphic.o
- .debug_ranges  0x00000000000001b8       0x18 My/CMSIS/src/system_stm32f1xx.o
- .debug_ranges  0x00000000000001d0       0x20 My/Drivers/gpio_ST.o
- .debug_ranges  0x00000000000001f0       0x68 My/Drivers/i2c_ST.o
- .debug_ranges  0x0000000000000258       0x38 My/Drivers/spi_ST.o
- .debug_ranges  0x0000000000000290       0x70 My/Drivers/sys_ST.o
- .debug_ranges  0x0000000000000300       0x10 My/Drivers/sys_tick_ST.o
- .debug_ranges  0x0000000000000310       0x70 My/Main/main.o
- .debug_ranges  0x0000000000000380       0x28 My/MiddleLevel/Encoder.o
- .debug_ranges  0x00000000000003a8       0xa0 My/OLED/ssd1306.o
- .debug_ranges  0x0000000000000448       0x20 Startup/startup_stm32f103c8tx.o
+.debug_ranges   0x0000000000000000      0x470
+ .debug_ranges  0x0000000000000000       0x30 My/Application/AHT10.o
+ .debug_ranges  0x0000000000000030       0x18 My/Application/Blink.o
+ .debug_ranges  0x0000000000000048       0x68 My/Application/DS18B20.o
+ .debug_ranges  0x00000000000000b0       0x18 My/Application/Delay.o
+ .debug_ranges  0x00000000000000c8       0x30 My/Application/Filters.o
+ .debug_ranges  0x00000000000000f8       0xc8 My/Application/LcdGraphic.o
+ .debug_ranges  0x00000000000001c0       0x18 My/CMSIS/src/system_stm32f1xx.o
+ .debug_ranges  0x00000000000001d8       0x20 My/Drivers/gpio_ST.o
+ .debug_ranges  0x00000000000001f8       0x68 My/Drivers/i2c_ST.o
+ .debug_ranges  0x0000000000000260       0x38 My/Drivers/spi_ST.o
+ .debug_ranges  0x0000000000000298       0x70 My/Drivers/sys_ST.o
+ .debug_ranges  0x0000000000000308       0x10 My/Drivers/sys_tick_ST.o
+ .debug_ranges  0x0000000000000318       0x70 My/Main/main.o
+ .debug_ranges  0x0000000000000388       0x28 My/MiddleLevel/Encoder.o
+ .debug_ranges  0x00000000000003b0       0xa0 My/OLED/ssd1306.o
+ .debug_ranges  0x0000000000000450       0x20 Startup/startup_stm32f103c8tx.o
 
-.debug_macro    0x0000000000000000    0x13460
- .debug_macro   0x0000000000000000      0x299 My/Application/AHT10.o
- .debug_macro   0x0000000000000299      0xa60 My/Application/AHT10.o
- .debug_macro   0x0000000000000cf9       0x22 My/Application/AHT10.o
- .debug_macro   0x0000000000000d1b       0x22 My/Application/AHT10.o
- .debug_macro   0x0000000000000d3d       0x8e My/Application/AHT10.o
- .debug_macro   0x0000000000000dcb       0x51 My/Application/AHT10.o
- .debug_macro   0x0000000000000e1c       0xef My/Application/AHT10.o
- .debug_macro   0x0000000000000f0b       0x6a My/Application/AHT10.o
- .debug_macro   0x0000000000000f75      0x1df My/Application/AHT10.o
- .debug_macro   0x0000000000001154       0x1c My/Application/AHT10.o
- .debug_macro   0x0000000000001170       0x22 My/Application/AHT10.o
- .debug_macro   0x0000000000001192       0xc3 My/Application/AHT10.o
- .debug_macro   0x0000000000001255      0xd23 My/Application/AHT10.o
- .debug_macro   0x0000000000001f78     0xe09e My/Application/AHT10.o
- .debug_macro   0x0000000000010016       0x46 My/Application/AHT10.o
- .debug_macro   0x000000000001005c       0x18 My/Application/AHT10.o
- .debug_macro   0x0000000000010074       0x3c My/Application/AHT10.o
- .debug_macro   0x00000000000100b0       0x34 My/Application/AHT10.o
- .debug_macro   0x00000000000100e4      0x174 My/Application/AHT10.o
- .debug_macro   0x0000000000010258       0x52 My/Application/AHT10.o
- .debug_macro   0x00000000000102aa       0x1f My/Application/AHT10.o
- .debug_macro   0x00000000000102c9       0x43 My/Application/AHT10.o
- .debug_macro   0x000000000001030c       0x20 My/Application/AHT10.o
- .debug_macro   0x000000000001032c      0x1a3 My/Application/AHT10.o
- .debug_macro   0x00000000000104cf      0x32a My/Application/AHT10.o
- .debug_macro   0x00000000000107f9      0x1e1 My/Application/AHT10.o
- .debug_macro   0x00000000000109da       0x28 My/Application/AHT10.o
- .debug_macro   0x0000000000010a02      0x100 My/Application/AHT10.o
- .debug_macro   0x0000000000010b02       0x16 My/Application/AHT10.o
- .debug_macro   0x0000000000010b18       0x16 My/Application/AHT10.o
- .debug_macro   0x0000000000010b2e       0x58 My/Application/AHT10.o
- .debug_macro   0x0000000000010b86       0x16 My/Application/AHT10.o
- .debug_macro   0x0000000000010b9c       0x40 My/Application/AHT10.o
- .debug_macro   0x0000000000010bdc       0x4c My/Application/AHT10.o
- .debug_macro   0x0000000000010c28       0x28 My/Application/AHT10.o
- .debug_macro   0x0000000000010c50       0x16 My/Application/AHT10.o
- .debug_macro   0x0000000000010c66       0x35 My/Application/AHT10.o
- .debug_macro   0x0000000000010c9b       0x20 My/Application/AHT10.o
- .debug_macro   0x0000000000010cbb       0x16 My/Application/AHT10.o
- .debug_macro   0x0000000000010cd1       0x16 My/Application/AHT10.o
- .debug_macro   0x0000000000010ce7       0x29 My/Application/AHT10.o
- .debug_macro   0x0000000000010d10       0x22 My/Application/AHT10.o
- .debug_macro   0x0000000000010d32       0x4c My/Application/AHT10.o
- .debug_macro   0x0000000000010d7e       0xfa My/Application/AHT10.o
- .debug_macro   0x0000000000010e78       0x6a My/Application/AHT10.o
- .debug_macro   0x0000000000010ee2       0x11 My/Application/Ascii_Tab_12864.o
- .debug_macro   0x0000000000010ef3      0x292 My/Application/Blink.o
- .debug_macro   0x0000000000011185       0x10 My/Application/Blink.o
- .debug_macro   0x0000000000011195      0x298 My/Application/DS18B20.o
- .debug_macro   0x000000000001142d       0x64 My/Application/DS18B20.o
- .debug_macro   0x0000000000011491      0x292 My/Application/Delay.o
- .debug_macro   0x0000000000011723      0x2b0 My/Application/Filters.o
- .debug_macro   0x00000000000119d3      0x29e My/Application/LcdGraphic.o
- .debug_macro   0x0000000000011c71       0x46 My/Application/LcdGraphic.o
- .debug_macro   0x0000000000011cb7       0xce My/CMSIS/src/system_stm32f1xx.o
- .debug_macro   0x0000000000011d85       0x2e My/CMSIS/src/system_stm32f1xx.o
- .debug_macro   0x0000000000011db3       0x43 My/CMSIS/src/system_stm32f1xx.o
- .debug_macro   0x0000000000011df6      0x298 My/Drivers/gpio_ST.o
- .debug_macro   0x000000000001208e       0xfa My/Drivers/gpio_ST.o
- .debug_macro   0x0000000000012188      0x298 My/Drivers/i2c_ST.o
- .debug_macro   0x0000000000012420       0x52 My/Drivers/i2c_ST.o
- .debug_macro   0x0000000000012472      0x298 My/Drivers/spi_ST.o
- .debug_macro   0x000000000001270a       0x10 My/Drivers/spi_ST.o
- .debug_macro   0x000000000001271a      0x298 My/Drivers/sys_ST.o
- .debug_macro   0x00000000000129b2      0x298 My/Drivers/sys_tick_ST.o
- .debug_macro   0x0000000000012c4a       0x10 My/Drivers/sys_tick_ST.o
- .debug_macro   0x0000000000012c5a      0x2a2 My/Main/main.o
- .debug_macro   0x0000000000012efc      0x298 My/MiddleLevel/Encoder.o
- .debug_macro   0x0000000000013194       0x3a My/MiddleLevel/Encoder.o
- .debug_macro   0x00000000000131ce      0x292 My/OLED/ssd1306.o
+.debug_macro    0x0000000000000000    0x13481
+ .debug_macro   0x0000000000000000      0x298 My/Application/AHT10.o
+ .debug_macro   0x0000000000000298      0xa60 My/Application/AHT10.o
+ .debug_macro   0x0000000000000cf8       0x22 My/Application/AHT10.o
+ .debug_macro   0x0000000000000d1a       0x22 My/Application/AHT10.o
+ .debug_macro   0x0000000000000d3c       0x8e My/Application/AHT10.o
+ .debug_macro   0x0000000000000dca       0x51 My/Application/AHT10.o
+ .debug_macro   0x0000000000000e1b       0xef My/Application/AHT10.o
+ .debug_macro   0x0000000000000f0a       0x6a My/Application/AHT10.o
+ .debug_macro   0x0000000000000f74      0x1df My/Application/AHT10.o
+ .debug_macro   0x0000000000001153       0x1c My/Application/AHT10.o
+ .debug_macro   0x000000000000116f       0x22 My/Application/AHT10.o
+ .debug_macro   0x0000000000001191       0xc3 My/Application/AHT10.o
+ .debug_macro   0x0000000000001254      0xd23 My/Application/AHT10.o
+ .debug_macro   0x0000000000001f77     0xe09e My/Application/AHT10.o
+ .debug_macro   0x0000000000010015       0x46 My/Application/AHT10.o
+ .debug_macro   0x000000000001005b       0x18 My/Application/AHT10.o
+ .debug_macro   0x0000000000010073       0x3c My/Application/AHT10.o
+ .debug_macro   0x00000000000100af       0x34 My/Application/AHT10.o
+ .debug_macro   0x00000000000100e3      0x174 My/Application/AHT10.o
+ .debug_macro   0x0000000000010257       0x52 My/Application/AHT10.o
+ .debug_macro   0x00000000000102a9       0x1f My/Application/AHT10.o
+ .debug_macro   0x00000000000102c8       0x43 My/Application/AHT10.o
+ .debug_macro   0x000000000001030b       0x20 My/Application/AHT10.o
+ .debug_macro   0x000000000001032b      0x1a3 My/Application/AHT10.o
+ .debug_macro   0x00000000000104ce      0x32a My/Application/AHT10.o
+ .debug_macro   0x00000000000107f8      0x1e1 My/Application/AHT10.o
+ .debug_macro   0x00000000000109d9       0x28 My/Application/AHT10.o
+ .debug_macro   0x0000000000010a01      0x100 My/Application/AHT10.o
+ .debug_macro   0x0000000000010b01       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010b17       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010b2d       0x58 My/Application/AHT10.o
+ .debug_macro   0x0000000000010b85       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010b9b       0x40 My/Application/AHT10.o
+ .debug_macro   0x0000000000010bdb       0x4c My/Application/AHT10.o
+ .debug_macro   0x0000000000010c27       0x28 My/Application/AHT10.o
+ .debug_macro   0x0000000000010c4f       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010c65       0x35 My/Application/AHT10.o
+ .debug_macro   0x0000000000010c9a       0x20 My/Application/AHT10.o
+ .debug_macro   0x0000000000010cba       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010cd0       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010ce6       0x29 My/Application/AHT10.o
+ .debug_macro   0x0000000000010d0f       0x22 My/Application/AHT10.o
+ .debug_macro   0x0000000000010d31       0x4c My/Application/AHT10.o
+ .debug_macro   0x0000000000010d7d       0xfa My/Application/AHT10.o
+ .debug_macro   0x0000000000010e77       0x6a My/Application/AHT10.o
+ .debug_macro   0x0000000000010ee1       0x16 My/Application/AHT10.o
+ .debug_macro   0x0000000000010ef7       0x11 My/Application/Ascii_Tab_12864.o
+ .debug_macro   0x0000000000010f08      0x292 My/Application/Blink.o
+ .debug_macro   0x000000000001119a       0x1c My/Application/Blink.o
+ .debug_macro   0x00000000000111b6      0x298 My/Application/DS18B20.o
+ .debug_macro   0x000000000001144e       0x64 My/Application/DS18B20.o
+ .debug_macro   0x00000000000114b2      0x292 My/Application/Delay.o
+ .debug_macro   0x0000000000011744      0x2b0 My/Application/Filters.o
+ .debug_macro   0x00000000000119f4      0x29e My/Application/LcdGraphic.o
+ .debug_macro   0x0000000000011c92       0x46 My/Application/LcdGraphic.o
+ .debug_macro   0x0000000000011cd8       0xce My/CMSIS/src/system_stm32f1xx.o
+ .debug_macro   0x0000000000011da6       0x2e My/CMSIS/src/system_stm32f1xx.o
+ .debug_macro   0x0000000000011dd4       0x43 My/CMSIS/src/system_stm32f1xx.o
+ .debug_macro   0x0000000000011e17      0x298 My/Drivers/gpio_ST.o
+ .debug_macro   0x00000000000120af       0xfa My/Drivers/gpio_ST.o
+ .debug_macro   0x00000000000121a9      0x298 My/Drivers/i2c_ST.o
+ .debug_macro   0x0000000000012441       0x52 My/Drivers/i2c_ST.o
+ .debug_macro   0x0000000000012493      0x298 My/Drivers/spi_ST.o
+ .debug_macro   0x000000000001272b       0x10 My/Drivers/spi_ST.o
+ .debug_macro   0x000000000001273b      0x298 My/Drivers/sys_ST.o
+ .debug_macro   0x00000000000129d3      0x298 My/Drivers/sys_tick_ST.o
+ .debug_macro   0x0000000000012c6b       0x10 My/Drivers/sys_tick_ST.o
+ .debug_macro   0x0000000000012c7b      0x2a2 My/Main/main.o
+ .debug_macro   0x0000000000012f1d      0x298 My/MiddleLevel/Encoder.o
+ .debug_macro   0x00000000000131b5       0x3a My/MiddleLevel/Encoder.o
+ .debug_macro   0x00000000000131ef      0x292 My/OLED/ssd1306.o
 
-.debug_line     0x0000000000000000     0xa44a
- .debug_line    0x0000000000000000      0xa63 My/Application/AHT10.o
- .debug_line    0x0000000000000a63       0x44 My/Application/Ascii_Tab_12864.o
- .debug_line    0x0000000000000aa7      0xa56 My/Application/Blink.o
- .debug_line    0x00000000000014fd      0xb5c My/Application/DS18B20.o
- .debug_line    0x0000000000002059      0xa3a My/Application/Delay.o
- .debug_line    0x0000000000002a93      0xaa4 My/Application/Filters.o
- .debug_line    0x0000000000003537      0xe26 My/Application/LcdGraphic.o
- .debug_line    0x000000000000435d      0x50f My/CMSIS/src/system_stm32f1xx.o
- .debug_line    0x000000000000486c      0xa74 My/Drivers/gpio_ST.o
- .debug_line    0x00000000000052e0      0xc2a My/Drivers/i2c_ST.o
- .debug_line    0x0000000000005f0a      0xadc My/Drivers/spi_ST.o
- .debug_line    0x00000000000069e6      0xb6d My/Drivers/sys_ST.o
- .debug_line    0x0000000000007553      0xa24 My/Drivers/sys_tick_ST.o
- .debug_line    0x0000000000007f77      0xbfc My/Main/main.o
- .debug_line    0x0000000000008b73      0xaad My/MiddleLevel/Encoder.o
- .debug_line    0x0000000000009620      0xda5 My/OLED/ssd1306.o
- .debug_line    0x000000000000a3c5       0x85 Startup/startup_stm32f103c8tx.o
+.debug_line     0x0000000000000000     0xa4ca
+ .debug_line    0x0000000000000000      0xa7f My/Application/AHT10.o
+ .debug_line    0x0000000000000a7f       0x44 My/Application/Ascii_Tab_12864.o
+ .debug_line    0x0000000000000ac3      0xa5d My/Application/Blink.o
+ .debug_line    0x0000000000001520      0xb63 My/Application/DS18B20.o
+ .debug_line    0x0000000000002083      0xa41 My/Application/Delay.o
+ .debug_line    0x0000000000002ac4      0xaab My/Application/Filters.o
+ .debug_line    0x000000000000356f      0xe2d My/Application/LcdGraphic.o
+ .debug_line    0x000000000000439c      0x50f My/CMSIS/src/system_stm32f1xx.o
+ .debug_line    0x00000000000048ab      0xa7b My/Drivers/gpio_ST.o
+ .debug_line    0x0000000000005326      0xc31 My/Drivers/i2c_ST.o
+ .debug_line    0x0000000000005f57      0xae3 My/Drivers/spi_ST.o
+ .debug_line    0x0000000000006a3a      0xb74 My/Drivers/sys_ST.o
+ .debug_line    0x00000000000075ae      0xa2b My/Drivers/sys_tick_ST.o
+ .debug_line    0x0000000000007fd9      0xc0c My/Main/main.o
+ .debug_line    0x0000000000008be5      0xab4 My/MiddleLevel/Encoder.o
+ .debug_line    0x0000000000009699      0xdac My/OLED/ssd1306.o
+ .debug_line    0x000000000000a445       0x85 Startup/startup_stm32f103c8tx.o
 
-.debug_str      0x0000000000000000    0x59fc8
- .debug_str     0x0000000000000000    0x58c1e My/Application/AHT10.o
-                                      0x58fb8 (size before relaxing)
- .debug_str     0x0000000000058c1e       0x24 My/Application/Ascii_Tab_12864.o
+.debug_str      0x0000000000000000    0x5a058
+ .debug_str     0x0000000000000000    0x58c64 My/Application/AHT10.o
+                                      0x59013 (size before relaxing)
+ .debug_str     0x0000000000058c64       0x6e My/Application/Ascii_Tab_12864.o
                                        0x2d1a (size before relaxing)
- .debug_str     0x0000000000058c42       0xa6 My/Application/Blink.o
-                                      0x58fc4 (size before relaxing)
- .debug_str     0x0000000000058ce8      0x23f My/Application/DS18B20.o
-                                      0x59171 (size before relaxing)
- .debug_str     0x0000000000058f27       0x39 My/Application/Delay.o
-                                      0x58f51 (size before relaxing)
- .debug_str     0x0000000000058f60       0xe1 My/Application/Filters.o
-                                      0x58ff9 (size before relaxing)
- .debug_str     0x0000000000059041      0x1e2 My/Application/LcdGraphic.o
-                                      0x5911b (size before relaxing)
- .debug_str     0x0000000000059223      0x3e5 My/CMSIS/src/system_stm32f1xx.o
+ .debug_str     0x0000000000058cd2       0xa6 My/Application/Blink.o
+                                      0x58ff1 (size before relaxing)
+ .debug_str     0x0000000000058d78      0x23f My/Application/DS18B20.o
+                                      0x5919e (size before relaxing)
+ .debug_str     0x0000000000058fb7       0x39 My/Application/Delay.o
+                                      0x58f7e (size before relaxing)
+ .debug_str     0x0000000000058ff0       0xe1 My/Application/Filters.o
+                                      0x59026 (size before relaxing)
+ .debug_str     0x00000000000590d1      0x1e2 My/Application/LcdGraphic.o
+                                      0x59148 (size before relaxing)
+ .debug_str     0x00000000000592b3      0x3e5 My/CMSIS/src/system_stm32f1xx.o
                                       0x542b0 (size before relaxing)
- .debug_str     0x0000000000059608       0xbe My/Drivers/gpio_ST.o
-                                      0x59036 (size before relaxing)
- .debug_str     0x00000000000596c6      0x121 My/Drivers/i2c_ST.o
-                                      0x590b0 (size before relaxing)
- .debug_str     0x00000000000597e7       0xbd My/Drivers/spi_ST.o
-                                      0x59030 (size before relaxing)
- .debug_str     0x00000000000598a4      0x13f My/Drivers/sys_ST.o
-                                      0x5909b (size before relaxing)
- .debug_str     0x00000000000599e3       0x46 My/Drivers/sys_tick_ST.o
-                                      0x58f5e (size before relaxing)
- .debug_str     0x0000000000059a29      0x277 My/Main/main.o
-                                      0x592ae (size before relaxing)
- .debug_str     0x0000000000059ca0       0x99 My/MiddleLevel/Encoder.o
-                                      0x59012 (size before relaxing)
- .debug_str     0x0000000000059d39      0x25e My/OLED/ssd1306.o
-                                      0x591c2 (size before relaxing)
- .debug_str     0x0000000000059f97       0x31 Startup/startup_stm32f103c8tx.o
+ .debug_str     0x0000000000059698       0xbe My/Drivers/gpio_ST.o
+                                      0x59063 (size before relaxing)
+ .debug_str     0x0000000000059756      0x121 My/Drivers/i2c_ST.o
+                                      0x590dd (size before relaxing)
+ .debug_str     0x0000000000059877       0xbd My/Drivers/spi_ST.o
+                                      0x5905d (size before relaxing)
+ .debug_str     0x0000000000059934      0x13f My/Drivers/sys_ST.o
+                                      0x590c8 (size before relaxing)
+ .debug_str     0x0000000000059a73       0x46 My/Drivers/sys_tick_ST.o
+                                      0x58f8b (size before relaxing)
+ .debug_str     0x0000000000059ab9      0x277 My/Main/main.o
+                                      0x592db (size before relaxing)
+ .debug_str     0x0000000000059d30       0x99 My/MiddleLevel/Encoder.o
+                                      0x5903f (size before relaxing)
+ .debug_str     0x0000000000059dc9      0x25e My/OLED/ssd1306.o
+                                      0x591ef (size before relaxing)
+ .debug_str     0x000000000005a027       0x31 Startup/startup_stm32f103c8tx.o
                                          0x7b (size before relaxing)
 
 .comment        0x0000000000000000       0x7b
@@ -3198,20 +3205,20 @@ OUTPUT(f103c8t6_i2c_oled_ds18b20.elf elf32-littlearm)
  .comment       0x000000000000007b       0x7c My/MiddleLevel/Encoder.o
  .comment       0x000000000000007b       0x7c My/OLED/ssd1306.o
 
-.debug_frame    0x0000000000000000     0x1268
- .debug_frame   0x0000000000000000       0x98 My/Application/AHT10.o
- .debug_frame   0x0000000000000098       0x58 My/Application/Blink.o
- .debug_frame   0x00000000000000f0      0x1b4 My/Application/DS18B20.o
- .debug_frame   0x00000000000002a4       0x58 My/Application/Delay.o
- .debug_frame   0x00000000000002fc       0xd8 My/Application/Filters.o
- .debug_frame   0x00000000000003d4      0x388 My/Application/LcdGraphic.o
- .debug_frame   0x000000000000075c       0x58 My/CMSIS/src/system_stm32f1xx.o
- .debug_frame   0x00000000000007b4       0x78 My/Drivers/gpio_ST.o
- .debug_frame   0x000000000000082c      0x1dc My/Drivers/i2c_ST.o
- .debug_frame   0x0000000000000a08       0xe0 My/Drivers/spi_ST.o
- .debug_frame   0x0000000000000ae8      0x1cc My/Drivers/sys_ST.o
- .debug_frame   0x0000000000000cb4       0x30 My/Drivers/sys_tick_ST.o
- .debug_frame   0x0000000000000ce4      0x1e8 My/Main/main.o
- .debug_frame   0x0000000000000ecc       0x98 My/MiddleLevel/Encoder.o
- .debug_frame   0x0000000000000f64      0x2d8 My/OLED/ssd1306.o
- .debug_frame   0x000000000000123c       0x2c e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libc_nano.a(lib_a-init.o)
+.debug_frame    0x0000000000000000     0x1288
+ .debug_frame   0x0000000000000000       0xb8 My/Application/AHT10.o
+ .debug_frame   0x00000000000000b8       0x58 My/Application/Blink.o
+ .debug_frame   0x0000000000000110      0x1b4 My/Application/DS18B20.o
+ .debug_frame   0x00000000000002c4       0x58 My/Application/Delay.o
+ .debug_frame   0x000000000000031c       0xd8 My/Application/Filters.o
+ .debug_frame   0x00000000000003f4      0x388 My/Application/LcdGraphic.o
+ .debug_frame   0x000000000000077c       0x58 My/CMSIS/src/system_stm32f1xx.o
+ .debug_frame   0x00000000000007d4       0x78 My/Drivers/gpio_ST.o
+ .debug_frame   0x000000000000084c      0x1dc My/Drivers/i2c_ST.o
+ .debug_frame   0x0000000000000a28       0xe0 My/Drivers/spi_ST.o
+ .debug_frame   0x0000000000000b08      0x1cc My/Drivers/sys_ST.o
+ .debug_frame   0x0000000000000cd4       0x30 My/Drivers/sys_tick_ST.o
+ .debug_frame   0x0000000000000d04      0x1e8 My/Main/main.o
+ .debug_frame   0x0000000000000eec       0x98 My/MiddleLevel/Encoder.o
+ .debug_frame   0x0000000000000f84      0x2d8 My/OLED/ssd1306.o
+ .debug_frame   0x000000000000125c       0x2c e:/000_instdir/cubeide/stm32cubeide_1.5.1/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libc_nano.a(lib_a-init.o)

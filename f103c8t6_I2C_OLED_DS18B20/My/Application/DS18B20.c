@@ -9,7 +9,7 @@
 //*******************************************************************************************
 
 uint32_t DELAY_WAIT_CONVERT = DELAY_T_CONVERT;
-uint8_t  TemperatureSign	= 0;
+static uint8_t  TemperatureSign	= 0;
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -98,8 +98,13 @@ static uint16_t readTemperature(void){
 	if(data & 0x0000F800)
 		{
 			TemperatureSign = DS18B20_SIGN_NEGATIVE;
-			data = (data ^ 0xffff) + 1;
-			data &= 0x0000FFFF;
+
+			data  = (data ^ 0x0000ffff) + 1;
+			data &= 0x00000FFF;//Маска для выделения 12 бит.
+
+//			data  = ~data;
+//			data += 1;
+//			data &= 0x00000FFF;
 		}
 	else TemperatureSign = DS18B20_SIGN_POSITIVE;
 	//Расчет температуры
