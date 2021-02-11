@@ -1,0 +1,12 @@
+i2c_ST.c:28:6:I2C_Init	24	static,ignoring_inline_asm
+i2c_ST.c:68:9:I2C_StartAndSendDeviceAddr	24	static
+i2c_ST.c:111:6:I2C_SendData	32	static
+i2c_ST.c:120:6:I2C_ReadData	32	static
+i2c_ST.c:145:6:I2C_Stop	16	static
+i2c_ST.c:152:6:I2C_Write	32	static
+i2c_ST.c:177:6:I2C_Read	32	static
+i2c_ST.c:227:6:I2C_Int_Init	16	static
+i2c_ST.c:272:6:I2C_Int_StartSendData	24	static
+i2c_ST.c:289:13:I2C_Int_Handler	24	static
+i2c_ST.c:473:6:I2C1_EV_IRQHandler	4	static
+i2c_ST.c:479:6:I2C2_EV_IRQHandler	8	static
