@@ -76,7 +76,7 @@ uint8_t tic(uint16_t event){
 //*******************************************************************************************
 //Работа с DS2782.
 
-#define DS2782_ADDR	(0x34 << 1)
+#define DS2782_ADDR (0b00110100 << 1)//(0x34 << 1)
 #define DS2782_I2C	I2C1
 
 //---------------------------
@@ -93,15 +93,31 @@ static DS2782_t DS2782Str;
 //************************************************************
 uint16_t DS2782_ReadADC(void){
 
-	uint8_t regAddr   = 0x00;
+	uint8_t regAddr   = 0x01;
 	uint8_t rxBuf[16] = {0};
 	//-------------------
-//	I2C_Read(DS2782_I2C, DS2782_ADDR, 0x00, rxBuf, 3);
-
-
+	//Этот кусок кода работает. Обмен с DS2782 есть.
 	I2C_StartAndSendDeviceAddr(DS2782_I2C, DS2782_ADDR | I2C_MODE_WRITE);
 	I2C_SendData(DS2782_I2C, &regAddr, 1);
 	I2C_Stop(DS2782_I2C);
+
+	//-------------------
+	I2C_Read(DS2782_I2C, DS2782_ADDR, 0x01, rxBuf, 1);
+
+
+
+	//Не работает!!!
+//	I2C_StartAndSendDeviceAddr(DS2782_I2C, DS2782_ADDR | I2C_MODE_WRITE);
+//	I2C_SendData(DS2782_I2C, &regAddr, 1);
+//
+//	I2C_StartAndSendDeviceAddr(DS2782_I2C, DS2782_ADDR | I2C_MODE_READ);
+//	I2C_ReadData(DS2782_I2C, rxBuf, 4);
+
+//	I2C_Stop(DS2782_I2C);
+
+
+	//Не работает!!!
+//	I2C_Read(DS2782_I2C, DS2782_ADDR, 0x00, rxBuf, 3);
 
 //	I2C_SendData(DS2782_I2C, &regAddr, 1);
 //
@@ -126,24 +142,7 @@ int main(void){
 	//Drivers.
 	Sys_Init();
 	Gpio_Init();
-
-	//TIM3_InitForPWM();
-	//TIM1_InitForCapture();
-	//TIM1->CCR2 = 10;
-
-	//Настройка DMA для работы с таймером.
-	//DMA1_ChX_Init(DMA1_Channel4, pwm_value, (sizeof(pwm_value) / sizeof(pwm_value[0])) );
-
-	//Настройка DMA для работы с I2C. Передача буфера в I2С через DMA.
-
 	//***********************************************
-	//Инициализация планировщик.
-//	Scheduler_Init();
-//	Scheduler_SetTask(Task_LedsBlink);
-//	Scheduler_SetTask(Task_GetTemperature);
-//	Scheduler_SetTask(Task_Display);
-//	Scheduler_SetTask(Task_LcdUpdate);
-
 	SysTick_Init();
 	__enable_irq();
 
@@ -161,9 +160,6 @@ int main(void){
 	DS18B20_StartConvertTemperature();
 	//***********************************************
 	//DS2782.
-
-
-
 
 	//***********************************************
 	msDelay(500);
@@ -183,7 +179,7 @@ int main(void){
 			//***********************************************
 			//LCD 128x64 - Работает.
 			Lcd_String(1, 1);
-			Lcd_Print("IMU v1.0 Test");
+			Lcd_Print("DS2782 Test");
 			//Вывод времени.
 			Lcd_String(1, 2);
 			Lcd_Print("Time:");
