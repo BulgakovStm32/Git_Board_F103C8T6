@@ -26,7 +26,8 @@ My/MiddleLevel/LM6063D.o: ../My/MiddleLevel/LM6063D.c \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/Blink.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/DS18B20.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/Filters.h \
- D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/AHT10.h
+ D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/AHT10.h \
+ D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/DS2782.h
 
 ../My/MiddleLevel/LM6063D.h:
 
@@ -83,3 +84,5 @@ D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782
 D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/Filters.h:
 
 D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/AHT10.h:
+
+D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_I2C_OLED_FuelGaugeDS2782/My/Application/DS2782.h:
