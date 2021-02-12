@@ -308,17 +308,17 @@ int main(void){
 
 			uint32_t currentAdcTemp = currentTemp;
 
-			//currentAdcTemp *= 1563; //
-			//currentAdcTemp = ((currentAdcTemp + 5000) / 10000);
+			currentAdcTemp *= 1563; //
+			currentAdcTemp = ((currentAdcTemp + 5000) / 10000);
 
 			Lcd_String(1, 8);
 			Lcd_Print("DS2782_I=");
-			Lcd_u32ToHex(currentAdcTemp);
-//			Lcd_BinToDec(currentAdcTemp, 5, LCD_CHAR_SIZE_NORM);
+			//Lcd_u32ToHex(currentAdcTemp);
+			Lcd_BinToDec(currentAdcTemp, 5, LCD_CHAR_SIZE_NORM);
 //			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
 //			Lcd_Chr(',');
 //			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
-//			Lcd_Print("mA");
+			Lcd_Print("mA");
 			//***********************************************
 			/* Sleep */
 			//__WFI();
