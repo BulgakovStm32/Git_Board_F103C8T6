@@ -3,6 +3,6 @@ main.c:41:6:Time_Calculation	16	static
 main.c:48:6:Led_Blink	8	static
 main.c:55:6:Temperature_Get	16	static
 main.c:65:9:tic	24	static
-main.c:94:10:DS2782_ReadADC	40	static
-main.c:137:5:main	16	static,ignoring_inline_asm
-main.c:242:6:SysTick_Handler	8	static
+main.c:172:10:DS2782_ReadADC	32	static
+main.c:191:5:main	40	static,ignoring_inline_asm
+main.c:331:6:SysTick_Handler	8	static

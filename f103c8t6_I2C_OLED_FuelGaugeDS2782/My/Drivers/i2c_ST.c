@@ -176,6 +176,7 @@ void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *p
 //**********************************************************
 void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
+	//---------------------------------
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
 	while(!(i2c->SR1 & I2C_SR1_SB)){};//Ожидание формирования Start condition.
@@ -188,10 +189,11 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 	//Передача адреса с которого начинаем чтение.
 	i2c->DR = regAddr;
 	while(!(i2c->SR1 & I2C_SR1_TXE));
-//	i2c->CR1 |= I2C_CR1_STOP;	//??????
-
+	//---------------------------------
 	//Формирование reStart condition.
+	i2c->CR1 |= I2C_CR1_STOP;		//Это команда нужня для работы с DS2782. Без нее не работает
 	i2c->CR1 |= I2C_CR1_START;
+
 	while(!(i2c->SR1 & I2C_SR1_SB)){};//Ожидание формирования Start condition.
 	(void)i2c->SR1;				      //Для сброса флага SB необходимо прочитать SR1
 	//Передаем адрес slave + Чтение.
@@ -203,7 +205,7 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 	if(len == 1)
 		{
 			i2c->CR1 &= ~I2C_CR1_ACK;           //Фомирование NACK после приема последнего байта.
-			while(!(i2c->SR1 & I2C_SR1_RXNE)){};//ожидаем окончания приема байта
+			//while(!(i2c->SR1 & I2C_SR1_RXNE)){};//ожидаем окончания приема байта
 			*(pBuf + 0) = i2c->DR;				//считали принятый байт.
 			i2c->CR1 |= I2C_CR1_STOP;           //Формируем Stop
 		}
@@ -221,6 +223,7 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 			*(pBuf + len - 1) = i2c->DR;		//считали принятый байт.
 			i2c->CR1 |= I2C_CR1_STOP;           //Формируем Stop
 		}
+	//---------------------------------
 }
 //*******************************************************************************************
 //*******************************************************************************************
