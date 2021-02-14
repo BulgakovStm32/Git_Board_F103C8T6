@@ -304,13 +304,13 @@ int main(void){
 			//Получения тока потребления от АКБ.
 			int16_t currentTemp = DS2782_ReadADC(Register_CURRENT, 2);
 			//int16_t currentTemp = DS2782_ReadADC(Register_IAVG, 2);
-			uint8_t currentSing = 0;
+			uint8_t currentSign = 0;
 			currentTemp = ( ((currentTemp << 8) & 0xFF00) | ((currentTemp >> 8) & 0x00FF) );
 
 			if(currentTemp < 0)
 				{
 					currentTemp = (currentTemp ^ 0xffff) + 1;	//Уберем знак
-					currentSing = 1;
+					currentSign = 1;
 				}
 
 			uint32_t currentAdcTemp = currentTemp;
@@ -319,7 +319,7 @@ int main(void){
 
 			Lcd_String(1, 8);
 			Lcd_Print("DS2782_I=");
-			if(currentSing)Lcd_Chr('-');
+			if(currentSign)Lcd_Chr('-');
 			else           Lcd_Chr(' ');
 
 			Lcd_BinToDec(currentAdcTemp, 4, LCD_CHAR_SIZE_NORM);

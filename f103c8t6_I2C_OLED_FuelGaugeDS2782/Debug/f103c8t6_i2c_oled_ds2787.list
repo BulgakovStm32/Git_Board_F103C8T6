@@ -3624,7 +3624,7 @@ __STATIC_FORCEINLINE void __enable_irq(void)
  800173e:	4603      	mov	r3, r0
  8001740:	83fb      	strh	r3, [r7, #30]
 			//int16_t currentTemp = DS2782_ReadADC(Register_IAVG, 2);
-			uint8_t currentSing = 0;
+			uint8_t currentSign = 0;
  8001742:	2300      	movs	r3, #0
  8001744:	777b      	strb	r3, [r7, #29]
 			currentTemp = ( ((currentTemp << 8) & 0xFF00) | ((currentTemp >> 8) & 0x00FF) );
@@ -3648,7 +3648,7 @@ __STATIC_FORCEINLINE void __enable_irq(void)
  8001764:	425b      	negs	r3, r3
  8001766:	b29b      	uxth	r3, r3
  8001768:	83fb      	strh	r3, [r7, #30]
-					currentSing = 1;
+					currentSign = 1;
  800176a:	2301      	movs	r3, #1
  800176c:	777b      	strb	r3, [r7, #29]
 				}
@@ -3677,7 +3677,7 @@ __STATIC_FORCEINLINE void __enable_irq(void)
 			Lcd_Print("DS2782_I=");
  800179a:	4814      	ldr	r0, [pc, #80]	; (80017ec <main+0x374>)
  800179c:	f7ff f98e 	bl	8000abc <Lcd_Print>
-			if(currentSing)Lcd_Chr('-');
+			if(currentSign)Lcd_Chr('-');
  80017a0:	7f7b      	ldrb	r3, [r7, #29]
  80017a2:	2b00      	cmp	r3, #0
  80017a4:	d024      	beq.n	80017f0 <main+0x378>
