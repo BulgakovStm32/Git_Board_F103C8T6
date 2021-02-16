@@ -276,7 +276,7 @@ int main(void){
 			adcTemp  &= 0b0000001111111111;//Уберем знак
 			adcTemp  *= 488;               //это 4,88mV * 100. Это нужно чтобы избавится от запятой => получили микровольты
 			//adcTemp = ((adcTemp + 50) / 100);
-			adcTemp  *= 5473;              //это коэф-т деления резистивного делителя, умноженного на 100.
+			adcTemp  *= 5500; //5475;              //это коэф-т деления резистивного делителя, умноженного на 1000.
 			adcTemp = ((adcTemp + 500000) / 1000000);
 
 			Lcd_String(1, 6);
@@ -302,19 +302,27 @@ int main(void){
 			Lcd_Print(" C");
 
 			//Получения тока потребления от АКБ.
-			uint16_t currentTemp = DS2782_ReadADC(Register_CURRENT, 2);
+			int16_t currentTemp = DS2782_ReadADC(Register_CURRENT, 2);
+			//int16_t currentTemp = DS2782_ReadADC(Register_IAVG, 2);
+			uint8_t currentSign = 0;
 			currentTemp = ( ((currentTemp << 8) & 0xFF00) | ((currentTemp >> 8) & 0x00FF) );
-			currentTemp = (currentTemp ^ 0xffff) + 1;	//Уберем знак
+
+			if(currentTemp < 0)
+				{
+					currentTemp = (currentTemp ^ 0xffff) + 1;	//Уберем знак
+					currentSign = 1;
+				}
 
 			uint32_t currentAdcTemp = currentTemp;
-
 			currentAdcTemp *= 1563; //
-			currentAdcTemp = ((currentAdcTemp + 5000) / 10000);
+			currentAdcTemp  = ((currentAdcTemp + 5000) / 10000);
 
 			Lcd_String(1, 8);
 			Lcd_Print("DS2782_I=");
-			//Lcd_u32ToHex(currentAdcTemp);
-			Lcd_BinToDec(currentAdcTemp, 5, LCD_CHAR_SIZE_NORM);
+			if(currentSign)Lcd_Chr('-');
+			else           Lcd_Chr(' ');
+
+			Lcd_BinToDec(currentAdcTemp, 4, LCD_CHAR_SIZE_NORM);
 //			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
 //			Lcd_Chr(',');
 //			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
