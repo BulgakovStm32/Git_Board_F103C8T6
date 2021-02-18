@@ -184,8 +184,10 @@ uint16_t DS2782_ReadADC(DS2782_Registers_t addrReg, uint8_t len){
 	return ((rxBuf[1] << 8) | rxBuf[0]);
 }
 //************************************************************
+void Coulomb_Calc(uint16_t current){
 
 
+}
 //*******************************************************************************************
 //*******************************************************************************************
 int main(void){
@@ -275,8 +277,8 @@ int main(void){
 			uint32_t tTemp =  Temp * 125;
 					 tTemp = (tTemp + 50) / 100;
 
-			Lcd_String(1, 7);
-			Lcd_Print("Bat_T=");
+			Lcd_String(1, 5);
+			Lcd_Print("Bat_T  =");
 			Lcd_BinToDec(tTemp/10, 2, LCD_CHAR_SIZE_NORM);
 			Lcd_Chr('.');
 			Lcd_BinToDec(tTemp%10, 1, LCD_CHAR_SIZE_NORM);
@@ -295,7 +297,7 @@ int main(void){
 			adcTemp = ((adcTemp + 500000) / 1000000);
 
 			Lcd_String(1, 6);
-			Lcd_Print("Bat_U=");
+			Lcd_Print("Bat_U  =");
 			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
 			Lcd_Chr(',');
 			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
@@ -317,13 +319,23 @@ int main(void){
 			currentAdcTemp *= 1563; //
 			currentAdcTemp  = ((currentAdcTemp + 5000) / 10000);
 
-			Lcd_String(1, 8);
-			Lcd_Print("Bat_I=");
+			Lcd_String(1, 7);
+			Lcd_Print("Bat_I  =");
 			if(currentSign)Lcd_Chr('-');
 			else           Lcd_Chr(' ');
 
 			Lcd_BinToDec(currentAdcTemp, 4, LCD_CHAR_SIZE_NORM);
 			Lcd_Print("mA");
+
+			//Расчет кулонов.
+			uint16_t coulombTemp = 0;
+
+			Coulomb_Calc(currentAdcTemp);
+
+			Lcd_String(1, 8);
+			Lcd_Print("Coulomb=");
+			Lcd_BinToDec(coulombTemp, 4, LCD_CHAR_SIZE_NORM);
+			Lcd_Print("q");
 			//***********************************************
 			/* Sleep */
 			//__WFI();
