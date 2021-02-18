@@ -5,4 +5,4 @@ main.c:55:6:Temperature_Get	16	static
 main.c:65:9:tic	24	static
 main.c:172:10:DS2782_ReadADC	32	static
 main.c:191:5:main	40	static,ignoring_inline_asm
-main.c:339:6:SysTick_Handler	8	static
+main.c:336:6:SysTick_Handler	8	static

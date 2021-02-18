@@ -262,10 +262,25 @@ int main(void){
 			//Работа с микросхемой DS2782.
 
 			//Чтение адреса DS2782.
-			Lcd_String(1, 5);
-			Lcd_Print("DS2782_ADDR:");
-			Lcd_Print("0x");
-			Lcd_u8ToHex(DS2782_ReadADC(Register_Unique_ID, 1) >> 1);
+//			Lcd_String(1, 5);
+//			Lcd_Print("DS2782_ADDR:");
+//			Lcd_Print("0x");
+//			Lcd_u8ToHex(DS2782_ReadADC(Register_Unique_ID, 1) >> 1);
+
+			//получение температуры.
+			uint16_t Temp   = DS2782_ReadADC(Register_TEMP, 2);
+			         Temp   = ( ((Temp << 8) & 0xFF00) | ((Temp >> 8) & 0x00FF) );
+			         Temp >>= 5;
+
+			uint32_t tTemp =  Temp * 125;
+					 tTemp = (tTemp + 50) / 100;
+
+			Lcd_String(1, 7);
+			Lcd_Print("Bat_T=");
+			Lcd_BinToDec(tTemp/10, 2, LCD_CHAR_SIZE_NORM);
+			Lcd_Chr('.');
+			Lcd_BinToDec(tTemp%10, 1, LCD_CHAR_SIZE_NORM);
+			Lcd_Print(" C");
 
 			//получение напряжения на АКБ.
 			uint16_t voltTemp = DS2782_ReadADC(Register_VOLT, 2);
@@ -280,26 +295,11 @@ int main(void){
 			adcTemp = ((adcTemp + 500000) / 1000000);
 
 			Lcd_String(1, 6);
-			Lcd_Print("DS2782_U=");
+			Lcd_Print("Bat_U=");
 			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
 			Lcd_Chr(',');
 			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
 			Lcd_Chr('V');
-
-			//получение температуры.
-			uint16_t Temp   = DS2782_ReadADC(Register_TEMP, 2);
-			         Temp   = ( ((Temp << 8) & 0xFF00) | ((Temp >> 8) & 0x00FF) );
-			         Temp >>= 5;
-
-			uint32_t tTemp =  Temp * 125;
-					 tTemp = (tTemp + 50) / 100;
-
-			Lcd_String(1, 7);
-			Lcd_Print("DS2782_T=");
-			Lcd_BinToDec(tTemp/10, 2, LCD_CHAR_SIZE_NORM);
-			Lcd_Chr('.');
-			Lcd_BinToDec(tTemp%10, 1, LCD_CHAR_SIZE_NORM);
-			Lcd_Print(" C");
 
 			//Получения тока потребления от АКБ.
 			int16_t currentTemp = DS2782_ReadADC(Register_CURRENT, 2);
@@ -318,14 +318,11 @@ int main(void){
 			currentAdcTemp  = ((currentAdcTemp + 5000) / 10000);
 
 			Lcd_String(1, 8);
-			Lcd_Print("DS2782_I=");
+			Lcd_Print("Bat_I=");
 			if(currentSign)Lcd_Chr('-');
 			else           Lcd_Chr(' ');
 
 			Lcd_BinToDec(currentAdcTemp, 4, LCD_CHAR_SIZE_NORM);
-//			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
-//			Lcd_Chr(',');
-//			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
 			Lcd_Print("mA");
 			//***********************************************
 			/* Sleep */

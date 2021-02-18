@@ -59,8 +59,8 @@ all: main-build
 main-build: f103c8t6_i2c_oled_ds2787.elf secondary-outputs
 
 # Tool invocations
-f103c8t6_i2c_oled_ds2787.elf: $(OBJS) $(USER_OBJS) C:\My\Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_FuelGaugeDS2782\Startup\STM32F103C8TX_FLASH.ld
-	arm-none-eabi-gcc -o "f103c8t6_i2c_oled_ds2787.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\My\Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_FuelGaugeDS2782\Startup\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="f103c8t6_i2c_oled_ds2787.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+f103c8t6_i2c_oled_ds2787.elf: $(OBJS) $(USER_OBJS) D:\04_CubeIDE_Prj\01_GitHub\Git_Board_F103C8T6\f103c8t6_I2C_OLED_FuelGaugeDS2782\Startup\STM32F103C8TX_FLASH.ld
+	arm-none-eabi-gcc -o "f103c8t6_i2c_oled_ds2787.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"D:\04_CubeIDE_Prj\01_GitHub\Git_Board_F103C8T6\f103c8t6_I2C_OLED_FuelGaugeDS2782\Startup\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="f103c8t6_i2c_oled_ds2787.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
