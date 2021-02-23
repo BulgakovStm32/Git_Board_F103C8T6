@@ -1,0 +1,5 @@
+LM6063D.c:6:13:Lm6063LcdPause	16	static
+LM6063D.c:11:13:Lm6063LcdGpioInit	4	static
+LM6063D.c:33:13:Lm6063LcdSendByte	16	static
+LM6063D.c:46:6:Lm6063LcdInit	8	static
+LM6063D.c:98:6:Lm6063LcdUpdate	24	static

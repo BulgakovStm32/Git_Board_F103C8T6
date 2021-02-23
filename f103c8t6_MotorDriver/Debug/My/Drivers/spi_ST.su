@@ -1,0 +1,6 @@
+spi_ST.c:11:6:Spi1Init	4	static
+spi_ST.c:60:9:Spi1TxRxByte	24	static
+spi_ST.c:86:6:Spi2Init	4	static
+spi_ST.c:134:9:Spi2GetStat	4	static
+spi_ST.c:140:9:Spi2TxRxByte	24	static
+spi_ST.c:164:6:SPI2_IRQHandler	4	static
