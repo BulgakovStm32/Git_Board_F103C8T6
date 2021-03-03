@@ -10,6 +10,9 @@ void Blink_Loop(void){
 	static uint16_t blinkCount = 0;
   //--------------------
 	++blinkCount;
+	BlinkReg ^= (1 << INTERVAL_1_mS);
+	if((blinkCount % 2)    == 0) BlinkReg ^= (1 << INTERVAL_2_mS);
+	if((blinkCount % 5)    == 0) BlinkReg ^= (1 << INTERVAL_5_mS);
 	if((blinkCount % 10)   == 0) BlinkReg ^= (1 << INTERVAL_10_mS);
 	if((blinkCount % 50)   == 0) BlinkReg ^= (1 << INTERVAL_50_mS);
 	if((blinkCount % 100)  == 0) BlinkReg ^= (1 << INTERVAL_100_mS);

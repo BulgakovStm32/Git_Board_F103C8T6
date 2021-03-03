@@ -10,7 +10,10 @@
 
 //-----------------------------------------------------------------------------
 typedef enum{
-	INTERVAL_10_mS = 0,
+	INTERVAL_1_mS = 0,
+	INTERVAL_2_mS,
+	INTERVAL_5_mS,
+	INTERVAL_10_mS,
 	INTERVAL_50_mS,
 	INTERVAL_100_mS,
 	INTERVAL_250_mS,

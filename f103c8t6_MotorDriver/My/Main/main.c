@@ -24,7 +24,8 @@ typedef struct{
 }Time_t;
 static Time_t Time;
 //---------------------------
-static uint32_t secCounter  = 0;
+static uint32_t secCounter = 0;
+static uint32_t PWRval	   = 0;
 //static uint16_t Temperature = 0;
 //*******************************************************************************************
 //*******************************************************************************************
@@ -37,6 +38,17 @@ void IncrementOnEachPass(uint32_t *var, uint16_t event){
 	oldState = event;
 	if(riseReg) (*var)++;
 }
+//************************************************************
+void DecrementOnEachPass(uint32_t *var, uint16_t event){
+
+		   uint16_t riseReg  = 0;
+	static uint16_t oldState = 0;
+	//-------------------
+	riseReg  = (oldState ^ event) & event;
+	oldState = event;
+	if(riseReg) (*var)--;
+}
+
 //************************************************************
 void Time_Calculation(uint32_t count){
 
@@ -201,23 +213,15 @@ int main(void){
 
 
 	TIM3_InitForPWM();
-	TIM3->CCR1 = 1;
+	TIM3->CCR1 = 50;
 
-//	I2C_Init(SSD1306_I2C);//I2C_Int_Init(SSD1306_I2C);
 	//***********************************************
+	//Инициализация таймера TIM1 для работы в режиме ШИМ.
+
+
+
+
 //	__disable_irq();
-	msDelay(500);
-	//***********************************************
-	//OLED SSD1306
-//	SSD1306_Init(SSD1306_I2C);
-	//***********************************************
-	//DS18B20
-	DS18B20_Init(DS18B20_Resolution_12_bit);
-	DS18B20_StartConvertTemperature();
-	//***********************************************
-	//DS2782.
-
-	//***********************************************
 	msDelay(500);
 	//************************************************************************************
 	while(1)
@@ -226,109 +230,13 @@ int main(void){
 			//***********************************************
 			//Мигание светодиодами.
 			Led_Blink();
-			//DS18B20.
-			Temperature_Get(&dsRes);
-			//Инкримент счетчика секунд.
-			IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));
-			//Преобразование времени
-			Time_Calculation(secCounter);
+
 			//***********************************************
-			//LCD 128x64 - Работает.
-			Lcd_String(1, 1);
-			Lcd_Print("DS2782 Test");
-			//Вывод времени.
-			Lcd_String(1, 2);
-			Lcd_Print("Time:");
-			Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
-			Lcd_Chr(':');
-			Lcd_BinToDec(Time.min, 2, LCD_CHAR_SIZE_NORM); //минуты
-			Lcd_Chr(':');
-			Lcd_BinToDec(Time.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
-			//Вывод темперетуры DS18B20.
-			Lcd_String(1, 3);
-			Lcd_Print("DS18B20 =");
-			if(DS18B20_GetTemperatureSign() & DS18B20_SIGN_NEGATIVE)Lcd_Chr('-');
-			else                    								Lcd_Chr('+');
-			Lcd_BinToDec(dsRes/10, 2, LCD_CHAR_SIZE_NORM);
-			Lcd_Chr('.');
-			Lcd_BinToDec(dsRes%10, 1, LCD_CHAR_SIZE_NORM);
-			Lcd_Print(" C");
+			//ШИМ.
+			if(PWRval <= 100) IncrementOnEachPass(&PWRval, Blink(INTERVAL_10_mS));
+			else PWRval = 10;
+			TIM3->CCR1 = PWRval;
 
-			Lcd_String(21, 1);
-			if(Blink(INTERVAL_50_mS))Lcd_Chr(':');
-			else                     Lcd_Chr(' ');
-
-//			Lcd_Update();//вывод сделан для SSD1306
-			Lcd_Clear();
-			//***********************************************
-			//Работа с микросхемой DS2782.
-
-			//Чтение адреса DS2782.
-			Lcd_String(1, 5);
-			Lcd_Print("DS2782_ADDR:");
-			Lcd_Print("0x");
-//			Lcd_u8ToHex(DS2782_ReadADC(Register_Unique_ID, 1) >> 1);
-
-			//получение напряжения на АКБ.
-			uint16_t voltTemp = 0; //DS2782_ReadADC(Register_VOLT, 2);
-			voltTemp = ( ((voltTemp << 8) & 0xFF00) | ((voltTemp >> 8) & 0x00FF) );
-
-			uint32_t adcTemp = voltTemp >> 5;   //
-
-			adcTemp  &= 0b0000001111111111;//Уберем знак
-			adcTemp  *= 488;               //это 4,88mV * 100. Это нужно чтобы избавится от запятой => получили микровольты
-			//adcTemp = ((adcTemp + 50) / 100);
-			adcTemp  *= 5500; //5475;              //это коэф-т деления резистивного делителя, умноженного на 1000.
-			adcTemp = ((adcTemp + 500000) / 1000000);
-
-			Lcd_String(1, 6);
-			Lcd_Print("DS2782_U=");
-			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
-			Lcd_Chr(',');
-			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
-			Lcd_Chr('V');
-
-			//получение температуры.
-			uint16_t Temp   =  0; //DS2782_ReadADC(Register_TEMP, 2);
-			         Temp   = ( ((Temp << 8) & 0xFF00) | ((Temp >> 8) & 0x00FF) );
-			         Temp >>= 5;
-
-			uint32_t tTemp =  Temp * 125;
-					 tTemp = (tTemp + 50) / 100;
-
-			Lcd_String(1, 7);
-			Lcd_Print("DS2782_T=");
-			Lcd_BinToDec(tTemp/10, 2, LCD_CHAR_SIZE_NORM);
-			Lcd_Chr('.');
-			Lcd_BinToDec(tTemp%10, 1, LCD_CHAR_SIZE_NORM);
-			Lcd_Print(" C");
-
-			//Получения тока потребления от АКБ.
-			int16_t currentTemp =  0; //DS2782_ReadADC(Register_CURRENT, 2);
-			//int16_t currentTemp = DS2782_ReadADC(Register_IAVG, 2);
-			uint8_t currentSign = 0;
-			currentTemp = ( ((currentTemp << 8) & 0xFF00) | ((currentTemp >> 8) & 0x00FF) );
-
-			if(currentTemp < 0)
-				{
-					currentTemp = (currentTemp ^ 0xffff) + 1;	//Уберем знак
-					currentSign = 1;
-				}
-
-			uint32_t currentAdcTemp = currentTemp;
-			currentAdcTemp *= 1563; //
-			currentAdcTemp  = ((currentAdcTemp + 5000) / 10000);
-
-			Lcd_String(1, 8);
-			Lcd_Print("DS2782_I=");
-			if(currentSign)Lcd_Chr('-');
-			else           Lcd_Chr(' ');
-
-			Lcd_BinToDec(currentAdcTemp, 4, LCD_CHAR_SIZE_NORM);
-//			Lcd_BinToDec(adcTemp / 100, 2, LCD_CHAR_SIZE_NORM);
-//			Lcd_Chr(',');
-//			Lcd_BinToDec(adcTemp % 100, 2, LCD_CHAR_SIZE_NORM);
-			Lcd_Print("mA");
 			//***********************************************
 			/* Sleep */
 			//__WFI();
