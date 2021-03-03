@@ -11,28 +11,43 @@
 
 //**************************************************************************************
 //**************************************************************************************
-
-
-
-
-
-
-
+//Светодиод.
+#define Led_PC13_On()     (GPIOC->BSRR = GPIO_BSRR_BS13)
+#define Led_PC13_Off()    (GPIOC->BSRR = GPIO_BSRR_BR13)
+#define Led_PC13_Toggel() (GPIOC->ODR ^= GPIO_ODR_ODR13)
 
 //***************************************************************
-#define LedPC13On()     (GPIOC->BSRR = GPIO_BSRR_BS13)
-#define LedPC13Off()    (GPIOC->BSRR = GPIO_BSRR_BR13)
-#define LedPC13Toggel() (GPIOC->ODR ^= GPIO_ODR_ODR13)
-
-#define LedPA6_On()     	(GPIOA->BSRR = GPIO_BSRR_BS6)
-#define LedPA6_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR6)
-#define LedPA6_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR6)
-
-#define LedPA7_On()     	(GPIOA->BSRR = GPIO_BSRR_BS7)
-#define LedPA7_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR7)
-#define LedPA7_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR7)
+//Управление двигателем.
+//IN1 - PA5
+#define MOTOR_IN1_On()     	(GPIOA->BSRR = GPIO_BSRR_BS5)
+#define MOTOR_IN1_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR5)
+#define MOTOR_IN1_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR5)
+//EN1 - PA4
+#define MOTOR_EN1_On()     	(GPIOA->BSRR = GPIO_BSRR_BS4)
+#define MOTOR_EN1_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR4)
+#define MOTOR_EN1_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR4)
 
 
+//IN2 - PA3
+#define MOTOR_IN2_On()     	(GPIOA->BSRR = GPIO_BSRR_BS3)
+#define MOTOR_IN2_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR3)
+#define MOTOR_IN2_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR3)
+//EN3 - PA2
+#define MOTOR_EN2_On()     	(GPIOA->BSRR = GPIO_BSRR_BS2)
+#define MOTOR_EN2_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR2)
+#define MOTOR_EN2_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR2)
+
+
+//IN3 - PA1
+#define MOTOR_IN3_On()     	(GPIOA->BSRR = GPIO_BSRR_BS1)
+#define MOTOR_IN3_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR1)
+#define MOTOR_IN3_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR1)
+//EN3 - PA0
+#define MOTOR_EN3_On()     	(GPIOA->BSRR = GPIO_BSRR_BS0)
+#define MOTOR_EN3_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR0)
+#define MOTOR_EN3_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR0)
+
+//***************************************************************
 #define Gpio_mSConst   10//50//10
 
 #define GpioAIDR       1

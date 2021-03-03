@@ -20,6 +20,7 @@ void msDelay_Loop(void){
 //**********************************************************
 void msDelay(volatile uint32_t del){
 
+	if(del == 0) return;
 	msCounter = 0;
 	while(msCounter < del){__NOP();};
 }

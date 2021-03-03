@@ -31,12 +31,21 @@ void Gpio_Init (void){
   //PC13 - Led.
   GPIOC->CRH &= ~GPIO_CRH_CNF13;//выход, режим - push-pull.
   GPIOC->CRH |= GPIO_CRH_MODE13;//тактирование 50МГц.
+  //--------------------
+  //Управление двигателем.
+  //IN1 - PA5
+  //IN2 - PA4
+  //IN3 - PA3
+  GPIOA->CRL &= ~(GPIO_CRL_CNF5  |GPIO_CRL_CNF4   | GPIO_CRL_CNF3 |
+		  	  	  GPIO_CRL_CNF2  |GPIO_CRL_CNF1   | GPIO_CRL_CNF0); //выход, режим - push-pull.
 
+  GPIOA->CRL |=  (GPIO_CRL_MODE5 | GPIO_CRL_MODE4 | GPIO_CRL_MODE3 |
+		  	  	  GPIO_CRL_MODE2 | GPIO_CRL_MODE1 | GPIO_CRL_MODE0);//тактирование 50МГц.
   //--------------------
   //PA6 - Led.
   //PA7 - Led.
-  GPIOA->CRL &= ~(GPIO_CRL_CNF6  | GPIO_CRL_CNF7); //выход, режим - push-pull.
-  GPIOA->CRL |=  (GPIO_CRL_MODE6 | GPIO_CRL_MODE7); //PA7(LC2_SOST_Red) - тактирование 50МГц.
+//  GPIOA->CRL &= ~(GPIO_CRL_CNF6  | GPIO_CRL_CNF7); //выход, режим - push-pull.
+//  GPIOA->CRL |=  (GPIO_CRL_MODE6 | GPIO_CRL_MODE7); //PA7(LC2_SOST_Red) - тактирование 50МГц.
 
 
   //JQ6500
