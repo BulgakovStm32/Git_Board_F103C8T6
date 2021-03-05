@@ -18,6 +18,11 @@
 
 //***************************************************************
 //Управление двигателем.
+#define MOTOR_EN_On()     	(GPIOA->BSRR = GPIO_BSRR_BS4)
+#define MOTOR_EN_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR4)
+#define MOTOR_EN_Toggel() 	(GPIOA->ODR ^= GPIO_ODR_ODR4)
+
+
 //IN1 - PA5
 #define MOTOR_IN1_On()     	(GPIOA->BSRR = GPIO_BSRR_BS5)
 #define MOTOR_IN1_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR5)
