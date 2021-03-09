@@ -460,29 +460,40 @@ void BLDC_PWMCommutation_rev2(void){
 //This text copied from site Блог им. Catethysis https://catethysis.ru
 //Read more: STM32: генератор синусоидального сигнала на TIM и DMA https://catethysis.ru/osnovnaya/stm32-tim-dma-pwm-sin
 
-#define CPU_Freq 72000000 // частота ядра микроконтроллера
-#define PWM_Freq 20000    // частота модуляции
-#define MOD_Freq 50       // частота переменного тока
-
-#define STEPS  		(PWM_Freq/MOD_Freq/2) //
-#define PRECISION 	(CPU_Freq/PWM_Freq/2) //
 #define PI  		 3.14159265359
 #define _2PI  		 6.28318530718
 #define PI_2  		 1.57079632679
+#define DEGREES_120	 2.0944
+#define DEGREES_240	 4.18879
+
+#define CPU_Freq 72000000 // частота ядра микроконтроллера
+#define PWM_Freq 20000    // частота модуляции
+#define MOD_Freq 20       // частота переменного тока
+
+
+
+#define PWM_MAX_VALUE	(CPU_Freq/PWM_Freq) //
+#define STEPS_NUM		(PWM_Freq/MOD_Freq/2) //
+
+
+
 //************************************************************
 //************************************************************
 
-static uint16_t sin_arr[STEPS];
+static uint16_t sin_arr[STEPS_NUM][3];
 
 //************************************************************
 //************************************************************
 void FillSinTable(void){
 
-	float arg = (PI / STEPS);
+	float arg = (PI / STEPS_NUM);
 	//--------------------------
-	for(int i = 0; i < STEPS; i++)
+	for(int i = 0; i < STEPS_NUM; i++)
 		{
-			sin_arr[i] = (uint16_t)( fabs(PRECISION * sin(i * arg)) );
+			//sin_arr[i] = (uint16_t)( fabs(PRECISION * sin(i * arg)) );
+			sin_arr[i][0] = (uint16_t)(PWM_MAX_VALUE * sinf(i * arg));
+//			sin_arr[i][1] = (uint16_t)(PWM_MAX_VALUE * sinf((i + STEPS_NUM/3) * arg));
+//			sin_arr[i][2] = (uint16_t)(PWM_MAX_VALUE * sinf((i + STEPS_NUM/6) * arg));
 		}
 }
 //*******************************************************************************************
@@ -592,16 +603,18 @@ void TIM4_IRQHandler(void){
 //	sinTableIndex++;
 //	if(sinTableIndex > PMSM_SINTABLESIZE-1) sinTableIndex = 0;
 	//--------------------------
-	pwm1 = (uint16_t)((uint32_t)(PMSM_PWM * sin_arr[sinTableIndex]) / 1800);
 
-
+	//Расчет заполенеия ШИМ.
+	pwm1 = (uint16_t)((uint32_t)(PMSM_PWM * sin_arr[sinTableIndex][0]) / STEPS_NUM);
+	pwm2 = (uint16_t)((uint32_t)(PMSM_PWM * sin_arr[sinTableIndex][1]) / STEPS_NUM);
+	pwm3 = (uint16_t)((uint32_t)(PMSM_PWM * sin_arr[sinTableIndex][2]) / STEPS_NUM);
 	//Set PWM
 	TIM1->CCR1 = pwm1;
-//	TIM1->CCR2 = pwm2;
-//	TIM1->CCR3 = pwm3;
+	TIM1->CCR2 = pwm2;
+	TIM1->CCR3 = pwm3;
 	// Increment position in sine table
 	sinTableIndex++;
-	if(sinTableIndex > PRECISION-1) sinTableIndex = 0;
+	if(sinTableIndex > STEPS_NUM-1) sinTableIndex = 0;
 }
 //*******************************************************************************************
 //*******************************************************************************************
