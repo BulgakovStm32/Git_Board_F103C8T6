@@ -11,7 +11,7 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-void TIM1_InitForPWM(void){
+void TIM1_InitForPWM(uint32_t ARRval){
 
 	//Включение тактирования таймера.
 	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
@@ -20,7 +20,8 @@ void TIM1_InitForPWM(void){
 	TIM1->PSC = 0;                //PSC[15:0]: Prescaler value.
 								  //The counter clock frequency (CK_CNT) is equal to fCK_PSC / (PSC[15:0] + 1).
 								  //таймер будет тактироваться с частотой 72МГц/(PSC[15:0] + 1) = 72MГц.
-	TIM1->ARR = (1800 - 1);       //Auto reload register. - это значение, до которого будет считать таймер.
+	TIM1->ARR = ARRval;//(3600 - 1);       //Auto reload register. - это значение, до которого будет считать таймер.
+
 	TIM1->CR1  |= TIM_CR1_ARPE;   //Включен режим предварительной записи регистра автоперезагрузки
 	TIM1->CCER |= TIM_CCER_CC1E | //Enable CC1 - включение первого канала
 				  TIM_CCER_CC2E | //Enable CC2 - включение второго канала
@@ -40,9 +41,9 @@ void TIM1_InitForPWM(void){
 
 	//Режимы работы ШИМ. CMS[1:0]: Center-aligned mode selection
 	TIM1->CR1 &= ~(TIM_CR1_CMS_0 | TIM_CR1_CMS_1);
-	TIM1->CR1 |=   TIM_CR1_CMS_0; 			  // выравнивания по центру - Режим 1.
-	//TIM1->CR1 |=   TIM_CR1_CMS_1;				  // выравнивания по центру - Режим 2.
-	//TIM1->CR1 |=   TIM_CR1_CMS_0 | TIM_CR1_CMS_1; // выравнивания по центру - Режим 3.
+	//TIM1->CR1 |=   TIM_CR1_CMS_0; 			   // выравнивания по центру - Режим 1.
+	//TIM1->CR1 |=   TIM_CR1_CMS_1;				   // выравнивания по центру - Режим 2.
+	//TIM1->CR1 |=   TIM_CR1_CMS_0 | TIM_CR1_CMS_1;// выравнивания по центру - Режим 3.
 
 	//TIM1->BDTR |= TIM_BDTR_MOE;// MOE: Main output enable. Разрешаем вывод сигнала на выводы
 	TIM1->BDTR |= TIM_BDTR_AOE;//AOE: Automatic output enable
@@ -116,7 +117,7 @@ void TIM4_Init(void){
 
 	//Прескаллер.
 	//APB1_CLK = 36MHz, TIM4_CLK = APB1_CLK * 2 = 72MHz.
-	TIM4->PSC = (72 - 1);  //таймер будет тактироваться с частотой 72МГц/72 = 1МГц.
+	TIM4->PSC = (72 - 1);  	   //таймер будет тактироваться с частотой 72МГц/72 = 1МГц.
 	TIM4->ARR = (100000 - 1);//Auto reload register - это значение, до которого будет считать таймер.
 
 	TIM4->DIER |= TIM_DIER_UIE; //Update interrupt enable

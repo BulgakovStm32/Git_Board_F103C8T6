@@ -1,5 +1,5 @@
 core_cm3.h:1511:22:__NVIC_EnableIRQ	16	static
 core_cm3.h:1639:22:__NVIC_SetPriority	16	static
-timers_ST.c:14:6:TIM1_InitForPWM	4	static
-timers_ST.c:66:6:TIM3_InitForPWM	4	static
-timers_ST.c:112:6:TIM4_Init	8	static
+timers_ST.c:14:6:TIM1_InitForPWM	16	static
+timers_ST.c:67:6:TIM3_InitForPWM	4	static
+timers_ST.c:113:6:TIM4_Init	8	static
