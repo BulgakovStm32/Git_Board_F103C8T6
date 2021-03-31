@@ -9,11 +9,13 @@
 //-----------------------------------------------------------------------------
 #define SPI_WAIT ((uint32_t)0x5000)
 
-#define SPI_INIT	(1<<0) //SPI проинициализирован.
+#define SPI_INIT (1<<0) //SPI проинициализирован.
 
 //-----------------------------------------------------------------------------
 void     Spi1Init(void);
 uint8_t	 Spi1TxRxByte(uint8_t byte);
+uint16_t Spi1TxRx2Byte(uint16_t data);
+uint32_t Spi1Rx3Byte(void);
 
 void     Spi2Init    (void);
 uint8_t  Spi2GetStat (void);

@@ -1,2 +1,0 @@
-timers_ST.c:14:6:TIM3_InitForPWM	4	static
-timers_ST.c:45:6:TIM1_InitForCapture	4	static

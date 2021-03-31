@@ -117,8 +117,8 @@ void TIM4_Init(void){
 
 	//Прескаллер.
 	//APB1_CLK = 36MHz, TIM4_CLK = APB1_CLK * 2 = 72MHz.
-	TIM4->PSC = (72 - 1);  	   //таймер будет тактироваться с частотой 72МГц/72 = 1МГц.
-	TIM4->ARR = (100000 - 1);//Auto reload register - это значение, до которого будет считать таймер.
+	TIM4->PSC = (360 - 1);  	   //таймер будет тактироваться с частотой 72МГц/72 = 1МГц.
+	TIM4->ARR = (10000 - 1);//Auto reload register - это значение, до которого будет считать таймер.
 
 	TIM4->DIER |= TIM_DIER_UIE; //Update interrupt enable
 	TIM4->CR1   = TIM_CR1_ARPE |//Auto-reload preload enable
