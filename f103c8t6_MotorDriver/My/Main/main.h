@@ -22,6 +22,7 @@
 #include "i2c_ST.h"
 #include "timers_ST.h"
 #include "dma_ST.h"
+#include "adc_ST.h"
 
 //-------------------------
 //Планировщик

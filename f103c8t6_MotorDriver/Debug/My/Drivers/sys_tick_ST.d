@@ -14,6 +14,7 @@ My/Drivers/sys_tick_ST.o: ../My/Drivers/sys_tick_ST.c \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/i2c_ST.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/timers_ST.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/dma_ST.h \
+ D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/adc_ST.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Sheduler/Scheduler.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/MiddleLevel/Encoder.h \
  D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Application/Delay.h \
@@ -58,6 +59,8 @@ D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/i
 D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/timers_ST.h:
 
 D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/dma_ST.h:
+
+D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Drivers/adc_ST.h:
 
 D:/04_CubeIDE_Prj/01_GitHub/Git_Board_F103C8T6/f103c8t6_MotorDriver/My/Sheduler/Scheduler.h:
 

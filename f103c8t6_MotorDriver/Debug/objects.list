@@ -9,6 +9,7 @@
 "My/Application/Lcd_TIC32.o"
 "My/Application/Lcd_i2c_1602.o"
 "My/CMSIS/src/system_stm32f1xx.o"
+"My/Drivers/adc_ST.o"
 "My/Drivers/dma_ST.o"
 "My/Drivers/gpio_ST.o"
 "My/Drivers/i2c_ST.o"
