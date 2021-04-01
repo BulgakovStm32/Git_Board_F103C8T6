@@ -59,6 +59,14 @@ void TIM1_InitForPWM(uint32_t ARRval){
 	GPIOA->CRH |= GPIO_CRH_MODE8 |  //PA8(TIM1_CH1)  - тактирование 50МГц.
 				  GPIO_CRH_MODE9 |  //PA9(TIM1_CH2)  - тактирование 50МГц.
 				  GPIO_CRH_MODE10;  //PA10(TIM1_CH3) - тактирование 50МГц.
+	//Настройка прерываний.
+	TIM1->CR1  |= TIM_CR1_URS; //Update Request Source
+	TIM1->EGR  |= TIM_EGR_UG;  //Update generation
+	TIM1->DIER |= TIM_DIER_UIE;//Update interrupt enable
+
+	NVIC_SetPriority(TIM1_UP_IRQn , 15);//Разрешение прерывания от TIM1.
+	NVIC_EnableIRQ(TIM1_UP_IRQn );
+
 	//Включение таймера
 	TIM1->CR1 |= TIM_CR1_CEN;//CEN: Counter enable
 }

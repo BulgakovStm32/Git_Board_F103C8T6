@@ -1,6 +1,6 @@
 main.c:21:6:IncrementOnEachPass	24	static
 main.c:31:6:DecrementOnEachPass	24	static
-main.c:41:6:Led_Blink	8	static
+main.c:41:6:Led_Blink	4	static
 main.c:47:9:tic	24	static
 main.c:271:6:BLDC_Commutation	8	static
 main.c:320:6:PWM_SetVal	16	static
@@ -17,4 +17,4 @@ main.c:578:6:ClarkeTransform	32	static
 main.c:595:5:main	16	static,ignoring_inline_asm
 main.c:681:6:SysTick_Handler	8	static
 main.c:703:6:TIM4_IRQHandler	16	static
-main.c:764:6:TIM1_IRQHandler	4	static
+main.c:764:6:TIM1_UP_IRQHandler	4	static
