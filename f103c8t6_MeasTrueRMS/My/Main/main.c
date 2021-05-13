@@ -47,8 +47,10 @@ void Time_Calculation(uint32_t count){
 //************************************************************
 void Led_Blink(void){
 
-	if(Blink(INTERVAL_100_mS)) LedPC13On();
-	else					   LedPC13Off();
+//	if(Blink(INTERVAL_100_mS)) LedPC13On();
+//	else					   LedPC13Off();
+
+	LedPC13Toggel();
 
 }
 //************************************************************
@@ -74,51 +76,87 @@ uint8_t tic(uint16_t event){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//Измерение ~U: F=50Гц, Uамп = 1В, смещенеи 1,6В.
+#define AC_MEAS_OFFSET	(ADC_REF / 2)
+
+volatile uint16_t AcRmsMeas_r    = 0;
+volatile uint16_t AcMeasOffset_r = 0;
+
+//************************************************************
+void AC_MeasLoop(void){
+
+	static uint32_t ac_meas_acc     = 0; //накопитель измерений.
+	static uint16_t ac_meas_counter = 0; //счетчик измерений.
+	       int32_t  ac_meas         = 0;
+	//-----------------------------
+	ac_meas  = (Adc_GetRegDR(ADC1) * ADC_QUANT) / 10000;//Получили значение АЦП.
+	ac_meas -= AcMeasOffset_r;//Вычитаем смещение.
+	ac_meas *= ac_meas;       //Возведение в квадрат.
+	ac_meas_acc += ac_meas;   //Накапливаем сумму измерений.
+
+	if(++ac_meas_counter >= 20)
+		{
+			ac_meas_acc /= 20;
+			AcRmsMeas_r  = (uint16_t)sqrtf((float)ac_meas_acc);//Извлекаем квадратный корень.
+			ac_meas_counter = 0;
+			ac_meas_acc     = 0;
+		}
+}
+//************************************************************
+uint16_t AC_GetMeas(void){
+
+	return AcRmsMeas_r;
+}
+//************************************************************
+void AC_MeasOffset(void){
+
+	uint32_t avrMeas = 0;
+	//-----------------------------
+	for(uint32_t i = 0; i < 64; i++)
+		{
+			avrMeas += Adc_GetRegDR(ADC1);
+		}
+	avrMeas >>= 6;
+	AcMeasOffset_r = (avrMeas * ADC_QUANT) / 10000;//Получили значение АЦП.
+}
+//*******************************************************************************************
+//*******************************************************************************************
 int main(void){
 
 	uint16_t dsRes = 0;
-//	uint16_t BmiT  = 0;
 	//-----------------------------
 	//Drivers.
 	Sys_Init();
 	Gpio_Init();
 	Adc_Init();
-	//***********************************************
 	SysTick_Init();
+
 	__enable_irq();
-
-
+	//***********************************************
+	//Инициализация OLED SSD1306
 	I2C_Init(SSD1306_I2C);//I2C_Int_Init(SSD1306_I2C);
-	//***********************************************
-//	__disable_irq();
-	msDelay(500);
-	//***********************************************
-	//OLED SSD1306
 	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//DS18B20
 	DS18B20_Init(DS18B20_Resolution_12_bit);
 	DS18B20_StartConvertTemperature();
 	//***********************************************
-	//DS2782.
 
 	//***********************************************
 	msDelay(500);
+
+	AC_MeasOffset();
 	//************************************************************************************
 	while(1)
 		{
-			msDelay(10);
+			msDelay(100);
 			//***********************************************
-			//Мигание светодиодами.
-			Led_Blink();
-			//DS18B20.
-			Temperature_Get(&dsRes);
-			//Инкримент счетчика секунд.
-			IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));
-			//Преобразование времени
-			Time_Calculation(secCounter);
+			Led_Blink();			      //Мигание светодиодами.
+			Temperature_Get(&dsRes);//DS18B20.
+			IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
+			Time_Calculation(secCounter);//Преобразование времени
 			//***********************************************
-			//LCD 128x64 - Работает.
+			//Работа с дисплеем 128x64.
 			Lcd_String(1, 1);
 			Lcd_Print("DS2782 Test");
 			//Вывод времени.
@@ -146,10 +184,12 @@ int main(void){
 			//Работа с АЦП.
 			//Регулярный канал АЦП.
 			Lcd_String(1, 5);
-			Lcd_Print("RegularADC=");
+			Lcd_Print("RegularADC =");
 			//Lcd_BinToDec(Adc_GetMeas(0), 4, LCD_CHAR_SIZE_NORM);
-			Lcd_BinToDec(Adc_GetRegDR(ADC1), 4, LCD_CHAR_SIZE_NORM);
 
+			//uint16_t volts = (Adc_GetRegDR(ADC1) * ADC_QUANT) / 10000;
+			//Lcd_BinToDec(Average(volts, 16), 4, LCD_CHAR_SIZE_NORM);
+			Lcd_BinToDec(AC_GetMeas(), 4, LCD_CHAR_SIZE_NORM);
 
 			//Инжектированный канал АЦП.
 			Lcd_String(1, 6);
@@ -172,11 +212,14 @@ void SysTick_Handler(void){
 	static uint16_t msCountForDS18B20 = 0;
 	//-----------------------------
 	//Отсчет таймаута для датчика температуры.
-	if(++msCountForDS18B20 >= 1000)
+	if(++msCountForDS18B20 >= 2000)
 		{
 			msCountForDS18B20 = 0;
 			FlagsStr.DS18B20  = 1;
 		}
+	//-----------------------------
+	//Измерение ~U: F=50Гц, Uамп = 1В, смещенеи 1,6В.
+	AC_MeasLoop();
 	//-----------------------------
 	msDelay_Loop();
 	Blink_Loop();

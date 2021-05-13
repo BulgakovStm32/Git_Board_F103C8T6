@@ -7,8 +7,10 @@
 #include "main.h"
 
 //-----------------------------------------------------------------------------
-#define ADC_REF			  3300UL //Опорное напряжение
-#define ADC_QUANT		  ((ADC_REF * 10000UL) / 4096UL)
+#define ADC_REF			  3270UL //Опорное напряжение
+#define ADC_RESOLUTION	  4096UL
+#define ADC_QUANT		  ((ADC_REF * 10000) / ADC_RESOLUTION)
+
 #define AdcMeasQuantity   16     //Количество измерений для усреднения
 #define AdcMeasShiftDev   4      //Количество сдвигов для деления
 //--------------------
