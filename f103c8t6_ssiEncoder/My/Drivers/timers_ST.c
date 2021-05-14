@@ -125,14 +125,14 @@ void TIM4_Init(void){
 
 	//Прескаллер.
 	//APB1_CLK = 36MHz, TIM4_CLK = APB1_CLK * 2 = 72MHz.
-	TIM4->PSC = (360 - 1);  	   //таймер будет тактироваться с частотой 72МГц/72 = 1МГц.
-	TIM4->ARR = (10000 - 1);//Auto reload register - это значение, до которого будет считать таймер.
+	TIM4->PSC = (2 - 1);//таймер будет тактироваться с частотой 72МГц/1 = 72МГц.
+	TIM4->ARR = (72 - 1); //Auto reload register - это значение, до которого будет считать таймер.
 
 	TIM4->DIER |= TIM_DIER_UIE; //Update interrupt enable
-	TIM4->CR1   = TIM_CR1_ARPE |//Auto-reload preload enable
-				  TIM_CR1_CEN;  //Counter enable
+	TIM4->CR1  |= TIM_CR1_ARPE; //Auto-reload preload enable
+	TIM4->CR1  |= TIM_CR1_CEN;  //Counter enable
 	//Разрешение прерывания от TIM4.
-	NVIC_SetPriority(TIM4_IRQn, 15);
+	NVIC_SetPriority(TIM4_IRQn, 0);
 	NVIC_EnableIRQ(TIM4_IRQn);
 }
 //*******************************************************************************************

@@ -11,163 +11,135 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-void IncrementOnEachPass(uint32_t *var, uint16_t event){
 
-		   uint16_t riseReg  = 0;
-	static uint16_t oldState = 0;
-	//--------------------------
-	riseReg  = (oldState ^ event) & event;
-	oldState = event;
-	if(riseReg) (*var)++;
-}
-//************************************************************
-void DecrementOnEachPass(uint32_t *var, uint16_t event){
+volatile uint32_t sysTick   = 0;
+volatile uint32_t uSecTick  = 0;
 
-		   uint16_t riseReg  = 0;
-	static uint16_t oldState = 0;
-	//--------------------------
-	riseReg  = (oldState ^ event) & event;
-	oldState = event;
-	if(riseReg) (*var)--;
-}
-//************************************************************
+volatile float Angle      = 0.0;
+volatile float oldAngle   = 0.0;
+volatile float deltaAngle = 0.0;
+
+uint8_t  txBuf[64] = {0,};
+
+//*******************************************************************************************
+//*******************************************************************************************
 void Led_Blink(void){
 
-//	if(Blink(INTERVAL_50_mS)) Led_PC13_On();
-//	else					  Led_PC13_Off();
-}
-//************************************************************
-uint8_t tic(uint16_t event){
-
-	  	   uint16_t riseReg  = 0;
-	static uint16_t oldState = 0;
-	//--------------------------
-	riseReg  = (oldState ^ event) & event;
-	oldState = event;
-	if(riseReg) return 1;
-	else 		return 0;
+	if(Blink(INTERVAL_50_mS)) Led_PC13_On();
+	else					  Led_PC13_Off();
+//	Led_PC13_Toggel();
 }
 //*******************************************************************************************
 //*******************************************************************************************
-//Работа с энкодером AMM3617.
-//Энкодер выдает 17-ти битный код Грея.
+//Работа с энкодером AMM3617.Энкодер выдает 17-тибитный код Грея.
+#define ENCODER_STEP (360000.0 / 131072)//Шаг энкодера. Энкодер 17 битный.
+									    //При выравнивании Старший бит теряется => код получается 16 бит.
 
-#define ENCODER_STEP (36000.0 / (65535))//Шаг энкодера. Энкодер 17 битный.
-																				//При выравнивании Старший бит теряется => код получается 16 бит.
+#define ENCODER_TIMEOUT 	(40 / 2)			      //деление на 2 так как uSecTick = 2 мкСек.
+#define ENCODER_NUM_STEP 	131072 					  //количество шагов энкодера
+#define ENCODER_QUANT  		(360.0 / ENCODER_NUM_STEP)//количество градусов в одном наге энкодера.
 
+#define QUANT_FOR_100mS ((60 * 10 * 1000) / 360.0)
 //************************************************************
 //************************************************************
-//Преобразование кода Грея в бинарный код. Вар1.
+//Преобразование кода Грея в бинарный код.
 uint32_t GrayToBin(uint32_t grayCode){
 
-	uint32_t bin;
-    //--------------------------
-    for(bin = 0; grayCode; grayCode >>= 1)
-    {
-      bin ^= grayCode;
-    }
-    return bin;
-}
-//------------------------------------------------------------
-//Преобразование кода Грея в бинарный код. Вар2.
-uint32_t GrayToBin2(uint32_t grayCode){
-
-	grayCode ^= (grayCode >> 1);
-	grayCode ^= (grayCode >> 2);
-	grayCode ^= (grayCode >> 4);
-	grayCode ^= (grayCode >> 8);
-	grayCode ^= (grayCode >> 16);
+	grayCode ^= grayCode >> 1;
+	grayCode ^= grayCode >> 2;
+	grayCode ^= grayCode >> 4;
+	grayCode ^= grayCode >> 8;
+	grayCode ^= grayCode >> 16;
 	return grayCode;
 }
 //------------------------------------------------------------
-//Получение значение поворота энкодера в от 0 до 36000.
-uint16_t Encoder_GetAngle(void){
+//Получение значение поворота энкодера.
+uint32_t Encoder_GetTicks(void){
 
-	//Чтение и выравнивание данных из энкодера. Уменьшение разрешения энкодера до 16 бит.
-	uint32_t encoderVal = ((Spi1Rx3Byte() >> 7) & 0x0000FFFF);
-	//Преобразование кода Грея в двоичный код.
-	//encoderVal = GrayToBin(encoderVal);
-	encoderVal = GrayToBin2(encoderVal);
+	//Чтение и выравнивание данных из энкодера.
+	uint32_t encoderVal = (Spi1Rx3Byte() >> 6) & 0x0001FFFF; //Разрешения энкодера 17 бит.
+	return GrayToBin(encoderVal);                            //Преобразование кода Грея в двоичный код.
+}
+//*******************************************************************************************
+//*******************************************************************************************
+void BinToDec(uint32_t var, uint8_t* buf){
 
-	return (uint16_t)(encoderVal * ENCODER_STEP);
+	*(buf+0) = (uint8_t)(var / 100000) + '0';
+	var %= 100000;
+
+	*(buf+1) = (uint8_t)(var / 10000) + '0';
+	var %= 10000;
+
+	*(buf+2) = (uint8_t)(var / 1000) + '0';
+	var %= 1000;
+
+	*(buf+3) = '.';
+
+	*(buf+4) = (uint8_t)(var / 100) + '0';
+	var %= 100;
+
+	*(buf+5) = (uint8_t)(var / 10) + '0';
+	*(buf+6) = (uint8_t)(var % 10) + '0';
 }
 //*******************************************************************************************
 //*******************************************************************************************
 int main(void){
 
-
-	//--------------------------
-	//Drivers.
+	uint32_t olduSecTicks = 0;
+	uint32_t encoderTicks = 0;
+	//***********************************************
 	Sys_Init();
 	Gpio_Init();
 	SysTick_Init();
-	Adc_Init();
+	TIM4_Init();          //TIM4 настривается для периодической генерации прерывания.
+	Spi1Init();           //Инициализация SPI для работы с энкодером.
+	Uart1Init(USART1_BRR);
+
 	__enable_irq();
-	//***********************************************
-	TIM1_InitForPWM(1024);
-	//TIM3_InitForPWM();//TIM3 генерирует ШИМ для трех каналов.
-	TIM4_Init();        //TIM4 настривается для периодической генерации прерывания.
-
-
-	//Настройка DMA для работы с таймером.
-	//DMA1_ChX_Init(DMA1_Channel4, pwm_value, (sizeof(pwm_value) / sizeof(pwm_value[0])) );
-	//***********************************************
-	//Инициализация дисплея.
-	I2C_Init(I2C1);
-	SSD1306_Init(I2C1);
-
-	Lcd_String(1, 1);
-	Lcd_Print("Motor Driver L6234");
-	Lcd_Update();
-	//***********************************************
-	//Инициализация SPI для работы с энкодером.
-	Spi1Init();
-
-	//***********************************************
-	//Определение смешения в каналах измерения тока фаз мотора.
-	uint16_t Ia_AdcOffset = 0;
-	for(uint8_t i=0; i <= 16; i++)
-		{
-			Ia_AdcOffset = Average(Adc_GetMeas(Ia_ADC_CH), 16);
-		}
-	//***********************************************
-	//__disable_irq();
-	msDelay(500);
 	//************************************************************************************
 	while(1)
 		{
-			msDelay(5);
 			//***********************************************
 			//Мигание светодиодами.
-			Led_Blink();
-			//***********************************************
+			//Led_Blink();
+			//--------------------------
 			//Чтение данных из энкодера.
+			if((uSecTick - olduSecTicks) >= ENCODER_TIMEOUT)
+				{
+				 	olduSecTicks = uSecTick;
+				 	//Led_PC13_Toggel(); //Для отладки.
+				 	//Led_PC13_On();
 
-			uint16_t Degrees = Encoder_GetAngle();
+				 	__disable_irq();
+				 	encoderTicks = Encoder_GetTicks();
+					__enable_irq();
+					//Преобразование в код Грея двух младших разрядов.
+					unsigned q = (encoderTicks >> 2) & 3u;//Разрядность энкодера 8192
+						 if (q == 2) q = 3;
+					else if (q == 3) q = 2;
+					//Ногодрыг
+					((q >> 1u) & 1u) ? EncAOn() : EncAOff();
+					 (q &  1u) ?       EncBOn() : EncBOff();
 
-			Lcd_String(1, 4);
-			Lcd_Print("EnCode=");
-			Lcd_u32ToHex(Degrees);
-
-			Lcd_String(1, 5);
-			Lcd_Print("Degrees=");
-			Lcd_BinToDec((uint16_t)(Degrees/100), 3, LCD_CHAR_SIZE_NORM);
-			Lcd_Chr('.');
-			Lcd_BinToDec((uint16_t)(Degrees%100), 2, LCD_CHAR_SIZE_NORM);
-			//***********************************************
-			//Измерение тока фаз двигателя.
-
-			uint16_t Ia = Average(Adc_GetMeas(Ia_ADC_CH), 16) - Ia_AdcOffset;
-
-			Lcd_String(1, 6);
-			Lcd_Print("Ia=");
-			Lcd_BinToDec(Ia, 5, LCD_CHAR_SIZE_NORM);
-
-			Lcd_Update();
-			//***********************************************
-			//Управление двигателем.
+					 //Led_PC13_Off();
+				}
+			//--------------------------
+			Angle      = ENCODER_QUANT * encoderTicks;//расчет угла поворота вала энкодера.
+ 			deltaAngle = fabs(Angle - oldAngle);      //приращение угла
 
 
+			//--------------------------
+			//Передача данных. каждые 250мСек.
+//			if(sysTick - oldSysTick >= 250)
+//				{
+//					uint32_t temp = encoderTicks;// * ENCODER_STEP;
+//					//uint32_t temp = Encoder_GetTicks() * ENCODER_STEP;
+//					BinToDec(temp, txBuf);
+//					txBuf[6] = '\r';
+//					DMA1Ch4StartTx(txBuf, 7);
+//
+//					oldSysTick = sysTick;
+//				}
 			//***********************************************
 			/* Sleep */
 			//__WFI();
@@ -179,28 +151,38 @@ int main(void){
 //Прерывание каждую милисекунду.
 void SysTick_Handler(void){
 
-//	static uint16_t msCountForDS18B20 = 0;
-//	//--------------------------
-//	//Отсчет таймаута для датчика температуры.
-//	if(++msCountForDS18B20 >= 1000)
-//		{
-//			msCountForDS18B20 = 0;
-//			FlagsStr.DS18B20  = 1;
-//		}
+	static uint32_t mSecCount = 0;
 	//--------------------------
-	msDelay_Loop();
-	Blink_Loop();
-	Encoder()->Loop();
+	//sysTick++;
+	//msDelay_Loop();
+	//Blink_Loop();
+	//Encoder()->Loop();
+	//--------------------------
+	if(++mSecCount >= 100)
+		{
+			Led_PC13_On();
+			mSecCount = 0;
+
+			float rpm = deltaAngle * QUANT_FOR_100mS;
+			oldAngle  = Angle;
+
+			BinToDec((uint32_t)rpm, txBuf);
+			txBuf[7] = '\r';
+			DMA1Ch4StartTx(txBuf, 8);
+			Led_PC13_Off();
+		}
+	//--------------------------
 }
 //*******************************************************************************************
 //*******************************************************************************************
-//Прерывание TIM4.
+//Прерывание TIM4. Каждые 2 микросекунды.
 void TIM4_IRQHandler(void){
 
-	uint16_t pwm1, pwm2, pwm3;
 	//--------------------------
 	TIM4->SR &= ~TIM_SR_UIF;//Сброс флага прерывания.
 	//--------------------------
+	uSecTick++;
+	//Led_PC13_Toggel();
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -210,7 +192,7 @@ void TIM1_UP_IRQHandler(void){
 	//--------------------------
 	TIM1->SR &= ~TIM_SR_UIF;//Сброс флага прерывания.
 	//--------------------------
-	Led_PC13_Toggel();
+	//Led_PC13_Toggel();
 }
 //*******************************************************************************************
 //*******************************************************************************************

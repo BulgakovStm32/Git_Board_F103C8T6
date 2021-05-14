@@ -11,6 +11,9 @@ void SysTick_Init(void){
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | //Тактирование частотой процессора (24МГц).
 					SysTick_CTRL_TICKINT_Msk   | //Рразрешение прерывания.
 					SysTick_CTRL_ENABLE_Msk;     //Резрешение таймеру считать.
+
+	NVIC_SetPriority(SysTick_IRQn, 15);
+	NVIC_EnableIRQ(SysTick_IRQn);
 }
 //-----------------------------------------------------------------------------
 //Прерываени системного таймера SysTick.

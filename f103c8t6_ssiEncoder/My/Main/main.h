@@ -23,6 +23,7 @@
 #include "timers_ST.h"
 #include "dma_ST.h"
 #include "adc_ST.h"
+#include "uart_ST.h"
 
 //-------------------------
 //Планировщик

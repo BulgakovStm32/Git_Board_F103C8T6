@@ -15,8 +15,16 @@
 #define Led_PC13_On()     (GPIOC->BSRR = GPIO_BSRR_BS13)
 #define Led_PC13_Off()    (GPIOC->BSRR = GPIO_BSRR_BR13)
 #define Led_PC13_Toggel() (GPIOC->ODR ^= GPIO_ODR_ODR13)
+//Квадратурный энкодер.
+#define EncAOn()     	(GPIOB->BSRR = GPIO_BSRR_BS3)
+#define EncAOff()    	(GPIOB->BSRR = GPIO_BSRR_BR3)
+#define EncAToggel() 	(GPIOB->ODR  = GPIOB->ODR ^ GPIO_ODR_ODR3)
 
-//***************************************************************
+#define EncBOn()     	(GPIOB->BSRR = GPIO_BSRR_BS4)
+#define EncBOff()    	(GPIOB->BSRR = GPIO_BSRR_BR4)
+#define EncBToggel() 	(GPIOB->ODR  = GPIOB->ODR ^ GPIO_ODR_ODR4)
+
+
 //Управление двигателем.
 #define MOTOR_EN_On()     	(GPIOA->BSRR = GPIO_BSRR_BS4)
 #define MOTOR_EN_Off()    	(GPIOA->BSRR = GPIO_BSRR_BR4)

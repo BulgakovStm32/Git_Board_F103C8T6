@@ -6,7 +6,6 @@ static uint8_t Spi1StatusReg = 0;
 static uint8_t Spi2StatusReg = 0;
 //**************************************************************************************
 //**************************************************************************************
-//**************************************************************************************
 //Инициализация SPI1. PA5(SPI1_SCK), PA6(SPI1_MISO), PA7(SPI1_MOSI).
 void Spi1Init(void){
   
@@ -21,8 +20,7 @@ void Spi1Init(void){
 	GPIOA->CRL |= GPIO_CRL_CNF5_1;//PA5(SPI1_SCK) - выход, альтернативный режим push-pull.
 	GPIOA->CRL |= GPIO_CRL_MODE5; //PA5(SPI1_SCK) - тактирование 50МГц.
 	
-	GPIOA->CRL &= ~GPIO_CRL_MODE6;
-	GPIOA->CRL &= ~GPIO_CRL_CNF6;
+	GPIOA->CRL &= ~(GPIO_CRL_MODE6 | GPIO_CRL_CNF6);
 	GPIOA->CRL |=  GPIO_CRL_CNF6_1;//PA6(SPI1_MISO) - вход, 
 	GPIOA->BSRR =  GPIO_BSRR_BS6;
 
@@ -33,30 +31,28 @@ void Spi1Init(void){
   
 	SPI1->CR1  = 0;
 	SPI1->CR1 |=(SPI_CR1_MSTR |	 //режим "мастер".
-				 SPI_CR1_BR_0 |  //задаем скорость. Fpclk/32 = 36MHz/32 = 1.125MHz
-				 //SPI_CR1_BR_1 |
-				 SPI_CR1_BR_2 |
-
+				 //Скорость. Fpclk/32 = 72MHz/32 = 2.25MHz
+				 4 << SPI_CR1_BR_Pos |
 				 //Настройки для работы с энодером.
-				 SPI_CR1_CPOL |
-				 SPI_CR1_CPHA |
+				 //SPI_CR1_BIDIMODE |
+				 SPI_CR1_RXONLY | // Output disabled (Receive-only mode)
+				 SPI_CR1_CPOL   |
+				 SPI_CR1_CPHA   |
 				 //SPI_CR1_LSBFIRST |//Младшим битом вперед
-				 //SPI_CR1_DFF  |	 // 16 бит данных.
+				 //SPI_CR1_DFF  |	 //16 бит данных.
 
 				 SPI_CR1_SSI  |  //обеспечить высокий уровень программного NSS
-				 SPI_CR1_SSM  |  //разрешить программное формирование NSS
-				 SPI_CR1_SPE);   //разрешить работу модуля SPI
+				 SPI_CR1_SSM );// |  //разрешить программное формирование NSS
+				 //SPI_CR1_SPE);   //разрешить работу модуля SPI
 	//--------------------	                  
-//	SPI2->CR1    |= SPI_CR1_LSBFIRST;
-//	SPI2->CR1    |= SPI_CR1_DFF;				// 16 бит данных.
-//	SPI2->CR1    |= SPI_CR1_SSI;        //обеспечить высокий уровень программного NSS
-//	SPI2->CR1    |= SPI_CR1_SSM;        //разрешить программное формирование NSS
-//	SPI2->CR1    |= SPI_CR1_SPE;        //разрешить работу модуля SPI
-	
-// 	SPI2->CR2 |= SPI_CR2_TXEIE;        //разрешить прерывание по окончанию передачи               /
-// 	SPI2->CR2 |= SPI_CR2_RXNEIE;       //разрешить прерывание, если принят байт данных
-// 	SPI2->CR2 |= SPI_CR2_ERRIE;        //разрешить прерывание при возникновении ошибки
-//	NVIC_EnableIRQ (SPI2_IRQn); 
+}
+//---------------------------------------------------------------
+void Spi1BiDirMode(uint8_t mode){
+
+  SPI1->CR1 &= ~(SPI_CR1_SPE);//Останов модуля SPI1.
+  if(mode == 1) SPI1->CR1 |=   SPI_CR1_BIDIOE; //Output enabled (transmit-only mode).
+  else          SPI1->CR1 &= ~(SPI_CR1_BIDIOE);//Output disabled(receive-only mode).
+  SPI1->CR1 |=   SPI_CR1_SPE; //Запуск модуля SPI1.
 }
 //---------------------------------------------------------------
 //Передача данных(8 бит) в SPI1.
@@ -68,17 +64,17 @@ uint8_t	Spi1TxRxByte(uint8_t byte){
 	if(!(Spi1StatusReg & SPI_INIT)) return 0;
 	//Ожидание освобождения передающего буфера.
 	while(!(SPI1->SR & SPI_SR_TXE))
-		{
-			if(++spiWaitCount > SPI_WAIT) return 0;
-		}
+//		{
+//			if(++spiWaitCount > SPI_WAIT) return 0;
+//		}
 		
 	spiWaitCount = 0;
 	SPI1->DR = byte;
 		
 	while(SPI1->SR & SPI_SR_BSY)
-		{
-			if(++spiWaitCount > SPI_WAIT) return 0;
-		}
+//		{
+//			if(++spiWaitCount > SPI_WAIT) return 0;
+//		}
 	//--------------------
 	return (uint8_t)SPI1->DR;
 } 
@@ -92,28 +88,48 @@ uint16_t Spi1TxRx2Byte(uint16_t data){
 	if(!(Spi1StatusReg & SPI_INIT)) return 0;
 	//Ожидание освобождения передающего буфера.
 	while(!(SPI1->SR & SPI_SR_TXE))
-		{
-			if(++spiWaitCount > SPI_WAIT) return 0;
-		}
+//		{
+//			if(++spiWaitCount > SPI_WAIT) return 0;
+//		}
 
 	spiWaitCount = 0;
 	SPI1->DR = data;
 
 	while(SPI1->SR & SPI_SR_BSY)
-		{
-			if(++spiWaitCount > SPI_WAIT) return 0;
-		}
+//		{
+//			if(++spiWaitCount > SPI_WAIT) return 0;
+//		}
 	//--------------------
 	return (uint16_t)SPI1->DR;
+}
+//---------------------------------------------------------------
+static uint8_t Spi1RxData(void){
+
+//	volatile uint32_t SpiWaitCount = 0;
+	//--------------------
+//	while(SPI1->SR & SPI_SR_BSY);
+//	{if(++SpiWaitCount > SPI_WAIT)return 0;}
+//	SpiWaitCount = 0;
+//
+//	SPI1->DR = 0xFF;
+
+	while(!(SPI1->SR & SPI_SR_RXNE));
+//	{if(++SpiWaitCount > SPI_WAIT)return 0;}
+	return (uint8_t)SPI1->DR;
 }
 //---------------------------------------------------------------
 uint32_t Spi1Rx3Byte(void){
 
 	uint32_t temp = 0;
 	//--------------------
-	temp |= Spi1TxRxByte(0xff) << 16;
-	temp |= Spi1TxRxByte(0xff) << 8;
-	temp |= Spi1TxRxByte(0xff);
+	SPI1->CR1 |= SPI_CR1_SPE;//Запуск модуля SPI1.
+	(void)SPI1->DR;			 //Это нужно для кооректного чтения данных из SPI
+
+	temp |= Spi1RxData() << 16;
+	temp |= Spi1RxData() << 8;
+	temp |= Spi1RxData();
+
+	SPI1->CR1 &= ~SPI_CR1_SPE;  //Останов модуля SPI1.
 
 	return temp;
 }
@@ -243,5 +259,5 @@ void SPI2_IRQHandler(void){
 //    }
   //--------------------
 }
-
-//-----------------------------------------------------------------------------
+//**************************************************************************************
+//**************************************************************************************
