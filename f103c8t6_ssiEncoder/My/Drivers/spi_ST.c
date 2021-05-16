@@ -58,7 +58,7 @@ void Spi1BiDirMode(uint8_t mode){
 //Передача данных(8 бит) в SPI1.
 uint8_t	Spi1TxRxByte(uint8_t byte){
 
-  volatile uint32_t spiWaitCount = 0;
+//  volatile uint32_t spiWaitCount = 0;
   //--------------------
 	//Если SPI не проинециализирован ,то выходим.
 	if(!(Spi1StatusReg & SPI_INIT)) return 0;
@@ -68,7 +68,7 @@ uint8_t	Spi1TxRxByte(uint8_t byte){
 //			if(++spiWaitCount > SPI_WAIT) return 0;
 //		}
 		
-	spiWaitCount = 0;
+//	spiWaitCount = 0;
 	SPI1->DR = byte;
 		
 	while(SPI1->SR & SPI_SR_BSY)
@@ -82,7 +82,7 @@ uint8_t	Spi1TxRxByte(uint8_t byte){
 //Передача данных(16 бит) в SPI1.
 uint16_t Spi1TxRx2Byte(uint16_t data){
 
-  volatile uint32_t spiWaitCount = 0;
+//  volatile uint32_t spiWaitCount = 0;
   //--------------------
 	//Если SPI не проинециализирован ,то выходим.
 	if(!(Spi1StatusReg & SPI_INIT)) return 0;
@@ -92,7 +92,7 @@ uint16_t Spi1TxRx2Byte(uint16_t data){
 //			if(++spiWaitCount > SPI_WAIT) return 0;
 //		}
 
-	spiWaitCount = 0;
+//	spiWaitCount = 0;
 	SPI1->DR = data;
 
 	while(SPI1->SR & SPI_SR_BSY)
@@ -123,7 +123,7 @@ uint32_t Spi1Rx3Byte(void){
 	uint32_t temp = 0;
 	//--------------------
 	SPI1->CR1 |= SPI_CR1_SPE;//Запуск модуля SPI1.
-	(void)SPI1->DR;			 //Это нужно для кооректного чтения данных из SPI
+	(void)SPI1->DR;			     //Это нужно для кооректного чтения данных из SPI
 
 	temp |= Spi1RxData() << 16;
 	temp |= Spi1RxData() << 8;

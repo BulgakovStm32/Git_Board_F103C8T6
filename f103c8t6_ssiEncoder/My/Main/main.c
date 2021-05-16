@@ -19,7 +19,7 @@ volatile float Angle      = 0.0;
 volatile float oldAngle   = 0.0;
 volatile float deltaAngle = 0.0;
 
-uint8_t  txBuf[64] = {0,};
+volatile uint8_t  txBuf[64] = {0,};
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -73,7 +73,7 @@ void BinToDec(uint32_t var, uint8_t* buf){
 	*(buf+2) = (uint8_t)(var / 1000) + '0';
 	var %= 1000;
 
-	*(buf+3) = '.';
+	*(buf+3) = ',';
 
 	*(buf+4) = (uint8_t)(var / 100) + '0';
 	var %= 100;
@@ -86,7 +86,7 @@ void BinToDec(uint32_t var, uint8_t* buf){
 int main(void){
 
 	uint32_t olduSecTicks = 0;
-	uint32_t encoderTicks = 0;
+	volatile uint32_t encoderTicks = 0;
 	//***********************************************
 	Sys_Init();
 	Gpio_Init();
@@ -115,7 +115,7 @@ int main(void){
 					__enable_irq();
 					//Преобразование в код Грея двух младших разрядов.
 					unsigned q = (encoderTicks >> 2) & 3u;//Разрядность энкодера 8192
-						 if (q == 2) q = 3;
+					  	 if (q == 2) q = 3;
 					else if (q == 3) q = 2;
 					//Ногодрыг
 					((q >> 1u) & 1u) ? EncAOn() : EncAOff();
@@ -160,16 +160,23 @@ void SysTick_Handler(void){
 	//--------------------------
 	if(++mSecCount >= 100)
 		{
-			Led_PC13_On();
+			//Led_PC13_On();
 			mSecCount = 0;
 
 			float rpm = deltaAngle * QUANT_FOR_100mS;
 			oldAngle  = Angle;
 
-			BinToDec((uint32_t)rpm, txBuf);
-			txBuf[7] = '\r';
-			DMA1Ch4StartTx(txBuf, 8);
-			Led_PC13_Off();
+			//Есть предполежения что на диске энкодера есть царапина,
+			//из-за которой перодически приходит неправильное значение.
+			//Это значение при расчете дает скорость в 592.ххх rpm.
+			//Это проверка отсекает это ложное значение скорсти. Это костыль!!!! Но работает.
+			if((uint32_t)rpm < 100000)
+				{
+					BinToDec((uint32_t)rpm, txBuf);
+					txBuf[7] = '\r';
+					DMA1Ch4StartTx(txBuf, 8);
+				}
+			//Led_PC13_Off();
 		}
 	//--------------------------
 }
