@@ -31,8 +31,8 @@ void Spi1Init(void){
   
 	SPI1->CR1  = 0;
 	SPI1->CR1 |=(SPI_CR1_MSTR |	 //режим "мастер".
-				 //Скорость. Fpclk/32 = 72MHz/32 = 2.25MHz
-				 4 << SPI_CR1_BR_Pos |
+				 //Скорость. Fpclk/32 = 72MHz/16 = 4.5MHz
+				 3 << SPI_CR1_BR_Pos |
 				 //Настройки для работы с энодером.
 				 //SPI_CR1_BIDIMODE |
 				 SPI_CR1_RXONLY | // Output disabled (Receive-only mode)
@@ -123,7 +123,7 @@ uint32_t Spi1Rx3Byte(void){
 	uint32_t temp = 0;
 	//--------------------
 	SPI1->CR1 |= SPI_CR1_SPE;//Запуск модуля SPI1.
-	(void)SPI1->DR;			     //Это нужно для кооректного чтения данных из SPI
+	(void)SPI1->DR;			 //Это нужно для кооректного чтения данных из SPI
 
 	temp |= Spi1RxData() << 16;
 	temp |= Spi1RxData() << 8;

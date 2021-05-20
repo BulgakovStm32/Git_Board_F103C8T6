@@ -15,12 +15,15 @@
 volatile uint32_t sysTick   = 0;
 volatile uint32_t uSecTick  = 0;
 
-volatile float Angle      = 0.0;
-volatile float oldAngle   = 0.0;
-volatile float deltaAngle = 0.0;
+volatile uint32_t EncoderTicks = 0;
+volatile uint32_t Direction    = 0;
+volatile float Angle           = 0.0;
+volatile float AngleSumm	   = 0.0;
+volatile float OldAngle        = 0.0;
+volatile float DeltaAngle      = 0.0;
+volatile float RPM             = 0.0;
 
-volatile uint8_t  txBuf[64] = {0,};
-
+uint8_t  txBuf[64] = {0,};
 //*******************************************************************************************
 //*******************************************************************************************
 void Led_Blink(void){
@@ -35,7 +38,7 @@ void Led_Blink(void){
 #define ENCODER_STEP (360000.0 / 131072)//Шаг энкодера. Энкодер 17 битный.
 									    //При выравнивании Старший бит теряется => код получается 16 бит.
 
-#define ENCODER_TIMEOUT 	(40 / 2)			      //деление на 2 так как uSecTick = 2 мкСек.
+#define ENCODER_TIMEOUT 	(30 / 2)			      //деление на 2 так как uSecTick = 2 мкСек.
 #define ENCODER_NUM_STEP 	131072 					  //количество шагов энкодера
 #define ENCODER_QUANT  		(360.0 / ENCODER_NUM_STEP)//количество градусов в одном наге энкодера.
 
@@ -62,7 +65,27 @@ uint32_t Encoder_GetTicks(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-void BinToDec(uint32_t var, uint8_t* buf){
+void BinToDecWithoutDot(uint32_t var, uint8_t* buf){
+
+	*(buf+0) = (uint8_t)(var / 100000) + '0';
+	var %= 100000;
+
+	*(buf+1) = (uint8_t)(var / 10000) + '0';
+	var %= 10000;
+
+	*(buf+2) = (uint8_t)(var / 1000) + '0';
+	var %= 1000;
+
+	//*(buf+3) = ',';
+
+	*(buf+3) = (uint8_t)(var / 100) + '0';
+	var %= 100;
+
+	*(buf+4) = (uint8_t)(var / 10) + '0';
+	*(buf+5) = (uint8_t)(var % 10) + '0';
+}
+//------------------------------------------------------------
+void BinToDecWithDot(uint32_t var, uint8_t* buf){
 
 	*(buf+0) = (uint8_t)(var / 100000) + '0';
 	var %= 100000;
@@ -81,12 +104,28 @@ void BinToDec(uint32_t var, uint8_t* buf){
 	*(buf+5) = (uint8_t)(var / 10) + '0';
 	*(buf+6) = (uint8_t)(var % 10) + '0';
 }
+//------------------------------------------------------------
+void BuildingAndSendTextBuffer(uint32_t timeStamp, uint32_t encodTicks, uint32_t angle, uint32_t speed){
+
+	BinToDecWithDot(timeStamp, txBuf);
+	txBuf[7] = '\t';
+
+	BinToDecWithoutDot(encodTicks, txBuf+8);
+	txBuf[14] = '\t';
+
+	BinToDecWithDot(angle, txBuf+15);
+	txBuf[22] = '\t';
+
+	BinToDecWithDot(speed, txBuf+23);
+	txBuf[30] = '\r';
+
+	DMA1Ch4StartTx(txBuf, 31);
+}
 //*******************************************************************************************
 //*******************************************************************************************
 int main(void){
 
 	uint32_t olduSecTicks = 0;
-	volatile uint32_t encoderTicks = 0;
 	//***********************************************
 	Sys_Init();
 	Gpio_Init();
@@ -111,10 +150,10 @@ int main(void){
 				 	//Led_PC13_On();
 
 				 	__disable_irq();
-				 	encoderTicks = Encoder_GetTicks();
+				 	EncoderTicks = Encoder_GetTicks();
 					__enable_irq();
 					//Преобразование в код Грея двух младших разрядов.
-					unsigned q = (encoderTicks >> 2) & 3u;//Разрядность энкодера 8192
+					unsigned q = (EncoderTicks >> 2) & 3u;//Разрядность энкодера 8192
 					  	 if (q == 2) q = 3;
 					else if (q == 3) q = 2;
 					//Ногодрыг
@@ -124,22 +163,12 @@ int main(void){
 					 //Led_PC13_Off();
 				}
 			//--------------------------
-			Angle      = ENCODER_QUANT * encoderTicks;//расчет угла поворота вала энкодера.
- 			deltaAngle = fabs(Angle - oldAngle);      //приращение угла
+			Angle = ENCODER_QUANT * EncoderTicks;//расчет угла поворота вала энкодера.
+//			if(Angle >= OldAngle) Direction = 1;
+//			else 				  Direction = 0;
 
-
-			//--------------------------
-			//Передача данных. каждые 250мСек.
-//			if(sysTick - oldSysTick >= 250)
-//				{
-//					uint32_t temp = encoderTicks;// * ENCODER_STEP;
-//					//uint32_t temp = Encoder_GetTicks() * ENCODER_STEP;
-//					BinToDec(temp, txBuf);
-//					txBuf[6] = '\r';
-//					DMA1Ch4StartTx(txBuf, 7);
-//
-//					oldSysTick = sysTick;
-//				}
+//			if(OldAngle > Angle) OldAngle = OldAngle - 360.0;
+// 			DeltaAngle = fabs(Angle - OldAngle);      //приращение угла
 			//***********************************************
 			/* Sleep */
 			//__WFI();
@@ -153,30 +182,44 @@ void SysTick_Handler(void){
 
 	static uint32_t mSecCount = 0;
 	//--------------------------
-	//sysTick++;
+	sysTick++;
 	//msDelay_Loop();
 	//Blink_Loop();
 	//Encoder()->Loop();
 	//--------------------------
 	if(++mSecCount >= 100)
 		{
-			//Led_PC13_On();
+			Led_PC13_Toggel(); //Для отладки.
 			mSecCount = 0;
+			//Определения направления арвщения.
 
-			float rpm = deltaAngle * QUANT_FOR_100mS;
-			oldAngle  = Angle;
 
-			//Есть предполежения что на диске энкодера есть царапина,
-			//из-за которой перодически приходит неправильное значение.
-			//Это значение при расчете дает скорость в 592.ххх rpm.
-			//Это проверка отсекает это ложное значение скорсти. Это костыль!!!! Но работает.
-			if((uint32_t)rpm < 100000)
-				{
-					BinToDec((uint32_t)rpm, txBuf);
-					txBuf[7] = '\r';
-					DMA1Ch4StartTx(txBuf, 8);
-				}
-			//Led_PC13_Off();
+
+			//Расчет скорости вращения.
+//			if(Direction)
+//				{
+//					if(OldAngle > Angle) OldAngle -= 360.0;//Это нужно для корректного расчета скорости при переходе от 359 к 0 градусов.
+//					RPM = fabs(Angle - OldAngle) * QUANT_FOR_100mS;
+//				}
+//			else
+//				{
+//					if(OldAngle < Angle) OldAngle += 360.0;//Это нужно для корректного расчета скорости при переходе от 0 к 359 градусов.
+//					RPM = fabs(Angle - OldAngle) * QUANT_FOR_100mS;
+//				}
+//			OldAngle = Angle;
+
+			if(OldAngle > Angle) OldAngle -= 360.0;//Это нужно для корректного расчета скорости при переходе от 359 к 0 градусов.
+			RPM = fabs(Angle - OldAngle) * QUANT_FOR_100mS;
+			OldAngle = Angle;
+
+//			RPM = fabs(DeltaAngle * QUANT_FOR_100mS);
+//			OldAngle = Angle;
+
+			//Передаем данные
+			BuildingAndSendTextBuffer(sysTick,
+									  EncoderTicks,
+									  (uint32_t)(Angle*1000),
+									  (uint32_t)RPM);
 		}
 	//--------------------------
 }
