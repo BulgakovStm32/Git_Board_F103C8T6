@@ -11,19 +11,16 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-
-volatile uint32_t sysTick   = 0;
-volatile uint32_t uSecTick  = 0;
-
+volatile uint32_t sysTick      = 0;
+volatile uint32_t uSecTick     = 0;
 volatile uint32_t EncoderTicks = 0;
-volatile uint32_t Direction    = 0;
+volatile uint32_t EncoderTicksTemp = 0;
 volatile float Angle           = 0.0;
-volatile float AngleSumm	   = 0.0;
 volatile float OldAngle        = 0.0;
 volatile float DeltaAngle      = 0.0;
 volatile float RPM             = 0.0;
 
-uint8_t  txBuf[64] = {0,};
+uint8_t txBuf[64] = {0,};
 //*******************************************************************************************
 //*******************************************************************************************
 void Led_Blink(void){
@@ -35,14 +32,11 @@ void Led_Blink(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //Работа с энкодером AMM3617.Энкодер выдает 17-тибитный код Грея.
-#define ENCODER_STEP (360000.0 / 131072)//Шаг энкодера. Энкодер 17 битный.
-									    //При выравнивании Старший бит теряется => код получается 16 бит.
-
-#define ENCODER_TIMEOUT 	(30 / 2)			      //деление на 2 так как uSecTick = 2 мкСек.
+#define ENCODER_TIMEOUT 	(30 / 10)			      //деление на 10 так как uSecTick = 10 мкСек.
 #define ENCODER_NUM_STEP 	131072 					  //количество шагов энкодера
 #define ENCODER_QUANT  		(360.0 / ENCODER_NUM_STEP)//количество градусов в одном наге энкодера.
-
-#define QUANT_FOR_100mS ((60 * 10 * 1000) / 360.0)
+#define _RPM				60
+#define QUANT_FOR_100mS     ((_RPM * 10 * 1000) / 360.0)
 //************************************************************
 //************************************************************
 //Преобразование кода Грея в бинарный код.
@@ -126,6 +120,7 @@ void BuildingAndSendTextBuffer(uint32_t timeStamp, uint32_t encodTicks, uint32_t
 int main(void){
 
 	uint32_t olduSecTicks = 0;
+	volatile uint32_t q   = 0;
 	//***********************************************
 	Sys_Init();
 	Gpio_Init();
@@ -139,36 +134,27 @@ int main(void){
 	while(1)
 		{
 			//***********************************************
-			//Мигание светодиодами.
-			//Led_Blink();
-			//--------------------------
-			//Чтение данных из энкодера.
+			//Чтение данных из энкодера каждые 30мкСек.
 			if((uSecTick - olduSecTicks) >= ENCODER_TIMEOUT)
 				{
 				 	olduSecTicks = uSecTick;
-				 	//Led_PC13_Toggel(); //Для отладки.
-				 	//Led_PC13_On();
-
-				 	__disable_irq();
+				 	//Led_PC13_Toggel();//Отладка
+				 	//Чтение заначения энкодера.
+				 	//__disable_irq();
 				 	EncoderTicks = Encoder_GetTicks();
-					__enable_irq();
 					//Преобразование в код Грея двух младших разрядов.
-					unsigned q = (EncoderTicks >> 2) & 3u;//Разрядность энкодера 8192
+				 	q = (EncoderTicks >> 2) & 3u;//Разрядность энкодера 8192
 					  	 if (q == 2) q = 3;
 					else if (q == 3) q = 2;
 					//Ногодрыг
 					((q >> 1u) & 1u) ? EncAOn() : EncAOff();
 					 (q &  1u) ?       EncBOn() : EncBOff();
-
-					 //Led_PC13_Off();
+					//__enable_irq();
+					//Расчет значений для будущего расчета скрости.
+					Angle = ENCODER_QUANT * EncoderTicks;  //расчет угла поворота вала энкодера.
+					if(OldAngle > Angle) OldAngle -= 360.0;//Это нужно для корректного расчета скорости при переходе от 359 к 0 градусов.
+					DeltaAngle = Angle - OldAngle;         //приращение угла
 				}
-			//--------------------------
-			Angle = ENCODER_QUANT * EncoderTicks;//расчет угла поворота вала энкодера.
-//			if(Angle >= OldAngle) Direction = 1;
-//			else 				  Direction = 0;
-
-//			if(OldAngle > Angle) OldAngle = OldAngle - 360.0;
-// 			DeltaAngle = fabs(Angle - OldAngle);      //приращение угла
 			//***********************************************
 			/* Sleep */
 			//__WFI();
@@ -183,38 +169,16 @@ void SysTick_Handler(void){
 	static uint32_t mSecCount = 0;
 	//--------------------------
 	sysTick++;
-	//msDelay_Loop();
-	//Blink_Loop();
-	//Encoder()->Loop();
+	if(sysTick > 999999) sysTick = 0;
+	//Led_PC13_Toggel(); //Для отладки.
 	//--------------------------
 	if(++mSecCount >= 100)
 		{
-			Led_PC13_Toggel(); //Для отладки.
 			mSecCount = 0;
-			//Определения направления арвщения.
-
-
-
+			Led_PC13_Toggel(); //Ииндикация обмена
 			//Расчет скорости вращения.
-//			if(Direction)
-//				{
-//					if(OldAngle > Angle) OldAngle -= 360.0;//Это нужно для корректного расчета скорости при переходе от 359 к 0 градусов.
-//					RPM = fabs(Angle - OldAngle) * QUANT_FOR_100mS;
-//				}
-//			else
-//				{
-//					if(OldAngle < Angle) OldAngle += 360.0;//Это нужно для корректного расчета скорости при переходе от 0 к 359 градусов.
-//					RPM = fabs(Angle - OldAngle) * QUANT_FOR_100mS;
-//				}
-//			OldAngle = Angle;
-
-			if(OldAngle > Angle) OldAngle -= 360.0;//Это нужно для корректного расчета скорости при переходе от 359 к 0 градусов.
-			RPM = fabs(Angle - OldAngle) * QUANT_FOR_100mS;
+			RPM = DeltaAngle * QUANT_FOR_100mS;
 			OldAngle = Angle;
-
-//			RPM = fabs(DeltaAngle * QUANT_FOR_100mS);
-//			OldAngle = Angle;
-
 			//Передаем данные
 			BuildingAndSendTextBuffer(sysTick,
 									  EncoderTicks,
@@ -225,7 +189,7 @@ void SysTick_Handler(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-//Прерывание TIM4. Каждые 2 микросекунды.
+//Прерывание TIM4. Каждые 10 микросекунды.
 void TIM4_IRQHandler(void){
 
 	//--------------------------

@@ -12,7 +12,7 @@ void SysTick_Init(void){
 					SysTick_CTRL_TICKINT_Msk   | //Рразрешение прерывания.
 					SysTick_CTRL_ENABLE_Msk;     //Резрешение таймеру считать.
 
-	NVIC_SetPriority(SysTick_IRQn, 15);
+	NVIC_SetPriority(SysTick_IRQn, 1);
 	NVIC_EnableIRQ(SysTick_IRQn);
 }
 //-----------------------------------------------------------------------------
