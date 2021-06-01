@@ -103,7 +103,7 @@ uint16_t Spi1TxRx2Byte(uint16_t data){
 	return (uint16_t)SPI1->DR;
 }
 //---------------------------------------------------------------
-static uint8_t Spi1RxData(void){
+__STATIC_INLINE uint8_t Spi1RxData(void){
 
 //	volatile uint32_t SpiWaitCount = 0;
 	//--------------------
@@ -118,7 +118,7 @@ static uint8_t Spi1RxData(void){
 	return (uint8_t)SPI1->DR;
 }
 //---------------------------------------------------------------
-uint32_t Spi1Rx3Byte(void){
+__INLINE uint32_t Spi1Rx3Byte(void){
 
 	uint32_t temp = 0;
 	//--------------------

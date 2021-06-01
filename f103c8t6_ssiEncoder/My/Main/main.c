@@ -14,6 +14,7 @@
 volatile uint32_t sysTick      = 0;
 volatile uint32_t uSecTick     = 0;
 volatile uint32_t EncoderTicks = 0;
+volatile uint32_t EncoderTicksVirt = 0;
 volatile uint32_t EncoderTicksTemp = 0;
 volatile float Angle           = 0.0;
 volatile float OldAngle        = 0.0;
@@ -33,30 +34,49 @@ void Led_Blink(void){
 //*******************************************************************************************
 //Работа с энкодером AMM3617.Энкодер выдает 17-тибитный код Грея.
 #define ENCODER_TIMEOUT 	(30 / 10)			      //деление на 10 так как uSecTick = 10 мкСек.
-#define ENCODER_NUM_STEP 	131072 					  //количество шагов энкодера
+//#define ENCODER_NUM_STEP 	131072 					  //количество шагов энкодера для 17 бит
+#define ENCODER_NUM_STEP    65536					  //количество шагов энкодера для 16 бит
+//#define ENCODER_NUM_STEP    32768					  //количество шагов энкодера для 15 бит
 #define ENCODER_QUANT  		(360.0 / ENCODER_NUM_STEP)//количество градусов в одном наге энкодера.
-#define _RPM				60
-#define QUANT_FOR_100mS     ((_RPM * 10 * 1000) / 360.0)
+
+#define _RPM						60
+#define NUM_MILLISECOND_PER_SECOND  1000
+#define TIMEOUT_FOR_CALC_SPEED_MS	100
+#define QUANT_FOR_100mS            ((_RPM * (NUM_MILLISECOND_PER_SECOND/TIMEOUT_FOR_CALC_SPEED_MS) * 1000) / 360.0)
+#define QUANT_FOR_40uS             (float)(5555555.55)
 //************************************************************
 //************************************************************
 //Преобразование кода Грея в бинарный код.
-uint32_t GrayToBin(uint32_t grayCode){
-
-	grayCode ^= grayCode >> 1;
-	grayCode ^= grayCode >> 2;
-	grayCode ^= grayCode >> 4;
-	grayCode ^= grayCode >> 8;
-	grayCode ^= grayCode >> 16;
-	return grayCode;
-}
+//uint32_t GrayToBin(uint32_t grayCode){
+//
+//	grayCode ^= grayCode >> 1;
+//	grayCode ^= grayCode >> 2;
+//	grayCode ^= grayCode >> 4;
+//	grayCode ^= grayCode >> 8;
+//	grayCode ^= grayCode >> 16;
+//	return grayCode;
+//}
 //------------------------------------------------------------
 //Получение значение поворота энкодера.
-uint32_t Encoder_GetTicks(void){
-
-	//Чтение и выравнивание данных из энкодера.
-	uint32_t encoderVal = (Spi1Rx3Byte() >> 6) & 0x0001FFFF; //Разрешения энкодера 17 бит.
-	return GrayToBin(encoderVal);                            //Преобразование кода Грея в двоичный код.
-}
+//uint32_t Encoder_GetTicks(void){
+//
+//	//Чтение и выравнивание данных из энкодера.
+//	//uint32_t encoderVal = (Spi1Rx3Byte() >> 6) & 0x0001FFFF; //Разрешения энкодера 17 бит.
+//	//uint32_t encoderVal = (Spi1Rx3Byte() >> 7) & 0x0000FFFF; //Разрешения энкодера 16 бит.
+//	//uint32_t encoderVal = (Spi1Rx3Byte() >> 8) & 0x00007FFF; //Разрешения энкодера 15 бит.
+//	//return GrayToBin((Spi1Rx3Byte() >> 7) & 0x0000FFFF);//Преобразование кода Грея в двоичный код.
+//
+//
+//	uint32_t grayCode = (Spi1Rx3Byte() >> 7) & 0x0000FFFF;//Разрешения энкодера 16 бит.
+//
+//	grayCode ^= grayCode >> 1;
+//	grayCode ^= grayCode >> 2;
+//	grayCode ^= grayCode >> 4;
+//	grayCode ^= grayCode >> 8;
+//	grayCode ^= grayCode >> 16;
+//
+//	return grayCode;
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 void BinToDecWithoutDot(uint32_t var, uint8_t* buf){
@@ -140,20 +160,31 @@ int main(void){
 				 	olduSecTicks = uSecTick;
 				 	//Led_PC13_Toggel();//Отладка
 				 	//Чтение заначения энкодера.
-				 	//__disable_irq();
-				 	EncoderTicks = Encoder_GetTicks();
-					//Преобразование в код Грея двух младших разрядов.
-				 	q = (EncoderTicks >> 2) & 3u;//Разрядность энкодера 8192
-					  	 if (q == 2) q = 3;
-					else if (q == 3) q = 2;
+				 	__disable_irq();
+				 	//EncoderTicks = Encoder_GetTicks();
+				 	EncoderTicks  = (Spi1Rx3Byte()>>7) & 0x0000FFFF;//Разрешения энкодера 16 бит.
+				 	//Преобразование кода Грея в бинарный код.
+				 	EncoderTicks ^= EncoderTicks >> 1;
+				 	EncoderTicks ^= EncoderTicks >> 2;
+				 	EncoderTicks ^= EncoderTicks >> 4;
+				 	EncoderTicks ^= EncoderTicks >> 8;
+				 	EncoderTicks ^= EncoderTicks >> 16;
+					//Эмуляция квадратурного(инкриментного) энкодера.
+				 	//Преобразование в код Грея двух младших разрядов.
+				 	//q = (EncoderTicks >> 2) & 3u;//ssi 17бит - инкриментный энкодера 8192 тика
+				 	q = (EncoderTicks >> 1) & 3u;//ssi 16бит - инкриментный энкодера 8192 тика
+					//     if (q == 2) q = 3;
+					//else if (q == 3) q = 2;
+				 	if(q > 1) q ^= 1;
 					//Ногодрыг
 					((q >> 1u) & 1u) ? EncAOn() : EncAOff();
 					 (q &  1u) ?       EncBOn() : EncBOff();
-					//__enable_irq();
-					//Расчет значений для будущего расчета скрости.
+					__enable_irq();
+					//Расчет значений для будущего расчета скорости.
 					Angle = ENCODER_QUANT * EncoderTicks;  //расчет угла поворота вала энкодера.
 					if(OldAngle > Angle) OldAngle -= 360.0;//Это нужно для корректного расчета скорости при переходе от 359 к 0 градусов.
 					DeltaAngle = Angle - OldAngle;         //приращение угла
+					RPM = DeltaAngle * QUANT_FOR_100mS;    //Расчет скорости вращения.
 				}
 			//***********************************************
 			/* Sleep */
@@ -168,16 +199,16 @@ void SysTick_Handler(void){
 
 	static uint32_t mSecCount = 0;
 	//--------------------------
-	sysTick++;
-	if(sysTick > 999999) sysTick = 0;
+	//sysTick++;
+	if(++sysTick > 999999) sysTick = 0;
 	//Led_PC13_Toggel(); //Для отладки.
 	//--------------------------
-	if(++mSecCount >= 100)
+	if(++mSecCount >= TIMEOUT_FOR_CALC_SPEED_MS)
 		{
 			mSecCount = 0;
 			Led_PC13_Toggel(); //Ииндикация обмена
 			//Расчет скорости вращения.
-			RPM = DeltaAngle * QUANT_FOR_100mS;
+			//RPM = DeltaAngle * QUANT_FOR_100mS;
 			OldAngle = Angle;
 			//Передаем данные
 			BuildingAndSendTextBuffer(sysTick,

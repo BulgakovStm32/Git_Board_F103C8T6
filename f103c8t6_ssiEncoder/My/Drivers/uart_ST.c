@@ -30,11 +30,11 @@ void Uart1Init(uint16_t usartBrr){
   USART1->CR2 &= ~USART_CR2_STOP;  //1 стоп-бит.
   USART1->CR1 =  USART_CR1_RE    | //Включение RX USART1.	
                  USART_CR1_TE    | //Включение TX USART1.
-                 USART_CR1_RXNEIE| //Включение прерывания от приемника USART1.		
+                 //USART_CR1_RXNEIE| //Включение прерывания от приемника USART1.
                  USART_CR1_UE;     //Включение USART1.
   USART1->CR3 |= USART_CR3_DMAT;   //Подключение TX USART1 к DMA.          
-  NVIC_SetPriority(USART1_IRQn, 15);//Приоритет прерывания USART1.
-  NVIC_EnableIRQ(USART1_IRQn);      //Разрешаем прерывание от приемника USART1.
+  //NVIC_SetPriority(USART1_IRQn, 15);//Приоритет прерывания USART1.
+  //NVIC_EnableIRQ(USART1_IRQn);      //Разрешаем прерывание от приемника USART1.
   //--------------------
   //Инициализация DMA. TX USART1 работает с DMA1 Ch4.
   RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Включить тактирование DMA1
