@@ -17,12 +17,6 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-//Порт, к которому подключен энкодер.
-#define EncoderPORT 	  GPIOC
-#define EncoderPinA  	  GPIO_IDR_IDR12  //вывод А энкодера.
-#define EncoderPinB  	  GPIO_IDR_IDR11  //вывод В энкодера.
-#define EncoderButtonPin  GPIO_IDR_IDR10  //кнопка энкодера.
-//**********************************
 #define ENCODER_NO_TURN     	0
 #define ENCODER_TURN        	1
 #define ENCODER_TURN_RIGHT  	2
@@ -48,14 +42,6 @@ typedef struct{
 	uint8_t		  BUTTON_STATE;
 	uint32_t	  ENCODER_NUMBER;
 }Encoder_t;
-//**********************************
-
-//typedef struct{
-//	uint8_t ButtonIsPress :1;
-//	//--------
-//	void (*Loop)();
-//	void (*Rotation)(uint16_t *parameter, uint16_t min, uint16_t max);
-//}Encoder_t;
 //*******************************************************************************************
 //*******************************************************************************************
 void Encoder_Init(Encoder_t *encoder);
