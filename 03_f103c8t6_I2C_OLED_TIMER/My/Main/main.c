@@ -94,7 +94,7 @@ void Task_Lcd(void){
 	static uint16_t counter = 0;
 	//-----------------------------
 
-	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
+	//Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
 	//-----------------------------
 	//Шапка
 	Lcd_SetCursor(1, 1);
@@ -176,6 +176,8 @@ int main(void){
 	Gpio_Init();
 	SysTick_Init();
 	microDelay_Init();
+
+	TIM4_Init();
 
 	__enable_irq();
 	msDelay(500);
@@ -261,10 +263,20 @@ void SysTick_Handler(void){
 	Scheduler_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
-	Encoder_ScanLoop(&Encoder);
+	//Encoder_ScanLoop(&Encoder);
 	//-----------------------------
 	//Измерение ~U: F=50Гц, Uамп = 1В, смещенеи 1,6В.
 	//AC_MeasLoop();
+}
+//*******************************************************************************************
+//******************************************************************************************
+//Прерывание TIM4.
+void TIM4_IRQHandler(void){
+
+	TIM4->SR &= ~TIM_SR_UIF;//Сброс флага прерывания.
+
+	LedPC13Toggel();
+	Encoder_ScanLoop(&Encoder);
 }
 //*******************************************************************************************
 //******************************************************************************************

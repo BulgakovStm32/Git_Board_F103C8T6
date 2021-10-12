@@ -52,18 +52,16 @@ void Encoder_Init(Encoder_t *encoder){
  */
 void Encoder_ScanLoop(Encoder_t *encoder){
 
-		   uint32_t pinA      = (1 << encoder->GPIO_PIN_A);
-		   uint32_t pinB      = (1 << encoder->GPIO_PIN_B);
-		   uint32_t pinButton = (1 << encoder->GPIO_PIN_BUTTON);
-	static uint8_t  cycle     = 0;
-	static uint8_t  msCount   = 0;
-	static uint16_t but[3]    = {0,};
-	//---------------------
+	uint32_t pinA      = (1 << encoder->GPIO_PIN_A);
+	uint32_t pinB      = (1 << encoder->GPIO_PIN_B);
+	uint32_t pinButton = (1 << encoder->GPIO_PIN_BUTTON);
+	//static uint8_t  encoderCount = 0;
 	//Обработка вращения энкодера.
 	switch(encoder->ENCODER_STATE){
 		//-----------
 		//нет вращения энекодера.
 		case ENCODER_NO_TURN:
+			//encoderCount = 0;
 			if(!(encoder->GPIO_PORT_A->IDR & pinA) && !(encoder->GPIO_PORT_B->IDR & pinB))
 			{
 				encoder->ENCODER_STATE = ENCODER_TURN;
@@ -73,6 +71,9 @@ void Encoder_ScanLoop(Encoder_t *encoder){
 		//произошло вращение энкодера.
 		case ENCODER_TURN:
 			//щелчок вправо.
+
+			//if(++encoderCount < 10)break;
+
 			if(!(encoder->GPIO_PORT_A->IDR & pinA) && (encoder->GPIO_PORT_B->IDR & pinB))
 			{
 				encoder->ENCODER_STATE = ENCODER_TURN_RIGHT;
@@ -90,6 +91,10 @@ void Encoder_ScanLoop(Encoder_t *encoder){
 	}
 	//--------------------
 	//Опрос кнопки энкодера.
+	static uint8_t  cycle     = 0;
+	static uint8_t  msCount   = 0;
+	static uint16_t but[3]    = {0,};
+
 	if(++msCount >= ENCODER_BUTTON_TIMEOUT)
 	{
 		msCount = 0;
