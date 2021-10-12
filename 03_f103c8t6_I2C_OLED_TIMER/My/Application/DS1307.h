@@ -42,7 +42,7 @@ typedef struct{
 	uint8_t  date;
 	uint8_t  month;
 	uint16_t year;
-}DS1307_TimeCalendar_t;
+}DS1307_t;
 //**********************************
 typedef enum DS1307_Rate{
 	DS1307_1HZ,
@@ -86,8 +86,8 @@ void DS1307_SetMinute(uint8_t minute);
 void DS1307_SetSecond(uint8_t second);
 void DS1307_SetTimeZone(int8_t hr, uint8_t min);
 
-void DS1307_SetTimeAndCalendar(DS1307_TimeCalendar_t *time);
-void DS1307_GetTimeAndCalendar(DS1307_TimeCalendar_t *time);
+void DS1307_SetTimeAndCalendar(DS1307_t *time);
+void DS1307_GetTimeAndCalendar(DS1307_t *time);
 
 void    DS1307_SetStatusFlag(uint8_t flag);
 void    DS1307_ResetStatusFlag(uint8_t flag);

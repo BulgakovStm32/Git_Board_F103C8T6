@@ -284,7 +284,7 @@ void DS1307_SetTimeZone(int8_t hr, uint8_t min){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-void DS1307_SetTimeAndCalendar(DS1307_TimeCalendar_t *time){
+void DS1307_SetTimeAndCalendar(DS1307_t *time){
 
 	//Именно в такой последовательности устанавливать дату
 	DS1307_SetDate(time->date);
@@ -299,7 +299,7 @@ void DS1307_SetTimeAndCalendar(DS1307_TimeCalendar_t *time){
 	DS1307_SetStatusFlag(DS1307_STATUS_FLAG_CONFIG);
 }
 //**********************************************************
-void DS1307_GetTimeAndCalendar(DS1307_TimeCalendar_t *time){
+void DS1307_GetTimeAndCalendar(DS1307_t *time){
 
 	time->hour = DS1307_GetHour();
 	time->min  = DS1307_GetMinute();
