@@ -35,16 +35,16 @@ static void OneWire_GpioInit(DS18B20_t *sensor){
 	if(sensor->GPIO_PIN <= 7)
 	{
 		pin = pin * 4;
-		sensor->GPIO_PORT->CRL |=  (0x03 << pin);          //GPIO_CRL_MODEx;
-		sensor->GPIO_PORT->CRL |=  (0x01 << (0x02 << pin));//GPIO_CRL_CNFx_0;
-		sensor->GPIO_PORT->CRL &= ~(0x02 << (0x02 << pin));//GPIO_CRL_CNFx_1;
+		sensor->GPIO_PORT->CRL |=  (0x03 << pin);      //GPIO_CRL_MODEx;
+		sensor->GPIO_PORT->CRL |=  (0x01 << (pin + 2));//GPIO_CRL_CNFx_0;
+		sensor->GPIO_PORT->CRL &= ~(0x02 << (pin + 2));//GPIO_CRL_CNFx_1;
 	}
 	else
 	{
 		pin = (pin - 8) * 4;
-		sensor->GPIO_PORT->CRH |=  (0x03 << pin);          //GPIO_CRL_MODEx;
-		sensor->GPIO_PORT->CRH |=  (0x01 << (0x02 << pin));//GPIO_CRL_CNFx_0;
-		sensor->GPIO_PORT->CRH &= ~(0x02 << (0x02 << pin));//GPIO_CRL_CNFx_1;
+		sensor->GPIO_PORT->CRH |=  (0x03 << pin);      //GPIO_CRL_MODEx;
+		sensor->GPIO_PORT->CRH |=  (0x01 << (pin + 2));//GPIO_CRL_CNFx_0;
+		sensor->GPIO_PORT->CRH &= ~(0x02 << (pin + 2));//GPIO_CRL_CNFx_1;
 	}
 }
 //**********************************************************

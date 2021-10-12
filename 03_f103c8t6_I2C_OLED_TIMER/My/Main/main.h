@@ -35,17 +35,16 @@
 //Application
 #include "Delay.h"
 #include "LcdGraphic.h"
-//#include "Lcd_i2c_1602.h"
 #include "Blink.h"
 #include "DS18B20.h"
+#include "ssd1306.h"
+#include "DS1307.h"
+#include "Encoder.h"
+
+//#include "Lcd_i2c_1602.h"
 //#include "Filters.h"
 //#include "AHT10.h"
 //#include "DS2782.h"
-
-#include "ssd1306.h"
-
-#include "DS1307.h"
-
 //*******************************************************************************************
 //*******************************************************************************************
 

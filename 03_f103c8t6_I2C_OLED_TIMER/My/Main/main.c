@@ -10,11 +10,11 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-
-DS1307_TimeCalendar_t TimeAndCalendar;
-
 DS18B20_t 			  Sensor_1;
 DS18B20_t 			  Sensor_2;
+DS1307_TimeCalendar_t TimeAndCalendar;
+Encoder_t			  Encoder;
+
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -91,6 +91,9 @@ void Task_Temperature_Read(void){
 //************************************************************
 void Task_Lcd(void){
 
+	static uint16_t counter = 0;
+	//-----------------------------
+
 	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
 	//-----------------------------
 	//Шапка
@@ -115,6 +118,13 @@ void Task_Lcd(void){
 	Lcd_BinToDec(TimeAndCalendar.month, 2, LCD_CHAR_SIZE_NORM);//месяц
 	Lcd_Chr('/');
 	Lcd_BinToDec(TimeAndCalendar.year, 4, LCD_CHAR_SIZE_NORM);//год
+
+	//Работа с энкодером.
+	Encoder_IncDecParam(&Encoder, &counter, 0, 100);
+
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("Encoder: ");
+	Lcd_BinToDec(counter, 4, LCD_CHAR_SIZE_NORM);
 
 	//Вывод темперетуры DS18B20.
 	//Temperature_Display(&Sensor_1, 1, 3);
@@ -188,14 +198,26 @@ int main(void){
 	{
 		//DS1307_SetTimeZone(+8, 00);
 		//DS1307_SetDayOfWeek(7);
-		TimeAndCalendar.date  = 1;
-		TimeAndCalendar.month = 1;
-		TimeAndCalendar.year  = 2001;
-		TimeAndCalendar.sec   = 0;
-		TimeAndCalendar.min   = 0;
-		TimeAndCalendar.hour  = 0;
+		TimeAndCalendar.date  = 12;
+		TimeAndCalendar.month = 12;
+		TimeAndCalendar.year  = 2012;
+		TimeAndCalendar.sec   = 12;
+		TimeAndCalendar.min   = 12;
+		TimeAndCalendar.hour  = 12;
 		DS1307_SetTimeAndCalendar(&TimeAndCalendar);
 	}
+	//***********************************************
+	//Инициализация Энкодера.
+	Encoder.GPIO_PORT_A = GPIOA;
+	Encoder.GPIO_PIN_A  = 5;
+
+	Encoder.GPIO_PORT_B = GPIOA;
+	Encoder.GPIO_PIN_B  = 6;
+
+	Encoder.GPIO_PORT_BUTTON = GPIOA;
+	Encoder.GPIO_PIN_BUTTON  = 7;
+
+	Encoder_Init(&Encoder);
 	//***********************************************
 	//Инициализация DS18B20
 
@@ -240,6 +262,7 @@ void SysTick_Handler(void){
 	Scheduler_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
+	Encoder_ScanLoop(&Encoder);
 	//-----------------------------
 	//Измерение ~U: F=50Гц, Uамп = 1В, смещенеи 1,6В.
 	//AC_MeasLoop();
