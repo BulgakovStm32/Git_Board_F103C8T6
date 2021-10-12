@@ -1,4 +1,0 @@
-Encoder.c:14:13:Encoder_Turn	16	static
-Encoder.c:44:13:Encoder_Loop	4	static
-Encoder.c:103:6:Encoder_Init	4	static
-Encoder.c:123:12:Encoder	4	static

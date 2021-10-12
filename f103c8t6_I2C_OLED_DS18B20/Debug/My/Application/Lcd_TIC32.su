@@ -1,3 +1,0 @@
-Lcd_TIC32.c:66:6:Lcd_TIC32_Init	8	static
-Lcd_TIC32.c:132:6:Lcd_TIC32_ClearRAM	16	static
-Lcd_TIC32.c:149:6:Lcd_TIC32_SendData	24	static

@@ -1,5 +1,0 @@
-Filters.c:14:10:Average	16	static
-Filters.c:41:10:Filter	16	static
-Filters.c:53:10:Filter_SMA	24	static
-Filters.c:75:10:runMiddleArifmOptim	16	static
-Filters.c:89:10:Filter_EMA	16	static
