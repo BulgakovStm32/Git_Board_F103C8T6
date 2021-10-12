@@ -17,28 +17,15 @@ Encoder_t			  Encoder;
 
 //*******************************************************************************************
 //*******************************************************************************************
-void IncrementOnEachPass(uint32_t *var, uint16_t event){
-
-		   uint16_t riseReg  = 0;
-	static uint16_t oldState = 0;
-	//-------------------
-	riseReg  = (oldState ^ event) & event;
-	oldState = event;
-	if(riseReg) (*var)++;
-}
-//************************************************************
-void Led_Blink1(uint32_t millis){
-
-	static uint32_t millisOld = 0;
-	static uint32_t flag      = 0;
-	//-------------------
-	if((millis - millisOld) >= (flag ? 900 : 100 ))
-	{
-		millisOld = millis;
-		flag = !flag;
-		LedPC13Toggel();
-	}
-}
+//void IncrementOnEachPass(uint32_t *var, uint16_t event){
+//
+//		   uint16_t riseReg  = 0;
+//	static uint16_t oldState = 0;
+//	//-------------------
+//	riseReg  = (oldState ^ event) & event;
+//	oldState = event;
+//	if(riseReg) (*var)++;
+//}
 //************************************************************
 //void Temperature_Read(void){
 //
@@ -53,6 +40,19 @@ void Led_Blink1(uint32_t millis){
 //		TemperatureSens_ReadTemperature(&Sensor_2);
 //	}
 //}
+//************************************************************
+void Led_Blink1(uint32_t millis){
+
+	static uint32_t millisOld = 0;
+	static uint32_t flag      = 0;
+	//-------------------
+	if((millis - millisOld) >= (flag ? 900 : 100 ))
+	{
+		millisOld = millis;
+		flag = !flag;
+		LedPC13Toggel();
+	}
+}
 //************************************************************
 void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 
@@ -127,8 +127,8 @@ void Task_Lcd(void){
 	Lcd_BinToDec(counter, 4, LCD_CHAR_SIZE_NORM);
 
 	//Вывод темперетуры DS18B20.
-	//Temperature_Display(&Sensor_1, 1, 3);
-	//Temperature_Display(&Sensor_2, 1, 4);
+	Temperature_Display(&Sensor_1, 1, 5);
+	Temperature_Display(&Sensor_2, 1, 6);
 
 	//Рисование графики.
 //	static uint32_t x1 = 0;
@@ -220,28 +220,27 @@ int main(void){
 	Encoder_Init(&Encoder);
 	//***********************************************
 	//Инициализация DS18B20
+	Sensor_1.GPIO_PORT     = GPIOA;
+	Sensor_1.GPIO_PIN      = 3;
+	Sensor_1.SENSOR_NUMBER = 1;
+	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
+	TemperatureSens_GpioInit(&Sensor_1);
+	TemperatureSens_SetResolution(&Sensor_1);
+	TemperatureSens_StartConvertTemperature(&Sensor_1);
 
-//	Sensor_1.GPIO_PORT     = GPIOA;
-//	Sensor_1.GPIO_PIN      = 3;
-//	Sensor_1.SENSOR_NUMBER = 1;
-//	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
-//	TemperatureSens_GpioInit(&Sensor_1);
-//	TemperatureSens_SetResolution(&Sensor_1);
-//	TemperatureSens_StartConvertTemperature(&Sensor_1);
-//
-//	Sensor_2.GPIO_PORT     = GPIOA;
-//	Sensor_2.GPIO_PIN      = 2;
-//	Sensor_2.SENSOR_NUMBER = 2;
-//	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
-//	TemperatureSens_GpioInit(&Sensor_2);
-//	TemperatureSens_SetResolution(&Sensor_2);
-//	TemperatureSens_StartConvertTemperature(&Sensor_2);
+	Sensor_2.GPIO_PORT     = GPIOA;
+	Sensor_2.GPIO_PIN      = 2;
+	Sensor_2.SENSOR_NUMBER = 2;
+	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
+	TemperatureSens_GpioInit(&Sensor_2);
+	TemperatureSens_SetResolution(&Sensor_2);
+	TemperatureSens_StartConvertTemperature(&Sensor_2);
 	//***********************************************
 	//Инициализация диспетчера.
 	Scheduler_Init();
 
 	//Постановка задач в очередь.
-	//Scheduler_SetTask(Task_Temperature_Read);
+	Scheduler_SetTask(Task_Temperature_Read);
 	Scheduler_SetTask(Task_Lcd);
 	Scheduler_SetTask(Task_LcdUpdate);
 	//***********************************************

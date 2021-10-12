@@ -52,14 +52,12 @@ void Encoder_Init(Encoder_t *encoder){
  */
 void Encoder_ScanLoop(Encoder_t *encoder){
 
-
-	static uint8_t  cycle   = 0;
-	static uint8_t  msCount = 0;
-	static uint16_t but[3]  = {0, 0, 0};
-
-	uint32_t pinA      = (1 << encoder->GPIO_PIN_A);
-	uint32_t pinB      = (1 << encoder->GPIO_PIN_B);
-	uint32_t pinButton = (1 << encoder->GPIO_PIN_BUTTON);
+		   uint32_t pinA      = (1 << encoder->GPIO_PIN_A);
+		   uint32_t pinB      = (1 << encoder->GPIO_PIN_B);
+		   uint32_t pinButton = (1 << encoder->GPIO_PIN_BUTTON);
+	static uint8_t  cycle     = 0;
+	static uint8_t  msCount   = 0;
+	static uint16_t but[3]    = {0,};
 	//---------------------
 	//Обработка вращения энкодера.
 	switch(encoder->ENCODER_STATE){
