@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdtprojectproperties>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">
+<language name="s,S">
+
+</language>
+<language name="C Source File">
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\CMSIS</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\Startup</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\Main</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\Drivers</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\Sheduler</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\Application</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\MiddleLevel</includepath>
+<includepath>D:\04_Git\Git_Board_F103C8T6\f103c8t6_I2C_OLED_3D-Cube\My\OLED</includepath>
+
+</language>
+<language name="Object File">
+
+</language>
+</section>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.Macros">
+<language name="s,S">
+
+</language>
+<language name="C Source File">
+<macro>
+<name>STM32</name><value/>
+</macro>
+<macro>
+<name>STM32F1</name><value/>
+</macro>
+<macro>
+<name>STM32F103C8Tx</name><value/>
+</macro>
+<macro>
+<name>DEBUG</name><value/>
+</macro>
+
+</language>
+<language name="Object File">
+
+</language>
+</section>
+</cdtprojectproperties>
