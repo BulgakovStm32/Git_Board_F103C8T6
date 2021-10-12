@@ -10,17 +10,11 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-typedef struct{
-	uint8_t hour;
-	uint8_t min;
-	uint8_t sec;
-}Time_t;
 
-static Time_t Time;
-//---------------------------
+DS1307_TimeCalendar_t TimeAndCalendar;
 
-DS18B20_t Sensor_1;
-DS18B20_t Sensor_2;
+DS18B20_t 			  Sensor_1;
+DS18B20_t 			  Sensor_2;
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -31,13 +25,6 @@ void IncrementOnEachPass(uint32_t *var, uint16_t event){
 	riseReg  = (oldState ^ event) & event;
 	oldState = event;
 	if(riseReg) (*var)++;
-}
-//************************************************************
-void Time_Calculation(uint32_t count){
-
-	Time.hour =  count / 3600;
-	Time.min  = (count % 3600) / 60;
-	Time.sec  =  count % 60;
 }
 //************************************************************
 void Led_Blink1(uint32_t millis){
@@ -85,7 +72,6 @@ void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_Print(" C(PinA");
 	Lcd_BinToDec(sensor->GPIO_PIN, 1, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr(')');
-
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -105,33 +91,38 @@ void Task_Temperature_Read(void){
 //************************************************************
 void Task_Lcd(void){
 
-	static uint32_t x1 = 0;
-	static uint32_t y1 = 0;
-	static uint32_t secCounter = 0;
-	//-----------------------------
-	//Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
-
-	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
-	Time_Calculation(secCounter);						     //Преобразование времени
+	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
 	//-----------------------------
 	//Шапка
 	Lcd_SetCursor(1, 1);
 	Lcd_Print("_TIMER_");
 
-	//Вывод времени.
+	//Вывод времени RTC.
+	DS1307_GetTimeAndCalendar(&TimeAndCalendar);
+
 	Lcd_SetCursor(1, 2);
-	Lcd_Print("Time: ");
-	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
+	Lcd_Print("Time:     ");
+	Lcd_BinToDec(TimeAndCalendar.hour, 2, LCD_CHAR_SIZE_NORM);//часы
 	Lcd_Chr(':');
-	Lcd_BinToDec(Time.min, 2, LCD_CHAR_SIZE_NORM); //минуты
+	Lcd_BinToDec(TimeAndCalendar.min, 2, LCD_CHAR_SIZE_NORM); //минуты
 	Lcd_Chr(':');
-	Lcd_BinToDec(Time.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
+	Lcd_BinToDec(TimeAndCalendar.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
+
+	Lcd_SetCursor(1, 3);
+	Lcd_Print("Calendar: ");
+	Lcd_BinToDec(TimeAndCalendar.date, 2, LCD_CHAR_SIZE_NORM);//день месяца
+	Lcd_Chr('/');
+	Lcd_BinToDec(TimeAndCalendar.month, 2, LCD_CHAR_SIZE_NORM);//месяц
+	Lcd_Chr('/');
+	Lcd_BinToDec(TimeAndCalendar.year, 4, LCD_CHAR_SIZE_NORM);//год
 
 	//Вывод темперетуры DS18B20.
-	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 4);
+	//Temperature_Display(&Sensor_1, 1, 3);
+	//Temperature_Display(&Sensor_2, 1, 4);
 
 	//Рисование графики.
+//	static uint32_t x1 = 0;
+//	static uint32_t y1 = 0;
 //	float rad_temp = Time.sec * RADIAN;
 //
 //	x1 = (uint32_t)(X_0 + RADIUS * (float)cos(rad_temp));
@@ -140,6 +131,7 @@ void Task_Lcd(void){
 //	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
 	//-----------------------------
 	Scheduler_SetTask(Task_Lcd);
+	//Scheduler_SetTimerTask(Task_Lcd, 1000);
 }
 //************************************************************
 void Task_LcdUpdate(void){
@@ -178,7 +170,7 @@ int main(void){
 	__enable_irq();
 	msDelay(500);
 	//***********************************************
-	//Ини-я OLED SSD1306
+	//Инициализация OLED SSD1306
 	I2C1_Init();
 	I2C1_DMAInit();
 	SSD1306_Init(SSD1306_I2C);
@@ -187,34 +179,47 @@ int main(void){
 	//I2C1_Init();
 	//I2C1_DMAInit();
 	//I2C1_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, TxBuf, 32);
-
-
-
-
 	//***********************************************
-	//Ини-я DS18B20
+	//Инициализация RTC DS1307.
+	DS1307_Init(DS1307_I2C);
 
-	Sensor_1.GPIO_PORT     = GPIOA;
-	Sensor_1.GPIO_PIN      = 3;
-	Sensor_1.SENSOR_NUMBER = 1;
-	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
-	TemperatureSens_GpioInit(&Sensor_1);
-	TemperatureSens_SetResolution(&Sensor_1);
-	TemperatureSens_StartConvertTemperature(&Sensor_1);
-
-	Sensor_2.GPIO_PORT     = GPIOA;
-	Sensor_2.GPIO_PIN      = 2;
-	Sensor_2.SENSOR_NUMBER = 2;
-	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
-	TemperatureSens_GpioInit(&Sensor_2);
-	TemperatureSens_SetResolution(&Sensor_2);
-	TemperatureSens_StartConvertTemperature(&Sensor_2);
+	//Настройки по умолчанию.
+	if(!DS1307_GetStatusFlag(DS1307_STATUS_FLAG_CONFIG))
+	{
+		//DS1307_SetTimeZone(+8, 00);
+		//DS1307_SetDayOfWeek(7);
+		TimeAndCalendar.date  = 1;
+		TimeAndCalendar.month = 1;
+		TimeAndCalendar.year  = 2001;
+		TimeAndCalendar.sec   = 0;
+		TimeAndCalendar.min   = 0;
+		TimeAndCalendar.hour  = 0;
+		DS1307_SetTimeAndCalendar(&TimeAndCalendar);
+	}
 	//***********************************************
-	//Ини-я диспетчера.
+	//Инициализация DS18B20
+
+//	Sensor_1.GPIO_PORT     = GPIOA;
+//	Sensor_1.GPIO_PIN      = 3;
+//	Sensor_1.SENSOR_NUMBER = 1;
+//	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
+//	TemperatureSens_GpioInit(&Sensor_1);
+//	TemperatureSens_SetResolution(&Sensor_1);
+//	TemperatureSens_StartConvertTemperature(&Sensor_1);
+//
+//	Sensor_2.GPIO_PORT     = GPIOA;
+//	Sensor_2.GPIO_PIN      = 2;
+//	Sensor_2.SENSOR_NUMBER = 2;
+//	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
+//	TemperatureSens_GpioInit(&Sensor_2);
+//	TemperatureSens_SetResolution(&Sensor_2);
+//	TemperatureSens_StartConvertTemperature(&Sensor_2);
+	//***********************************************
+	//Инициализация диспетчера.
 	Scheduler_Init();
 
 	//Постановка задач в очередь.
-	Scheduler_SetTask(Task_Temperature_Read);
+	//Scheduler_SetTask(Task_Temperature_Read);
 	Scheduler_SetTask(Task_Lcd);
 	Scheduler_SetTask(Task_LcdUpdate);
 	//***********************************************

@@ -33,19 +33,19 @@
 
 //**********************************
 typedef enum {
-  SKIP_ROM         = 0xCC,
-  CONVERT_T        = 0x44,
-  READ_SCRATCHPAD  = 0xBE,
-  WRITE_SCRATCHPAD = 0x4E,
-  TH_REGISTER      = 0x4B,
-  TL_REGISTER      = 0x46,
+	SKIP_ROM         = 0xCC,
+	CONVERT_T        = 0x44,
+	READ_SCRATCHPAD  = 0xBE,
+	WRITE_SCRATCHPAD = 0x4E,
+	TH_REGISTER      = 0x4B,
+	TL_REGISTER      = 0x46,
 }DS18B20_Cmd_Enum;
 //**********************************
 typedef enum {
-  DS18B20_Resolution_9_bit  = 0x1F,
-  DS18B20_Resolution_10_bit = 0x3F,
-  DS18B20_Resolution_11_bit = 0x5F,
-  DS18B20_Resolution_12_bit = 0x7F
+	DS18B20_Resolution_9_bit  = 0x1F,
+	DS18B20_Resolution_10_bit = 0x3F,
+	DS18B20_Resolution_11_bit = 0x5F,
+	DS18B20_Resolution_12_bit = 0x7F
 }DS18B20_Resolution_Enum;
 //**********************************
 typedef struct{
@@ -65,7 +65,6 @@ void 	 TemperatureSens_StartConvertTemperature(DS18B20_t *sensor);
 void     TemperatureSens_ReadTemperature(DS18B20_t *sensor);
 uint32_t TemperatureSens_Sign(DS18B20_t *sensor);
 uint32_t TemperatureSens_Temperature(DS18B20_t *sensor);
-
 
 
 //*******************************************************************************************

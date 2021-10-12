@@ -40,7 +40,7 @@ void 	I2C_Init(I2C_TypeDef *i2c);
 //void    I2C_Stop(I2C_TypeDef *i2c);
 
 void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
-void I2C_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
+void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
 
 
 void I2C1_Init(void);

@@ -177,13 +177,13 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 void SSD1306_UpdateScreen(uint8_t *pBuf) {
 
 	for(uint8_t m = 0; m < 8; m++)
-		{
-			ssd1306_I2C_WriteCMD(0xB0 + m);//Set Page Start Address for Page Addressing Mode,0-7
-			ssd1306_I2C_WriteCMD(0x02);    //Set low column address ,смещение вывода изображениея на 2 столбца.
-			ssd1306_I2C_WriteCMD(0x10);    //Set high column address
-			/* Write multi data */
-			ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
-		}
+	{
+		ssd1306_I2C_WriteCMD(0xB0 + m);//Set Page Start Address for Page Addressing Mode,0-7
+		ssd1306_I2C_WriteCMD(0x02);    //Set low column address ,смещение вывода изображениея на 2 столбца.
+		ssd1306_I2C_WriteCMD(0x10);    //Set high column address
+		/* Write multi data */
+		ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
+	}
 }
 //***********************************************************************
 void SSD1306_ToggleInvert(void) {
