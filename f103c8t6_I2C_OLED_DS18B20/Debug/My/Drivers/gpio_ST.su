@@ -1,3 +1,0 @@
-gpio_ST.c:10:6:Gpio_Init	4	static
-gpio_ST.c:94:6:Gpio_CheckLoop	4	static
-gpio_ST.c:134:10:Gpio_GetState	16	static
