@@ -70,7 +70,11 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 
 	/* Init LCD */
 	ssd1306_I2C_WriteCMD(0xAE); //display off
+
+	//настройка адресации
 	ssd1306_I2C_WriteCMD(0x20); //Set Memory Addressing Mode
+
+	//ssd1306_I2C_WriteCMD(0x00);// 0х00 для горизонтальной, 0х01 для вертикальной, 0х02 для постраничной адресации
 	ssd1306_I2C_WriteCMD(0x01); //00,Horizontal Addressing Mode;
 							    //01,Vertical Addressing Mode;
 							    //10,Page Addressing Mode (RESET);
@@ -81,13 +85,13 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 	ssd1306_I2C_WriteCMD(0xC8); //Set COM Output Scan Direction
 	ssd1306_I2C_WriteCMD(0x00); //---set low column address
 	ssd1306_I2C_WriteCMD(0x10); //---set high column address
-	ssd1306_I2C_WriteCMD(0x40); //--set start line address
+	ssd1306_I2C_WriteCMD(0x40); //---set start line address
 
 	ssd1306_I2C_WriteCMD(0x81); //--set contrast control register
 	ssd1306_I2C_WriteCMD(50);
 
-	ssd1306_I2C_WriteCMD(0xA1); //--set segment re-map 0 to 127
-	ssd1306_I2C_WriteCMD(0xA6); //--set normal display
+	ssd1306_I2C_WriteCMD(0xA1); //--set segment re-map 0 to 127. отражение по горизонтали, для отображения справа налево необходимо использовать команду 0xA0
+	ssd1306_I2C_WriteCMD(0xA7);//(0xA6); //--set normal display
 	ssd1306_I2C_WriteCMD(0xA8); //--set multiplex ratio(1 to 64)
 	ssd1306_I2C_WriteCMD(0x3F); //
 
@@ -176,14 +180,35 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 //***********************************************************************
 void SSD1306_UpdateScreen(uint8_t *pBuf) {
 
-	for(uint8_t m = 0; m < 8; m++)
-	{
-		ssd1306_I2C_WriteCMD(0xB0 + m);//Set Page Start Address for Page Addressing Mode,0-7
-		ssd1306_I2C_WriteCMD(0x02);    //Set low column address ,смещение вывода изображениея на 2 столбца.
-		ssd1306_I2C_WriteCMD(0x10);    //Set high column address
-		/* Write multi data */
-		ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
-	}
+//	for(uint8_t m = 0; m < 8; m++)
+//	{
+//		ssd1306_I2C_WriteCMD(0xB0 + m);//Set Page Start Address for Page Addressing Mode,0-7
+//		ssd1306_I2C_WriteCMD(0x02);    //Set low column address ,смещение вывода изображениея на 2 столбца.
+//		ssd1306_I2C_WriteCMD(0x10);    //Set high column address
+//		/* Write multi data */
+//		ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
+//	}
+
+////	for(uint8_t m = 0; m < 8; m++)
+////	{
+//		ssd1306_I2C_WriteCMD(0xB0);//Set Page Start Address for Page Addressing Mode,0-7
+//		//ssd1306_I2C_WriteCMD(0x02);//Set low column address ,смещение вывода изображениея на 2 столбца.
+//		//ssd1306_I2C_WriteCMD(0x10);//Set high column address
+//		/* Write multi data */
+//		ssd1306_I2C_WriteDataBuf(pBuf, 1024);
+////	}
+
+
+
+	ssd1306_I2C_WriteCMD(0x21);//установка столбца
+	ssd1306_I2C_WriteCMD(0);//Начальный столбец.
+	ssd1306_I2C_WriteCMD(127);//Конечный столбец.
+
+	ssd1306_I2C_WriteCMD(0x22);//установка страницы
+	ssd1306_I2C_WriteCMD(0);//Начальная страница.
+	ssd1306_I2C_WriteCMD(7);//Конечная страница.
+
+	ssd1306_I2C_WriteDataBuf(pBuf, 1024);
 }
 //***********************************************************************
 void SSD1306_ToggleInvert(void) {
