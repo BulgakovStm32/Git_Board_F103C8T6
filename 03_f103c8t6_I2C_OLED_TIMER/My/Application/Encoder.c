@@ -46,72 +46,46 @@ void Encoder_Init(Encoder_t *encoder){
 }
 //**********************************************************
 /**
- * @brief: Фу-я опроса состояния энкодера. Вызывается каждую 1мСек.
+ * @brief: Фу-я опроса состояния энкодера Вариант 2. Вызывается каждую 1мСек.
  * @In_param:
  * @Out_param:
  */
 void Encoder_ScanLoop(Encoder_t *encoder){
 
-	uint32_t pinA      = (1 << encoder->GPIO_PIN_A);
-	uint32_t pinB      = (1 << encoder->GPIO_PIN_B);
-	uint32_t pinButton = (1 << encoder->GPIO_PIN_BUTTON);
-	//static uint8_t  encoderCount = 0;
-	//Обработка вращения энкодера.
-	switch(encoder->ENCODER_STATE){
-		//-----------
-		//нет вращения энекодера.
-		case ENCODER_NO_TURN:
-			//encoderCount = 0;
-			if(!(encoder->GPIO_PORT_A->IDR & pinA) && !(encoder->GPIO_PORT_B->IDR & pinB))
-			{
-				encoder->ENCODER_STATE = ENCODER_TURN;
-			}
-		break;
-		//-----------
-		//произошло вращение энкодера.
-		case ENCODER_TURN:
-			//щелчок вправо.
+	uint32_t pinA         = (1 << encoder->GPIO_PIN_A);
+	uint32_t pinB         = (1 << encoder->GPIO_PIN_B);
+	uint32_t pinButton    = (1 << encoder->GPIO_PIN_BUTTON);
+	uint8_t  currentState = 0;
+	//--------------------
+	//Определение состояния энкодера.
+	static uint8_t oldState     = 0; //хранит последовательность состояний энкодера
 
-			//if(++encoderCount < 10)break;
+	//проверяем состояние выводов микроконтроллера
+	if(encoder->GPIO_PORT_A->IDR & pinA) currentState |= 1<<0;
+	if(encoder->GPIO_PORT_B->IDR & pinB) currentState |= 1<<1;
 
-			if(!(encoder->GPIO_PORT_A->IDR & pinA) && (encoder->GPIO_PORT_B->IDR & pinB))
-			{
-				encoder->ENCODER_STATE = ENCODER_TURN_RIGHT;
-			}
-			//щелчок влево.
-			if((encoder->GPIO_PORT_A->IDR & pinA) && !(encoder->GPIO_PORT_B->IDR & pinB))
-			{
-				encoder->ENCODER_STATE = ENCODER_TURN_LEFT;
-			}
-		break;
-		//-----------
-		default:
-		break;
-		//-----------
+	//если равно предыдущему, то выходим
+	if(currentState != (oldState & 0b00000011))
+	{
+		//если не равно, то сдвигаем и сохраняем
+		oldState = (oldState << 2) | currentState;
+		//сравниваем получившуюся последовательность
+		if(oldState == 0b11100001) encoder->ENCODER_STATE = ENCODER_TURN_RIGHT;
+		if(oldState == 0b11010010) encoder->ENCODER_STATE = ENCODER_TURN_LEFT;
 	}
 	//--------------------
 	//Опрос кнопки энкодера.
-	static uint8_t  cycle     = 0;
-	static uint8_t  msCount   = 0;
-	static uint16_t but[3]    = {0,};
+	static uint8_t oldStateButton = 0; //хранит последовательность состояний энкодера
 
-	if(++msCount >= ENCODER_BUTTON_TIMEOUT)
-	{
-		msCount = 0;
-		//-----------
-		if(++cycle <= 3) but[cycle] = encoder->GPIO_PORT_BUTTON->IDR & pinButton;//Считывание состояние вывода.
-		else
-		{
-			cycle = 0;
-			//Мажоритарное определение состояния выводов.
-			if(~((but[0] & but[1]) | (but[1] & but[2]) | (but[0] & but[2])) & pinButton)
-			{
-				encoder->BUTTON_STATE = 1;
-			}
-			else encoder->BUTTON_STATE = 0;
-		}
-		//-----------
-	}
+	//проверяем состояние выводов микроконтроллера
+	if(encoder->GPIO_PORT_BUTTON->IDR & pinButton) currentState = 1<<0;
+	//если равно предыдущему, то выходим
+	if(currentState == (oldStateButton & 0b00000001)) return;
+	//если не равно, то сдвигаем и сохраняем
+	oldStateButton = (oldStateButton << 1) | currentState;
+	//сравниваем получившуюся последовательность
+	if(oldStateButton == 0b11110000) encoder->BUTTON_STATE = 1;
+	if(oldStateButton == 0b00001111) encoder->BUTTON_STATE = 0;
 	//--------------------
 }
 //**********************************************************

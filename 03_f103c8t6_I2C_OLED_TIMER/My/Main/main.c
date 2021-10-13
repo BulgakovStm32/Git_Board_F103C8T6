@@ -94,7 +94,7 @@ void Task_Lcd(void){
 	static uint16_t counter = 0;
 	//-----------------------------
 
-	//Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
+	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
 	//-----------------------------
 	//Шапка
 	Lcd_SetCursor(1, 1);
@@ -177,8 +177,8 @@ int main(void){
 	SysTick_Init();
 	microDelay_Init();
 
-	TIM4_Init();
-	EXTI_Init();
+	//TIM4_Init();
+	//EXTI_Init();
 
 	__enable_irq();
 	msDelay(500);
@@ -212,13 +212,15 @@ int main(void){
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GPIO_PORT_A = GPIOA;
-	Encoder.GPIO_PIN_A  = 5;
+	Encoder.GPIO_PIN_A  = 0;
 
 	Encoder.GPIO_PORT_B = GPIOA;
-	Encoder.GPIO_PIN_B  = 6;
+	Encoder.GPIO_PIN_B  = 1;
 
 	Encoder.GPIO_PORT_BUTTON = GPIOA;
 	Encoder.GPIO_PIN_BUTTON  = 7;
+
+	Encoder.ENCODER_STATE = ENCODER_NO_TURN;
 
 	Encoder_Init(&Encoder);
 	//***********************************************
@@ -264,7 +266,7 @@ void SysTick_Handler(void){
 	Scheduler_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
-	//Encoder_ScanLoop(&Encoder);
+	Encoder_ScanLoop(&Encoder);
 	//-----------------------------
 	//Измерение ~U: F=50Гц, Uамп = 1В, смещенеи 1,6В.
 	//AC_MeasLoop();
@@ -274,10 +276,11 @@ void SysTick_Handler(void){
 //Прерывание TIM4.
 void TIM4_IRQHandler(void){
 
-	TIM4->SR &= ~TIM_SR_UIF;//Сброс флага прерывания.
+	TIM4->SR  &= ~TIM_SR_UIF; //Сброс флага прерывания.
+	//TIM4->CR1 &= ~TIM_CR1_CEN;//Counter dasable.
 
 	//LedPC13Toggel();
-	Encoder_ScanLoop(&Encoder);
+	//Encoder_ScanLoop(&Encoder);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -291,12 +294,13 @@ void EXTI0_IRQHandler(void){
 	if((EXTI->PR & 0x0001) != 0)  /* Check line 0 has triggered the IT */
 	{
 		EXTI->PR |= 0x0001; //Сброс бита в регистре EXTI_PR выполняется путем записи в соответствующий бит значения ‘1’.
-		LedPC13Toggel();
+
+		//LedPC13Toggel();
 	}
-	else /* Should never occur */
-	{
-		//GPIOC->BSRR = (1<<8); /* Switch on orange led to report an error */
-	}
+//	else /* Should never occur */
+//	{
+//		//GPIOC->BSRR = (1<<8); /* Switch on orange led to report an error */
+//	}
 }
 //*******************************************************************************************
 //*******************************************************************************************

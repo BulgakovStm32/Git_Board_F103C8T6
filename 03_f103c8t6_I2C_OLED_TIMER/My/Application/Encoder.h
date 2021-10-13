@@ -22,6 +22,8 @@
 #define ENCODER_TURN_RIGHT  	2
 #define ENCODER_TURN_LEFT		3
 
+
+
 #define ENCODER_BUTTON_TIMEOUT	10
 //**********************************
 //Состояние кнопки энкодера.
