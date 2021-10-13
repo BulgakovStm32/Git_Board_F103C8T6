@@ -197,18 +197,18 @@ int main(void){
 	DS1307_Init(DS1307_I2C);
 
 	//Настройки по умолчанию.
-	if(!DS1307_GetStatusFlag(DS1307_STATUS_FLAG_CONFIG))
-	{
-		//DS1307_SetTimeZone(+8, 00);
-		//DS1307_SetDayOfWeek(7);
-		TimeAndCalendar.date  = 12;
-		TimeAndCalendar.month = 12;
-		TimeAndCalendar.year  = 2012;
-		TimeAndCalendar.sec   = 12;
-		TimeAndCalendar.min   = 12;
-		TimeAndCalendar.hour  = 12;
-		DS1307_SetTimeAndCalendar(&TimeAndCalendar);
-	}
+//	if(!DS1307_GetStatusFlag(DS1307_STATUS_FLAG_CONFIG))
+//	{
+//		//DS1307_SetTimeZone(+8, 00);
+//		//DS1307_SetDayOfWeek(7);
+//		TimeAndCalendar.date  = 13;
+//		TimeAndCalendar.month = 10;
+//		TimeAndCalendar.year  = 2021;
+//		TimeAndCalendar.sec   = 00;
+//		TimeAndCalendar.min   = 30;
+//		TimeAndCalendar.hour  = 12;
+//		DS1307_SetTimeAndCalendar(&TimeAndCalendar);
+//	}
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GPIO_PORT_A = GPIOA;

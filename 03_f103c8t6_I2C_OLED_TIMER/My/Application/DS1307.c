@@ -73,7 +73,7 @@ void DS1307_Init(I2C_TypeDef *i2c){
 
 	_ds1307_i2c = i2c;
 
-	DS1307_SetClockHalt(0);
+	//DS1307_SetClockHalt(0);
 	//DS1307_SetClockHalt(1);
 }
 //**********************************************************
