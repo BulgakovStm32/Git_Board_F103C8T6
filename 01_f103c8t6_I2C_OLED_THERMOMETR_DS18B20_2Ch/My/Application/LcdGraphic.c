@@ -5,6 +5,9 @@
 static uint8_t  lcdTextBuf[LCD_TEXT_BUFFER_SIZE];	   //буфер для вывода текста
 static uint8_t  lcdVideoBuffer[LCD_VIDEO_BUFFER_SIZE]; //Cache buffer in SRAM 128*64 bits or 1024 bytes
 static uint16_t LcdCacheIdx = 0;                       //Cache index
+
+static uint8_t  UartTextBuffer[128] ={0,};
+static uint16_t UartTextBufferIndex = 0;
 //*****************************
 extern const unsigned char Ascii_Tab_12864[];//Рабочая.
 #define TabAscii	       Ascii_Tab_12864   //Рабочая.
@@ -42,6 +45,12 @@ void Lcd_ClearVideoBuffer(void){
   
 	//забиваем всю память 0
 	for(uint16_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = 0;
+}
+//*****************************************************************************
+uint8_t* UartTextBuf(void){
+
+	UartTextBufferIndex = 0;
+	return UartTextBuffer;
 }
 //*********************************************************************************************
 //*********************************************************************************************
@@ -202,6 +211,8 @@ void Lcd_Chr(uint16_t ch){
 	//Проверка на максимум.
 	//if(ch > LCD_CACHE_SIZE) return;
 	//--------------------
+	UartTextBuffer[UartTextBufferIndex++] = (uint8_t)ch;
+
 	for (i=0; i<5; i++)
 	{
 		//выделяем байт-столбик из символа и грузим в массив - 5 раз

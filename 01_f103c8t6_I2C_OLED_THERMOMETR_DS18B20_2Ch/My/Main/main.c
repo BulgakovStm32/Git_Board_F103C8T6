@@ -87,6 +87,14 @@ void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_BinToDec(sensor->GPIO_PIN, 1, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr(')');
 
+	Lcd_SetCursor(1, 6);
+	Lcd_Print("_Str_");
+
+	Lcd_SetCursor(1, 7);
+	Lcd_Print("_Str_");
+
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("_Str_");
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -94,7 +102,32 @@ void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 #define X_0	   64
 #define Y_0	   0
 #define RADIAN	((2*M_PI)/120.0)
+//************************************************************
+void Task_UartSendData(void){
 
+//	static uint8_t txBuf[] = {"_TERMOMETR_\r"};
+	//-----------------------------
+//	//BinToDecWithDot(timeStamp, txBuf);
+//	txBuf[7] = '\t';
+//
+//	//BinToDecWithoutDot(encodTicks, txBuf+8);
+//	txBuf[14] = '\t';
+//
+//	//BinToDecWithDot(angle, txBuf+15);
+//	txBuf[22] = '\t';
+//
+//	//BinToDecWithDot(speed, txBuf+23);
+//	txBuf[30] = '\r';
+
+
+
+	//DMA1Ch4StartTx(txBuf, sizeof(txBuf)-1);
+	UartTextBuf()[127] = '\r';
+
+	DMA1Ch4StartTx(UartTextBuf(), 128);
+	//-----------------------------
+	Scheduler_SetTimerTask(Task_UartSendData, 1000);
+}
 //************************************************************
 void Task_Temperature_Read(void){
 
@@ -177,6 +210,7 @@ int main(void){
 	Gpio_Init();
 	SysTick_Init();
 	microDelay_Init();
+	Uart1Init(USART1_BRR);
 
 	__enable_irq();
 	msDelay(500);
@@ -225,6 +259,7 @@ int main(void){
 	Scheduler_Init();
 
 	//Постановка задач в очередь.
+	Scheduler_SetTask(Task_UartSendData);
 	Scheduler_SetTask(Task_Temperature_Read);
 	Scheduler_SetTask(Task_Lcd);
 	Scheduler_SetTask(Task_LcdUpdate);

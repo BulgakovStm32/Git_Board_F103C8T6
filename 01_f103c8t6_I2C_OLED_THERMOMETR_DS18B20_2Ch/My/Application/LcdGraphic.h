@@ -31,6 +31,7 @@ void     Lcd_Init		     (void);
 void     Lcd_Update          (void);
 uint8_t* Lcd_pVideoBuffer    (void);
 void     Lcd_ClearVideoBuffer(void);
+uint8_t* UartTextBuf(void);
 
 void Lcd_Filling(uint8_t byte);
 void Lcd_Pixel  (uint8_t x, uint8_t y, uint8_t mode);
