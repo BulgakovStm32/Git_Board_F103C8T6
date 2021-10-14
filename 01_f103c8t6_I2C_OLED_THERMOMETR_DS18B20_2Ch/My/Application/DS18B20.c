@@ -35,16 +35,16 @@ static void OneWire_GpioInit(DS18B20_t *sensor){
 	if(sensor->GPIO_PIN <= 7)
 	{
 		pin = pin * 4;
-		sensor->GPIO_PORT->CRL |=  (0x03 << pin);          //GPIO_CRL_MODEx;
-		sensor->GPIO_PORT->CRL |=  (0x01 << (0x02 << pin));//GPIO_CRL_CNFx_0;
-		sensor->GPIO_PORT->CRL &= ~(0x02 << (0x02 << pin));//GPIO_CRL_CNFx_1;
+		sensor->GPIO_PORT->CRL |=  (0X03 << pin);          //MODEy[1:0] - 11: Output mode, max speed 50 MHz
+		sensor->GPIO_PORT->CRL |=  (0X01 << (0X02 << pin));//CNFy[1:0]  - 01: General purpose output Open-drain
+		sensor->GPIO_PORT->CRL &= ~(0x02 << (0x02 << pin));//
 	}
 	else
 	{
 		pin = (pin - 8) * 4;
-		sensor->GPIO_PORT->CRH |=  (0x03 << pin);          //GPIO_CRL_MODEx;
-		sensor->GPIO_PORT->CRH |=  (0x01 << (0x02 << pin));//GPIO_CRL_CNFx_0;
-		sensor->GPIO_PORT->CRH &= ~(0x02 << (0x02 << pin));//GPIO_CRL_CNFx_1;
+		sensor->GPIO_PORT->CRH |=  (0x03 << pin);          //MODEy[1:0] - 11: Output mode, max speed 50 MHz
+		sensor->GPIO_PORT->CRH |=  (0x01 << (0x02 << pin));//CNFy[1:0]  - 01: General purpose output Open-drain
+		sensor->GPIO_PORT->CRH &= ~(0x02 << (0x02 << pin));//
 	}
 }
 //**********************************************************

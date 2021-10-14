@@ -21,6 +21,7 @@ static Time_t Time;
 
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
+DS18B20_t Sensor_3;
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -82,14 +83,14 @@ void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr('.');
 	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" C(PinA");
+	Lcd_Print(" C (PinA");
 	Lcd_BinToDec(sensor->GPIO_PIN, 1, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr(')');
 
 }
 //*******************************************************************************************
 //*******************************************************************************************
-#define RADIUS 30.0
+#define RADIUS 15.0
 #define X_0	   64
 #define Y_0	   0
 #define RADIAN	((2*M_PI)/120.0)
@@ -99,6 +100,7 @@ void Task_Temperature_Read(void){
 
 	TemperatureSens_ReadTemperature(&Sensor_1);
 	TemperatureSens_ReadTemperature(&Sensor_2);
+	TemperatureSens_ReadTemperature(&Sensor_3);
 	//-----------------------------
 	Scheduler_SetTimerTask(Task_Temperature_Read, 1000);
 }
@@ -109,7 +111,7 @@ void Task_Lcd(void){
 	static uint32_t y1 = 0;
 	static uint32_t secCounter = 0;
 	//-----------------------------
-	//Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
+	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
 
 	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
 	Time_Calculation(secCounter);						     //Преобразование времени
@@ -130,6 +132,7 @@ void Task_Lcd(void){
 	//Вывод темперетуры DS18B20.
 	Temperature_Display(&Sensor_1, 1, 3);
 	Temperature_Display(&Sensor_2, 1, 4);
+	Temperature_Display(&Sensor_3, 1, 5);
 
 	//Рисование графики.
 	float rad_temp = Time.sec * RADIAN;
@@ -161,8 +164,8 @@ void Task_LcdUpdate(void){
 	Lcd_Update();//вывод сделан для SSD1306
 	Lcd_ClearVideoBuffer();
 	//-----------------------------
-	//Scheduler_SetTask(Task_LcdUpdate);
-	Scheduler_SetTimerTask(Task_LcdUpdate, 1000);
+	Scheduler_SetTask(Task_LcdUpdate);
+	//Scheduler_SetTimerTask(Task_LcdUpdate, 1000);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -195,7 +198,7 @@ int main(void){
 	//Ини-я DS18B20
 
 	Sensor_1.GPIO_PORT     = GPIOA;
-	Sensor_1.GPIO_PIN      = 3;
+	Sensor_1.GPIO_PIN      = 1;
 	Sensor_1.SENSOR_NUMBER = 1;
 	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_1);
@@ -209,6 +212,14 @@ int main(void){
 	TemperatureSens_GpioInit(&Sensor_2);
 	TemperatureSens_SetResolution(&Sensor_2);
 	TemperatureSens_StartConvertTemperature(&Sensor_2);
+
+	Sensor_3.GPIO_PORT     = GPIOA;
+	Sensor_3.GPIO_PIN      = 3;
+	Sensor_3.SENSOR_NUMBER = 3;
+	Sensor_3.RESOLUTION    = DS18B20_Resolution_12_bit;
+	TemperatureSens_GpioInit(&Sensor_3);
+	TemperatureSens_SetResolution(&Sensor_3);
+	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
 	//Ини-я диспетчера.
 	Scheduler_Init();
