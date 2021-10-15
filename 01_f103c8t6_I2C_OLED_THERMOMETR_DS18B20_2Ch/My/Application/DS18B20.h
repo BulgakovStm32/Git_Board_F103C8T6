@@ -32,12 +32,21 @@
 
 //**********************************
 typedef enum {
-  SKIP_ROM         = 0xCC,
-  CONVERT_T        = 0x44,
-  READ_SCRATCHPAD  = 0xBE,
-  WRITE_SCRATCHPAD = 0x4E,
-  TH_REGISTER      = 0x4B,
-  TL_REGISTER      = 0x46,
+	SEARCH_ROM 		 = 0xFF,//определить адреса 1-Wire устройств, подключенных к шине.
+	READ_ROM		 = 0x33,//считывать 64-разрядный код устройства.
+	SKIP_ROM         = 0xCC,//обращения ко всем 1-Wire устройствам, подключенным к шине.
+	MATCH_ROM        = 0x55,//обращение к конкретному 1-Wire устройству.
+	ALARM_SAERCH     = 0xEC,//отвечают на данную команду устройства с установленным флагом аварии.
+
+	CONVERT_T        = 0x44,
+	READ_SCRATCHPAD  = 0xBE,
+	WRITE_SCRATCHPAD = 0x4E,
+	COPY_SCRATCHPAD  = 0x48,
+	RECALL_E2		 = 0xB8,
+	READ_PWR_SUPPLY  = 0xB4,
+
+	TH_REGISTER      = 0x4B,
+	TL_REGISTER      = 0x46,
 }DS18B20_Cmd_Enum;
 //**********************************
 typedef enum {
