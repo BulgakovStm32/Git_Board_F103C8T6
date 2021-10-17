@@ -135,7 +135,7 @@ void Task_Temperature_Read(void){
 	TemperatureSens_ReadTemperature(&Sensor_2);
 	TemperatureSens_ReadTemperature(&Sensor_3);
 	//-----------------------------
-	Scheduler_SetTimerTask(Task_Temperature_Read, 1000);
+	//Scheduler_SetTimerTask(Task_Temperature_Read, 1000);
 }
 //************************************************************
 void Task_Lcd(void){
@@ -144,7 +144,7 @@ void Task_Lcd(void){
 	static uint32_t y1 = 0;
 	static uint32_t secCounter = 0;
 	//-----------------------------
-	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
+	//Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
 
 	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
 	Time_Calculation(secCounter);						     //Преобразование времени
@@ -175,7 +175,9 @@ void Task_Lcd(void){
 
 	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
 	//-----------------------------
-	Scheduler_SetTask(Task_Lcd);
+	//Scheduler_SetTask(Task_Lcd);
+
+	LedPC13Toggel();
 }
 //************************************************************
 void Task_LcdUpdate(void){
@@ -197,8 +199,9 @@ void Task_LcdUpdate(void){
 	Lcd_Update();//вывод сделан для SSD1306
 	Lcd_ClearVideoBuffer();
 	//-----------------------------
-	Scheduler_SetTask(Task_LcdUpdate);
+	//Scheduler_SetTask(Task_LcdUpdate);
 	//Scheduler_SetTimerTask(Task_LcdUpdate, 1000);
+	//LedPC13Toggel();
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -216,18 +219,9 @@ int main(void){
 	msDelay(500);
 	//***********************************************
 	//Ини-я OLED SSD1306
-	I2C1_Init();
-	I2C1_DMAInit();
-	SSD1306_Init(SSD1306_I2C);
-
-	//uint8_t TxBuf[32] = {0,};
 	//I2C1_Init();
 	//I2C1_DMAInit();
-	//I2C1_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, TxBuf, 32);
-
-
-
-
+	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я DS18B20
 
@@ -255,20 +249,27 @@ int main(void){
 	TemperatureSens_SetResolution(&Sensor_3);
 	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
-	//Ини-я диспетчера.
-	Scheduler_Init();
+//	//Ини-я диспетчера.
+//	Scheduler_Init();
+//
+//	//Постановка задач в очередь.
+//	Scheduler_SetTask(Task_UartSendData);
+//	Scheduler_SetTask(Task_Temperature_Read);
+//	Scheduler_SetTask(Task_Lcd);
+//	Scheduler_SetTask(Task_LcdUpdate);
 
-	//Постановка задач в очередь.
-	Scheduler_SetTask(Task_UartSendData);
-	Scheduler_SetTask(Task_Temperature_Read);
-	Scheduler_SetTask(Task_Lcd);
-	Scheduler_SetTask(Task_LcdUpdate);
+	RTOS_Init();
+
+	RTOS_SetTask(Task_Temperature_Read, 0, 5);
+	RTOS_SetTask(Task_Lcd, 0, 5);
+	RTOS_SetTask(Task_LcdUpdate, 0, 25);
 	//***********************************************
 	msDelay(500);
 	//************************************************************************************
 	while(1)
 	{
-		Scheduler_Loop();
+		//Scheduler_Loop();
+		RTOS_DispatchLoop();
 		//__WFI();//Sleep
 	}
 	//************************************************************************************
@@ -278,7 +279,9 @@ int main(void){
 //Прерывание каждую милисекунду.
 void SysTick_Handler(void){
 
-	Scheduler_TimerServiceLoop();
+	//Scheduler_TimerServiceLoop();
+	RTOS_TimerServiceLoop();
+
 	msDelay_Loop();
 	Blink_Loop();
 	//-----------------------------

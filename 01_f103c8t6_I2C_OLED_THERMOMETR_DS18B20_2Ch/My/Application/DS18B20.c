@@ -169,95 +169,95 @@ static void DS18B20_ReadTemperature(DS18B20_t *sensor){
  *
  *  \note   See main.c for an example of how to utilize this function.
  */
-unsigned char OWI_SearchRom(uint8_t *bitPattern, uint8_t lastDeviation, uint8_t pin){
-
-	uint8_t currentBit = 1;
-	uint8_t newDeviation = 0;
-	uint8_t bitMask = 0x01;
-	uint8_t bitA;
-	uint8_t bitB;
-
-	// Send SEARCH ROM command on the bus.
-	OWI_SendByte(OWI_ROM_SEARCH, pin);
-
-	// Walk through all 64 bits.
-	while(currentBit <= 64)
-	{
-		// Read bit from bus twice.
-		bitA = OWI_ReadBit(pin);
-		bitB = OWI_ReadBit(pin);
-
-		if (bitA && bitB)
-		{
-			// Both bits 1 (Error).
-			newDeviation = OWI_ROM_SEARCH_FAILED;
-			return SEARCH_ERROR;
-		}
-		else if (bitA ^ bitB)
-		{
-			// Bits A and B are different. All devices have the same bit here.
-			// Set the bit in bitPattern to this value.
-			if (bitA)
-			{
-				(*bitPattern) |= bitMask;
-			}
-			else
-			{
-				(*bitPattern) &= ~bitMask;
-			}
-		}
-		else // Both bits 0
-		{
-			// If this is where a choice was made the last time,
-			// a '1' bit is selected this time.
-			if (currentBit == lastDeviation)
-			{
-				(*bitPattern) |= bitMask;
-			}
-			// For the rest of the id, '0' bits are selected when
-			// discrepancies occur.
-			else if (currentBit > lastDeviation)
-			{
-				(*bitPattern) &= ~bitMask;
-				newDeviation = currentBit;
-			}
-			// If current bit in bit pattern = 0, then this is
-			// out new deviation.
-			else if ( !(*bitPattern & bitMask))
-			{
-				newDeviation = currentBit;
-			}
-			// IF the bit is already 1, do nothing.
-			else
-			{
-
-			}
-		}
-
-
-		// Send the selected bit to the bus.
-		if ((*bitPattern) & bitMask)
-		{
-			OWI_WriteBit1(pin);
-		}
-		else
-		{
-			OWI_WriteBit0(pin);
-		}
-
-		// Increment current bit.
-		currentBit++;
-
-		// Adjust bitMask and bitPattern pointer.
-		bitMask <<= 1;
-		if (!bitMask)
-		{
-			bitMask = 0x01;
-			bitPattern++;
-		}
-	}
-	return newDeviation;
-}
+//unsigned char OWI_SearchRom(uint8_t *bitPattern, uint8_t lastDeviation, uint8_t pin){
+//
+//	uint8_t currentBit = 1;
+//	uint8_t newDeviation = 0;
+//	uint8_t bitMask = 0x01;
+//	uint8_t bitA;
+//	uint8_t bitB;
+//
+//	// Send SEARCH ROM command on the bus.
+//	OWI_SendByte(OWI_ROM_SEARCH, pin);
+//
+//	// Walk through all 64 bits.
+//	while(currentBit <= 64)
+//	{
+//		// Read bit from bus twice.
+//		bitA = OWI_ReadBit(pin);
+//		bitB = OWI_ReadBit(pin);
+//
+//		if (bitA && bitB)
+//		{
+//			// Both bits 1 (Error).
+//			newDeviation = OWI_ROM_SEARCH_FAILED;
+//			return SEARCH_ERROR;
+//		}
+//		else if (bitA ^ bitB)
+//		{
+//			// Bits A and B are different. All devices have the same bit here.
+//			// Set the bit in bitPattern to this value.
+//			if (bitA)
+//			{
+//				(*bitPattern) |= bitMask;
+//			}
+//			else
+//			{
+//				(*bitPattern) &= ~bitMask;
+//			}
+//		}
+//		else // Both bits 0
+//		{
+//			// If this is where a choice was made the last time,
+//			// a '1' bit is selected this time.
+//			if (currentBit == lastDeviation)
+//			{
+//				(*bitPattern) |= bitMask;
+//			}
+//			// For the rest of the id, '0' bits are selected when
+//			// discrepancies occur.
+//			else if (currentBit > lastDeviation)
+//			{
+//				(*bitPattern) &= ~bitMask;
+//				newDeviation = currentBit;
+//			}
+//			// If current bit in bit pattern = 0, then this is
+//			// out new deviation.
+//			else if ( !(*bitPattern & bitMask))
+//			{
+//				newDeviation = currentBit;
+//			}
+//			// IF the bit is already 1, do nothing.
+//			else
+//			{
+//
+//			}
+//		}
+//
+//
+//		// Send the selected bit to the bus.
+//		if ((*bitPattern) & bitMask)
+//		{
+//			OWI_WriteBit1(pin);
+//		}
+//		else
+//		{
+//			OWI_WriteBit0(pin);
+//		}
+//
+//		// Increment current bit.
+//		currentBit++;
+//
+//		// Adjust bitMask and bitPattern pointer.
+//		bitMask <<= 1;
+//		if (!bitMask)
+//		{
+//			bitMask = 0x01;
+//			bitPattern++;
+//		}
+//	}
+//	return newDeviation;
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 void TemperatureSens_GpioInit(DS18B20_t *sensor){
