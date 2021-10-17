@@ -53,8 +53,14 @@ void I2C_Init(I2C_TypeDef *i2c){
 			//Инициализация портов.
 			//I2C1_SCL - PB6
 			//I2C1_SDA - PB7
-			GPIOB->CRL |= GPIO_CRL_MODE6_1 | GPIO_CRL_MODE7_1 |
-					      GPIO_CRL_CNF6    | GPIO_CRL_CNF7;
+			//GPIOB->CRL |= GPIO_CRL_MODE6_1 | GPIO_CRL_MODE7_1 |
+			//		      GPIO_CRL_CNF6    | GPIO_CRL_CNF7;
+
+			//Ремап SCL/PB8, SDA/PB9)
+			AFIO->MAPR |= AFIO_MAPR_I2C1_REMAP;
+			GPIOB->CRH |= GPIO_CRH_MODE8_1 | GPIO_CRH_MODE9_1 |
+					      GPIO_CRH_CNF8    | GPIO_CRH_CNF9;
+
 		}
 	//------------------------------
 	//Тактирование I2C_2
@@ -165,6 +171,109 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 	//---------------------
 	STOP:
 	i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+}
+//**********************************************************
+uint32_t I2C_Write2(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
+
+//	//---------------------
+//	//Формирование Start condition.
+//	i2c->CR1 |= I2C_CR1_START;
+//	while(!(i2c->SR1 & I2C_SR1_SB)){};//Ожидание формирования Start condition.
+//	(void)i2c->SR1;				      //Для сброса флага SB необходимо прочитать SR1
+//
+//	//Передаем адрес slave + Запись.
+//	i2c->DR = deviceAddr | I2C_MODE_WRITE;
+//	while(!(i2c->SR1 & I2C_SR1_ADDR)){};//Ожидаем окончания передачи адреса и
+//	(void)i2c->SR1;				        //сбрасываем бит ADDR (чтением SR1 и SR2):
+//	(void)i2c->SR2;				        //
+//
+//	//Передача адреса в который хотим записать.
+//	i2c->DR = regAddr;
+//	while(!(i2c->SR1 & I2C_SR1_TXE)){};
+//
+//	//передача данных на запись.
+//	for(uint16_t i = 0; i < len; i++)
+//		{
+//			i2c->DR = *(pBuf + i);
+//			//Ждем освобождения буфера
+//			if(I2C_LongWaitTransmitters(i2c)) goto STOP;
+//		}
+//	STOP:
+//	i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+//
+//	return 0;
+	//---------------------
+
+	static uint32_t i2c_state = 0;
+	static uint32_t index = 0;
+
+	switch(i2c_state)
+	{
+		//---------------------
+		//Формирование Start condition.
+		case(0):
+			i2c->CR1 |= I2C_CR1_START;
+			i2c_state = 1;
+		break;
+		//---------------------
+		//Ожидание формирования Start condition.
+		case(1):
+			if(!(i2c->SR1 & I2C_SR1_SB)) break;//Ожидание формирования Start condition.
+			(void)i2c->SR1;				        //Для сброса флага SB необходимо прочитать SR1
+			i2c_state = 2;
+		break;
+		//---------------------
+		//Передаем адрес slave + Запись.
+		case(2):
+			i2c->DR = deviceAddr | I2C_MODE_WRITE;
+			i2c_state = 3;
+		break;
+		//---------------------
+		//Ожидаем окончания передачи адреса
+		case(3):
+			if(!(i2c->SR1 & I2C_SR1_ADDR))break;//Ожидаем окончания передачи адреса и
+			(void)i2c->SR1;				         //сбрасываем бит ADDR (чтением SR1 и SR2):
+			(void)i2c->SR2;				         //
+			i2c_state = 4;
+		break;
+		//---------------------
+		//Передача адреса в который хотим записать.
+		case(4):
+			i2c->DR = regAddr;
+			i2c_state = 5;
+		break;
+		//---------------------
+		//Ожидаем окончания передачи адреса в который хотим записать.
+		case(5):
+			if(!(i2c->SR1 & I2C_SR1_TXE))break;
+			i2c_state = 6;
+		break;
+		//---------------------
+		//передача данных на запись.
+		case(6):
+			i2c->DR = *(pBuf + index);//передаем байт
+			index++;
+			i2c_state = 7;
+		break;
+		//---------------------
+		//Проверка окончания передачи байта
+		case(7):
+			if(!(i2c->SR1 & I2C_SR1_TXE))break;
+
+			if(index <= len) i2c_state = 6;//Продолжение передачи буфера.
+			else             i2c_state = 8;//Окончили передачу буфера.
+
+		break;
+		//---------------------
+		//Формируем Stop
+		case(8):
+			i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+			index     = 0;
+			i2c_state = 0;
+		break;
+		//---------------------
+	}
+	return i2c_state;
 }
 //*******************************************************************************************
 //*******************************************************************************************

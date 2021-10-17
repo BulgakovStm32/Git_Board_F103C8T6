@@ -126,7 +126,7 @@ void Task_UartSendData(void){
 
 	DMA1Ch4StartTx(UartTextBuf(), 128);
 	//-----------------------------
-	Scheduler_SetTimerTask(Task_UartSendData, 1000);
+	//Scheduler_SetTimerTask(Task_UartSendData, 1000);
 }
 //************************************************************
 void Task_Temperature_Read(void){
@@ -144,8 +144,7 @@ void Task_Lcd(void){
 	static uint32_t y1 = 0;
 	static uint32_t secCounter = 0;
 	//-----------------------------
-	//Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
-
+	Led_Blink1(RTOS_GetTickCount());					     //Мигание светодиодами.
 	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
 	Time_Calculation(secCounter);						     //Преобразование времени
 	//-----------------------------
@@ -176,27 +175,28 @@ void Task_Lcd(void){
 	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
 	//-----------------------------
 	//Scheduler_SetTask(Task_Lcd);
-
-	LedPC13Toggel();
 }
 //************************************************************
 void Task_LcdUpdate(void){
 
 	static uint32_t fps      = 0;
 	static uint32_t fps_temp = 0;
+
+	//-----------------------------
+	RTOS_SetTask(Task_Lcd, 0, 0);
 	//-----------------------------
 	//Счетчик кадров в секунду
 	if(!Blink(INTERVAL_1000_mS)) fps_temp++;
 	if(Blink(INTERVAL_1000_mS) && fps_temp != 0)
-		{
-			fps = fps_temp;
-			fps_temp = 0;
-		}
+	{
+		fps = fps_temp;
+		fps_temp = 0;
+	}
 	Lcd_SetCursor(16, 1);
 	Lcd_Print("FPS=");
 	Lcd_BinToDec(fps, 2, LCD_CHAR_SIZE_NORM);
 	//-----------------------------
-	Lcd_Update();//вывод сделан для SSD1306
+	Lcd_Update(); //вывод сделан для SSD1306
 	Lcd_ClearVideoBuffer();
 	//-----------------------------
 	//Scheduler_SetTask(Task_LcdUpdate);
@@ -226,7 +226,7 @@ int main(void){
 	//Ини-я DS18B20
 
 	Sensor_1.GPIO_PORT     = GPIOA;
-	Sensor_1.GPIO_PIN      = 1;
+	Sensor_1.GPIO_PIN      = 2;
 	Sensor_1.SENSOR_NUMBER = 1;
 	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_1);
@@ -234,7 +234,7 @@ int main(void){
 	TemperatureSens_StartConvertTemperature(&Sensor_1);
 
 	Sensor_2.GPIO_PORT     = GPIOA;
-	Sensor_2.GPIO_PIN      = 2;
+	Sensor_2.GPIO_PIN      = 1;
 	Sensor_2.SENSOR_NUMBER = 2;
 	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_2);
@@ -242,7 +242,7 @@ int main(void){
 	TemperatureSens_StartConvertTemperature(&Sensor_2);
 
 	Sensor_3.GPIO_PORT     = GPIOA;
-	Sensor_3.GPIO_PIN      = 3;
+	Sensor_3.GPIO_PIN      = 0;
 	Sensor_3.SENSOR_NUMBER = 3;
 	Sensor_3.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_3);
@@ -260,9 +260,9 @@ int main(void){
 
 	RTOS_Init();
 
-	RTOS_SetTask(Task_Temperature_Read, 0, 5);
-	RTOS_SetTask(Task_Lcd, 0, 5);
-	RTOS_SetTask(Task_LcdUpdate, 0, 25);
+	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
+	//RTOS_SetTask(Task_Lcd, 0, 5);
+	RTOS_SetTask(Task_LcdUpdate, 0, 20);
 	//***********************************************
 	msDelay(500);
 	//************************************************************************************
@@ -281,7 +281,6 @@ void SysTick_Handler(void){
 
 	//Scheduler_TimerServiceLoop();
 	RTOS_TimerServiceLoop();
-
 	msDelay_Loop();
 	Blink_Loop();
 	//-----------------------------
