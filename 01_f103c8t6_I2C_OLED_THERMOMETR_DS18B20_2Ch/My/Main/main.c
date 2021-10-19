@@ -54,47 +54,25 @@ void Led_Blink1(uint32_t millis){
 	}
 }
 //************************************************************
-//void Temperature_Read(void){
-//
-//		   uint32_t millis    = Scheduler_GetTickCount();
-//	static uint32_t millisOld = 0;
-//	//-------------------
-//	if(millis - millisOld >= 1000)
-//	{
-//		millisOld = millis;
-//
-//		TemperatureSens_ReadTemperature(&Sensor_1);
-//		TemperatureSens_ReadTemperature(&Sensor_2);
-//	}
-//}
-//************************************************************
 void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 
 	uint32_t temperature = sensor->TEMPERATURE;
 	//-------------------
 	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_Print("Sens");
-	Lcd_BinToDec(sensor->SENSOR_NUMBER, 1, LCD_CHAR_SIZE_NORM);
-	Lcd_Chr('=');
+	Lcd_PrintBig("Sens");
+	Lcd_BinToDec(sensor->SENSOR_NUMBER, 1, LCD_CHAR_SIZE_BIG);
+	Lcd_PrintBig("= ");
+	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Lcd_ChrBig('-');
+	else                    								Lcd_ChrBig('+');
+	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_BIG);
+	Lcd_ChrBig('.');
+	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_BIG);
+	Lcd_Print("o ");
+	Lcd_ChrBig('C');
 
-	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Lcd_Chr('-');
-	else                    								Lcd_Chr('+');
-
-	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_NORM);
-	Lcd_Chr('.');
-	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" C (PinA");
-	Lcd_BinToDec(sensor->GPIO_PIN, 1, LCD_CHAR_SIZE_NORM);
-	Lcd_Chr(')');
-
-	Lcd_SetCursor(1, 6);
-	Lcd_Print("_Str_");
-
-	Lcd_SetCursor(1, 7);
-	Lcd_Print("_Str_");
-
-	Lcd_SetCursor(1, 8);
-	Lcd_Print("_Str_");
+//	Lcd_Print(" (PinA");
+//	Lcd_BinToDec(sensor->GPIO_PIN, 1, LCD_CHAR_SIZE_NORM);
+//	Lcd_Chr(')');
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -140,8 +118,8 @@ void Task_Temperature_Read(void){
 //************************************************************
 void Task_Lcd(void){
 
-	static uint32_t x1 = 0;
-	static uint32_t y1 = 0;
+	//static uint32_t x1 = 0;
+	//static uint32_t y1 = 0;
 	static uint32_t secCounter = 0;
 	//-----------------------------
 	Led_Blink1(RTOS_GetTickCount());					     //Мигание светодиодами.
@@ -163,39 +141,35 @@ void Task_Lcd(void){
 
 	//Вывод темперетуры DS18B20.
 	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 4);
-	Temperature_Display(&Sensor_3, 1, 5);
+	Temperature_Display(&Sensor_2, 1, 5);
+	Temperature_Display(&Sensor_3, 1, 7);
 
 	//Рисование графики.
-	float rad_temp = Time.sec * RADIAN;
-
-	x1 = (uint32_t)(X_0 + RADIUS * (float)cos(rad_temp));
-	y1 = (uint32_t)(Y_0 + RADIUS * (float)sin(rad_temp));
-
-	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
+//	float rad_temp = Time.sec * RADIAN;
+//	x1 = (uint32_t)(X_0 + RADIUS * (float)cos(rad_temp));
+//	y1 = (uint32_t)(Y_0 + RADIUS * (float)sin(rad_temp));
+//	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
 	//-----------------------------
 	//Scheduler_SetTask(Task_Lcd);
 }
 //************************************************************
 void Task_LcdUpdate(void){
 
-	static uint32_t fps      = 0;
-	static uint32_t fps_temp = 0;
-
-	//-----------------------------
-	RTOS_SetTask(Task_Lcd, 0, 0);
 	//-----------------------------
 	//Счетчик кадров в секунду
-	if(!Blink(INTERVAL_1000_mS)) fps_temp++;
-	if(Blink(INTERVAL_1000_mS) && fps_temp != 0)
-	{
-		fps = fps_temp;
-		fps_temp = 0;
-	}
-	Lcd_SetCursor(16, 1);
-	Lcd_Print("FPS=");
-	Lcd_BinToDec(fps, 2, LCD_CHAR_SIZE_NORM);
+	//static uint32_t fps      = 0;
+	//static uint32_t fps_temp = 0;
+	//if(!Blink(INTERVAL_1000_mS)) fps_temp++;
+	//if(Blink(INTERVAL_1000_mS) && fps_temp != 0)
+	//{
+	//	fps = fps_temp;
+	//	fps_temp = 0;
+	//}
+	//Lcd_SetCursor(16, 1);
+	//Lcd_Print("FPS=");
+	//Lcd_BinToDec(fps, 2, LCD_CHAR_SIZE_NORM);
 	//-----------------------------
+	RTOS_SetTask(Task_Lcd, 0, 0);
 	Lcd_Update(); //вывод сделан для SSD1306
 	Lcd_ClearVideoBuffer();
 	//-----------------------------
@@ -261,7 +235,6 @@ int main(void){
 	RTOS_Init();
 
 	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	//RTOS_SetTask(Task_Lcd, 0, 5);
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
 	//***********************************************
 	msDelay(500);
@@ -283,9 +256,6 @@ void SysTick_Handler(void){
 	RTOS_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
-	//-----------------------------
-	//Измерение ~U: F=50Гц, Uамп = 1В, смещенеи 1,6В.
-	//AC_MeasLoop();
 }
 //*******************************************************************************************
 //******************************************************************************************
