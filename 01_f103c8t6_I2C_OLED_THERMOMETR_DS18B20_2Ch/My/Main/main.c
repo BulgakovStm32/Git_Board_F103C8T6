@@ -192,11 +192,6 @@ int main(void){
 	__enable_irq();
 	msDelay(500);
 	//***********************************************
-	//Ини-я OLED SSD1306
-	//I2C1_Init();
-	//I2C1_DMAInit();
-	SSD1306_Init(SSD1306_I2C);
-	//***********************************************
 	//Ини-я DS18B20
 
 	Sensor_1.GPIO_PORT     = GPIOA;
@@ -223,6 +218,11 @@ int main(void){
 	TemperatureSens_SetResolution(&Sensor_3);
 	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
+	//Ини-я OLED SSD1306
+	//I2C1_Init();
+	//I2C1_DMAInit();
+	SSD1306_Init(SSD1306_I2C);
+	//***********************************************
 //	//Ини-я диспетчера.
 //	Scheduler_Init();
 //
@@ -237,7 +237,7 @@ int main(void){
 	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
 	//***********************************************
-	msDelay(500);
+	//msDelay(500);
 	//************************************************************************************
 	while(1)
 	{
