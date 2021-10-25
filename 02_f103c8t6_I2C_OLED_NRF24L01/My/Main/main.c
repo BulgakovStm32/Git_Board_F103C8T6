@@ -23,6 +23,15 @@ static Time_t Time;
 
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
+
+
+//---------------------------
+typedef struct{
+	uint8_t STATUS_Reg;
+
+}NRF24L01_t;
+
+NRF24L01_t	NRF24L01;
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -100,8 +109,7 @@ void Task_Lcd(void){
 	static uint32_t y1 = 0;
 	static uint32_t secCounter = 0;
 	//-----------------------------
-	Led_Blink1(Scheduler_GetTickCount());//Мигание светодиодами.
-
+	Led_Blink1(Scheduler_GetTickCount());                    //Мигание светодиодами.
 	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
 	Time_Calculation(secCounter);						     //Преобразование времени
 	//-----------------------------
@@ -118,18 +126,18 @@ void Task_Lcd(void){
 	Lcd_Chr(':');
 	Lcd_BinToDec(Time.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
 
-	//Вывод темперетуры DS18B20.
-//	Temperature_Read();
-//	Temperature_Display(&Sensor_1, 1, 3);
-//	Temperature_Display(&Sensor_2, 1, 4);
+	//Вывод регистра STATUS
+	Lcd_SetCursor(1, 3);
+	Lcd_Print("reg'STATUS' = 0x");
+	Lcd_u8ToHex(NRF24L01.STATUS_Reg);
+
+
 
 	//Рисование графики.
-	float rad_temp = Time.sec * RADIAN;
-
-	x1 = (uint32_t)(X_0 + RADIUS * (float)cos(rad_temp));
-	y1 = (uint32_t)(Y_0 + RADIUS * (float)sin(rad_temp));
-
-	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
+//	float rad_temp = Time.sec * RADIAN;
+//	x1 = (uint32_t)(X_0 + RADIUS * (float)cos(rad_temp));
+//	y1 = (uint32_t)(Y_0 + RADIUS * (float)sin(rad_temp));
+//	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
 	//-----------------------------
 	Scheduler_SetTask(Task_Lcd);
 	//Scheduler_SetTimerTask(Task_Lcd, 50);
@@ -156,18 +164,27 @@ void Task_LcdUpdate(void){
 	Lcd_ClearVideoBuffer();
 	//-----------------------------
 	//Scheduler_SetTask(Task_LcdUpdate);
-	Scheduler_SetTimerTask(Task_LcdUpdate, 20);
+	Scheduler_SetTimerTask(Task_LcdUpdate, 10);
 }
 //************************************************************
 void Task_Spi(void){
 
-	//SPI_TxRxByte(SPI1, 0xFF);
+	SPI_TxRxByte(SPI1, 0xFF);
 	LedPC13Toggel();
 	//-----------------------------
-	Scheduler_SetTimerTask(Task_Spi, 5);
+	Scheduler_SetTimerTask(Task_Spi, 100);
 }
 //*******************************************************************************************
 //*******************************************************************************************
+#define NRF24_CE_HIGHT()   (GPIOA->BSRR = GPIO_BSRR_BS3)
+#define NRF24_CE_LOW()     (GPIOA->BSRR = GPIO_BSRR_BR3)
+#define NRF24_CE_TOGGEL()  (GPIOA->ODR ^= GPIO_ODR_ODR3)
+
+#define NRF24_CSN_HIGHT()  (GPIOA->BSRR = GPIO_BSRR_BS2)
+#define NRF24_CSN_LOW()    (GPIOA->BSRR = GPIO_BSRR_BR2)
+#define NRF24_CSN_TOGGEL() (GPIOA->ODR ^= GPIO_ODR_ODR2)
+
+
 int main(void){
 
 	//-----------------------------
@@ -175,7 +192,7 @@ int main(void){
 	Sys_Init();
 	Gpio_Init();
 	SysTick_Init();
-	SPI_Init(SPI1);
+	//SPI_Init(SPI1);
 	microDelay_Init();
 
 	__enable_irq();
@@ -203,9 +220,25 @@ int main(void){
 //	TemperatureSens_StartConvertTemperature(&Sensor_2);
 	//***********************************************
 	//Инициализация NRF24L01.
-	NRF_Init();
+	//NRF_Init();
+
+	//PA2 - NRF24_CSN,
+	//PA3 - NRF24_CE.
+	GPIOA->CRL &= ~(GPIO_CRL_CNF2 | GPIO_CRL_CNF3);  //выход, режим - push-pull.
+	GPIOA->CRL |=  (GPIO_CRL_MODE2 | GPIO_CRL_MODE3);//тактирование 50МГц.
+
+	//PA5(SPI1_SCK) - выход, альтернативный режим push-pull.
+	//PA6(SPI1_MISO) - вход,
+	//PA7(SPI1_MOSI) - выход, альтернативный режим push-pull.
+	SPI_Init(SPI1);
 
 
+	//Чтение статуса из NRF24L01
+	NRF24_CSN_LOW();
+
+	NRF24L01.STATUS_Reg = SPI_TxRxByte(SPI1, NOP);
+
+	NRF24_CSN_HIGHT();
 	//***********************************************
 	//Ини-я диспетчера.
 	Scheduler_Init();
@@ -215,7 +248,7 @@ int main(void){
 	Scheduler_SetTask(Task_LcdUpdate);
 	Scheduler_SetTask(Task_Spi);
 	//***********************************************
-	msDelay(500);
+	//msDelay(500);
 	//************************************************************************************
 	while(1)
 	{
