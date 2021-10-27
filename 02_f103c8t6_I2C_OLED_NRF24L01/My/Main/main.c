@@ -152,19 +152,19 @@ void Task_LcdUpdate(void){
 	if(!Blink(INTERVAL_1000_mS)) fps_temp++;
 	if(Blink(INTERVAL_1000_mS) && fps_temp != 0)
 	{
-		fps = fps_temp;
+		fps = fps_temp >> 3;//делим не 8 т.к. вывод на дисплей производится за 8 проходов.
 		fps_temp = 0;
 	}
 
-	Lcd_SetCursor(16, 1);
+	Lcd_SetCursor(14, 1);
 	Lcd_Print("FPS=");
-	Lcd_BinToDec(fps, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(fps, 4, LCD_CHAR_SIZE_NORM);
 	//-----------------------------
 	Lcd_Update();//вывод сделан для SSD1306
 	Lcd_ClearVideoBuffer();
 	//-----------------------------
-	//Scheduler_SetTask(Task_LcdUpdate);
-	Scheduler_SetTimerTask(Task_LcdUpdate, 10);
+	Scheduler_SetTask(Task_LcdUpdate);
+	//Scheduler_SetTimerTask(Task_LcdUpdate, 10);
 }
 //************************************************************
 void Task_Spi(void){
