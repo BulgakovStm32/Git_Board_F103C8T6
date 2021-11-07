@@ -115,7 +115,7 @@ void Task_Lcd(void){
 	//-----------------------------
 	//Шапка
 	Lcd_SetCursor(1, 1);
-	Lcd_Print("_NRF24L01_");
+	Lcd_Print("-NRF24L01-");
 
 	//Вывод времени.
 	Lcd_SetCursor(1, 2);
@@ -128,7 +128,7 @@ void Task_Lcd(void){
 
 	//Вывод регистра STATUS
 	Lcd_SetCursor(1, 3);
-	Lcd_Print("reg'STATUS' = 0x");
+	Lcd_Print("reg_STATUS = 0x");
 	Lcd_u8ToHex(NRF24L01.STATUS_Reg);
 
 

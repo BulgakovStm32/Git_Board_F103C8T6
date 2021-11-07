@@ -68,6 +68,7 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 
 	/* Init LCD */
 	ssd1306_I2C_WriteCMD(0xAE); //display off
+
 	ssd1306_I2C_WriteCMD(0x20); //Set Memory Addressing Mode
 	ssd1306_I2C_WriteCMD(0x00); //00,Horizontal Addressing Mode;
 							    //01,Vertical Addressing Mode;
@@ -77,14 +78,18 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 	ssd1306_I2C_WriteCMD(0xB0); //Set Page Start Address for Page Addressing Mode,0-7
 
 	ssd1306_I2C_WriteCMD(0xC8); //Set COM Output Scan Direction
+	//ssd1306_I2C_WriteCMD(0xC0); //Set COM Output Scan Direction
+
 	ssd1306_I2C_WriteCMD(0x00); //---set low column address
 	ssd1306_I2C_WriteCMD(0x10); //---set high column address
-	ssd1306_I2C_WriteCMD(0x40); //--set start line address
+	ssd1306_I2C_WriteCMD(0x40); //---set start line address
 
 	ssd1306_I2C_WriteCMD(0x81); //--set contrast control register
-	ssd1306_I2C_WriteCMD(50);
+	ssd1306_I2C_WriteCMD(50);   //0-255
 
 	ssd1306_I2C_WriteCMD(0xA1); //--set segment re-map 0 to 127
+	//ssd1306_I2C_WriteCMD(0xA0);
+
 	ssd1306_I2C_WriteCMD(0xA6); //--set normal display
 	ssd1306_I2C_WriteCMD(0xA8); //--set multiplex ratio(1 to 64)
 	ssd1306_I2C_WriteCMD(0x3F); //
@@ -98,7 +103,8 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 	ssd1306_I2C_WriteCMD(0x22); //
 
 	ssd1306_I2C_WriteCMD(0xDA); //--set com pins hardware configuration
-	ssd1306_I2C_WriteCMD(0x12);
+	//ssd1306_I2C_WriteCMD(0x12);//SSD1306 128x64
+	ssd1306_I2C_WriteCMD(0x22);//SSD1306 128x32
 
 	ssd1306_I2C_WriteCMD(0xDB); //--set vcomh
 	ssd1306_I2C_WriteCMD(0x20); //0x20,0.77xVcc
@@ -198,7 +204,7 @@ void SSD1306_UpdateScreen(uint8_t *pBuf) {
 	else m = 0;
 
 
-//    //Передача данных для дисплея 0,95"
+    //Передача данных для дисплея 0,95"
 //	ssd1306_I2C_WriteCMD(0x20);//настройка адресации
 //	ssd1306_I2C_WriteCMD(0x00);//
 //
@@ -211,7 +217,6 @@ void SSD1306_UpdateScreen(uint8_t *pBuf) {
 //	ssd1306_I2C_WriteCMD(7);   //Конечная страница.
 //
 //	ssd1306_I2C_WriteDataBuf(pBuf, 1024);
-
 }
 //***********************************************************************
 void SSD1306_ToggleInvert(void) {
