@@ -174,6 +174,39 @@ void Task_Spi(void){
 	//-----------------------------
 	Scheduler_SetTimerTask(Task_Spi, 100);
 }
+//************************************************************
+static uint8_t  txtBuf[128] = {0, };
+static uint16_t txtBufIndex = 0;
+
+//-----------------------------
+void Txt_Chr(uint8_t ch){
+
+  if(txtBufIndex < 128) txtBuf[txtBufIndex++] = ch;
+}
+//-----------------------------
+uint8_t Txt_Print(char *txt){
+
+  uint8_t i = 0;
+  //--------------------
+  //ClearTextBuf();
+  while(*txt)
+    {
+	  Txt_Chr(*txt++);
+      i++;
+    }
+  Txt_Chr('\n');
+  i++;
+  return i;
+}
+//-----------------------------
+void Task_Uart(void){
+
+	Txt_Print("123456");
+	DMA1Ch4StartTx(txtBuf, txtBufIndex);
+	txtBufIndex = 0;
+	//-----------------------------
+	Scheduler_SetTimerTask(Task_Uart, 1000);
+}
 //*******************************************************************************************
 //*******************************************************************************************
 #define NRF24_CE_HIGHT()   (GPIOA->BSRR = GPIO_BSRR_BS3)
@@ -193,6 +226,7 @@ int main(void){
 	Gpio_Init();
 	SysTick_Init();
 	//SPI_Init(SPI1);
+	Uart1Init(USART1_BRR);
 	microDelay_Init();
 
 	__enable_irq();
@@ -247,6 +281,7 @@ int main(void){
 	Scheduler_SetTask(Task_Lcd);
 	Scheduler_SetTask(Task_LcdUpdate);
 	Scheduler_SetTask(Task_Spi);
+	Scheduler_SetTask(Task_Uart);
 	//***********************************************
 	//msDelay(500);
 	//************************************************************************************
