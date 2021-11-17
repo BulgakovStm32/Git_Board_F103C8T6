@@ -165,7 +165,7 @@ void Task_LcdUpdate(void){
 void Task_Spi(void){
 
 	SPI_TxRxByte(SPI1, 0xFF);
-	LedPC13Toggel();
+	//LedPC13Toggel();
 	//-----------------------------
 	Scheduler_SetTimerTask(Task_Spi, 100);
 }
@@ -283,6 +283,9 @@ int main(void){
 	Uart1Init(USART1_BRR);
 	microDelay_Init();
 
+	TIM4_Init();
+	TIM4_SetFreq(5200 * 2);
+
 	__enable_irq();
 	msDelay(500);
 	//***********************************************
@@ -307,6 +310,7 @@ int main(void){
 //	TemperatureSens_SetResolution(&Sensor_2);
 //	TemperatureSens_StartConvertTemperature(&Sensor_2);
 	//***********************************************
+
 	//Инициализация ETR
 
 	//Тактирование TIM2 и GPIOA, PA0 input-float
@@ -355,4 +359,14 @@ void SysTick_Handler(void){
 	//LedPC13Toggel();
 }
 //*******************************************************************************************
-//******************************************************************************************
+//*******************************************************************************************
+//Прерывание TIM4.
+void TIM4_IRQHandler(void){
+
+	TIM4->SR  &= ~TIM_SR_UIF; //Сброс флага прерывания.
+	//TIM4->CR1 &= ~TIM_CR1_CEN;//Counter dasable.
+
+	//LedPC13Toggel();
+}
+//*******************************************************************************************
+//*******************************************************************************************
