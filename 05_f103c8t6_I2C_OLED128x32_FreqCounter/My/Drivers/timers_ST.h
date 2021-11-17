@@ -20,6 +20,8 @@ void TIM3_InitForPWM(void);
 
 void TIM1_InitForCapture(void);
 
+void TIM3_InitForEncoder(void);
+
 void TIM4_Init(void);
 void TIM4_SetFreq(uint32_t freq);
 //*******************************************************************************************

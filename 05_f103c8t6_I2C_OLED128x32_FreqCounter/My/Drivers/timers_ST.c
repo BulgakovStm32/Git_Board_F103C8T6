@@ -71,6 +71,60 @@ void TIM1_InitForCapture(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+/*
+ *
+ */
+void TIM3_InitForEncoder(void){
+
+	/*
+	 * Настройка ножки микроконтроллера.
+	 * PA6 - TIM3_CH1
+	 * PA7 - TIM3_CH2
+	 */
+	/* Тактирование GPIOA и Alternative Func */
+	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN;
+
+	//PA6 - TIM3_CH1.
+	GPIOA->CRL &= ~(0b11 << GPIO_CRL_MODE6_Pos);// 00: Input mode (reset state)
+	GPIOA->CRL |=  (0b10 << GPIO_CRL_CNF6_Pos); // 10: Input with pull-up / pull-down
+	GPIOA->ODR |=   GPIO_ODR_ODR6;				// pull-up
+
+	//PA7 - TIM3_CH2.
+	GPIOA->CRL &= ~(0b11 << GPIO_CRL_MODE7_Pos);// 00: Input mode (reset state)
+	GPIOA->CRL |=  (0b10 << GPIO_CRL_CNF7_Pos); // 10: Input with pull-up / pull-down
+	GPIOA->ODR |=   GPIO_ODR_ODR7;				// pull-up
+
+	/* Encoder Initialization */
+	/* TIM3 Clock */
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+
+	//TIM3->PSC = 4;
+	TIM3->ARR = 100 * 2;  //Счёт выполняется от 0 до значения в регистре TIMx_ARR
+
+	//CC1S[1:0]: выбор направления для канала x.
+	TIM3->CCMR1 |= (0b01 << TIM_CCMR1_CC1S_Pos);//01:канал CC1 настроен как вход, сигнал IC1 подключен к TI1
+	TIM3->CCMR1 |= (0b01 << TIM_CCMR1_CC2S_Pos);//01:канал CC2 настроен как вход, сигнал IC2 подключен к TI2
+
+	//ICxPSC[1:0]: предделитель для входного канала ICx.
+	TIM3->CCMR1 |= (0b11 << TIM_CCMR1_IC1PSC_Pos);//11: захват выполняется каждые 8 выбранных событий на входе
+	TIM3->CCMR1 |= (0b11 << TIM_CCMR1_IC2PSC_Pos);//11: захват выполняется каждые 8 выбранных событий на входе
+
+	//IC1F[3:0]: настройка частоты сэмплирования и времени дэмпфирования для цифрового фильтра входного сигнала канала x.
+	TIM3->CCMR1 |= (0b1010 << TIM_CCMR1_IC1F_Pos);//1010: fSAMPLING = fDTS/16, N=5
+	TIM3->CCMR1 |= (0b1010 << TIM_CCMR1_IC2F_Pos);//1010: fSAMPLING = fDTS/16, N=5
+
+	//CCxP: определение активных полярностей входных и выходных сигналов канала x.
+	TIM3->CCER &= ~(TIM_CCER_CC1P  | TIM_CCER_CC2P);//
+	TIM3->CCER &= ~(TIM_CCER_CC1NP | TIM_CCER_CC2NP);//
+
+	//SMS[2:0](slave mode selection): эти биты определяют режим работы слэйв-контроллера (что и как будет делать слэйв-контроллер).
+	TIM3->SMCR |= (0b001 << TIM_SMCR_SMS_Pos);//001: Encoder Mode 1 — счётчик считает вверх/вниз по фронту на TI2FP2 в зависимости от уровня на TI1FP1
+
+	/* 1: Counter enabled */
+	TIM3->CR1 |= TIM_CR1_CEN;
+}
+//*******************************************************************************************
+//*******************************************************************************************
 void TIM4_Init(void){
 
 	//Включение тактирования таймера.

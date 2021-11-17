@@ -24,9 +24,7 @@ static Time_t Time;
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
 
-
-//---------------------------
-
+uint32_t EncoderReg = 0;
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -118,6 +116,13 @@ void Task_Lcd(void){
 	Lcd_BinToDec(Time.min, 2, LCD_CHAR_SIZE_NORM); //минуты
 	Lcd_Chr(':');
 	Lcd_BinToDec(Time.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
+
+	//Вывод значения счетного регистра TIM3
+	EncoderReg = (TIM3->CNT >> 1);
+
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("TIM3_CNT= ");
+	Lcd_BinToDec(EncoderReg, 4, LCD_CHAR_SIZE_NORM);
 
 	//Вывод регистра STATUS
 //	Lcd_SetCursor(1, 3);
@@ -286,6 +291,10 @@ int main(void){
 	TIM4_Init();
 	TIM4_SetFreq(5200 * 2);
 
+
+	TIM3_InitForEncoder();
+
+
 	__enable_irq();
 	msDelay(500);
 	//***********************************************
@@ -343,6 +352,7 @@ int main(void){
 	while(1)
 	{
 		Scheduler_Loop();
+		//EncoderReg = TIM3->CNT;
 		//__WFI();//Sleep
 	}
 	//************************************************************************************
