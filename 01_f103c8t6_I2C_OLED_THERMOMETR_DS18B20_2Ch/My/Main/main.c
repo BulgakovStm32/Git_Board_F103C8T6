@@ -40,17 +40,17 @@ void Time_Calculation(uint32_t count){
 	Time.sec  =  count % 60;
 }
 //************************************************************
-void Led_Blink1(uint32_t millis){
+uint32_t Led_Blink(uint32_t millis, uint32_t period, uint32_t switch_on_time){
 
 	static uint32_t millisOld = 0;
 	static uint32_t flag      = 0;
 	//-------------------
-	if((millis - millisOld) >= (flag ? 900 : 100 ))
+	if((millis - millisOld) >= (flag ? (period - switch_on_time) : switch_on_time ))
 	{
 		millisOld = millis;
 		flag = !flag;
-		LedPC13Toggel();
 	}
+	return flag;
 }
 //************************************************************
 void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
@@ -99,7 +99,11 @@ void Task_Lcd(void){
 
 	static uint32_t secCounter = 0;
 	//-----------------------------
-	Led_Blink1(RTOS_GetTickCount());					     //Мигание светодиодами.
+	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
+	else										 LedPC13Off();
+
+
+	//Мигание светодиодами.
 	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
 	Time_Calculation(secCounter);						     //Преобразование времени
 	//-----------------------------
@@ -126,20 +130,6 @@ void Task_Lcd(void){
 //************************************************************
 void Task_LcdUpdate(void){
 
-	//-----------------------------
-	//Счетчик кадров в секунду
-	//static uint32_t fps      = 0;
-	//static uint32_t fps_temp = 0;
-	//if(!Blink(INTERVAL_1000_mS)) fps_temp++;
-	//if(Blink(INTERVAL_1000_mS) && fps_temp != 0)
-	//{
-	//	fps = fps_temp;
-	//	fps_temp = 0;
-	//}
-	//Lcd_SetCursor(16, 1);
-	//Lcd_Print("FPS=");
-	//Lcd_BinToDec(fps, 2, LCD_CHAR_SIZE_NORM);
-	//-----------------------------
 	RTOS_SetTask(Task_Lcd, 0, 0);
 	Lcd_Update(); //вывод сделан для SSD1306
 	Lcd_ClearVideoBuffer();
@@ -171,7 +161,6 @@ void Task_UartSend(void){
 
 	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
 	Txt_Buf()->bufIndex = 0;
-	//-----------------------------
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -184,12 +173,8 @@ int main(void){
 	SysTick_Init();
 	microDelay_Init();
 	Uart1Init(USART1_BRR);
-
-	__enable_irq();
-	msDelay(500);
 	//***********************************************
 	//Ини-я DS18B20
-
 	Sensor_1.GPIO_PORT     = GPIOA;
 	Sensor_1.GPIO_PIN      = 2;
 	Sensor_1.SENSOR_NUMBER = 1;
@@ -217,7 +202,7 @@ int main(void){
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
-//	//Ини-я диспетчера.
+	//Ини-я диспетчера.
 //	Scheduler_Init();
 //
 //	//Постановка задач в очередь.
@@ -232,7 +217,8 @@ int main(void){
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
 	RTOS_SetTask(Task_UartSend, 0, 1000);
 	//***********************************************
-	//msDelay(500);
+	microDelay(100000);
+	__enable_irq();
 	//************************************************************************************
 	while(1)
 	{
