@@ -118,7 +118,8 @@ void Task_Lcd(void){
 	Lcd_BinToDec(Time.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
 
 	//Вывод значения счетного регистра TIM3
-	EncoderReg = (TIM3->CNT >> 1);
+	EncoderReg = (TIM3_GetCounter() >> 1);//На каждый щелчок энкодера таймер меняется на 2.
+										  //по этому делим на 2.
 
 	Lcd_SetCursor(1, 4);
 	Lcd_Print("TIM3_CNT= ");
@@ -170,7 +171,7 @@ void Task_LcdUpdate(void){
 void Task_Spi(void){
 
 	SPI_TxRxByte(SPI1, 0xFF);
-	//LedPC13Toggel();
+	LedPC13Toggel();
 	//-----------------------------
 	Scheduler_SetTimerTask(Task_Spi, 100);
 }
@@ -291,8 +292,8 @@ int main(void){
 	TIM4_Init();
 	TIM4_SetFreq(5200 * 2);
 
-
 	TIM3_InitForEncoder();
+	TIM3_SetCounter(81);
 
 
 	__enable_irq();
@@ -319,7 +320,6 @@ int main(void){
 //	TemperatureSens_SetResolution(&Sensor_2);
 //	TemperatureSens_StartConvertTemperature(&Sensor_2);
 	//***********************************************
-
 	//Инициализация ETR
 
 	//Тактирование TIM2 и GPIOA, PA0 input-float
@@ -352,7 +352,6 @@ int main(void){
 	while(1)
 	{
 		Scheduler_Loop();
-		//EncoderReg = TIM3->CNT;
 		//__WFI();//Sleep
 	}
 	//************************************************************************************
