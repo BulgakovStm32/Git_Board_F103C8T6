@@ -173,6 +173,8 @@ int main(void){
 	SysTick_Init();
 	microDelay_Init();
 	Uart1Init(USART1_BRR);
+
+	microDelay(100000);
 	//***********************************************
 	//Ини-я DS18B20
 	Sensor_1.GPIO_PORT     = GPIOA;
@@ -212,12 +214,10 @@ int main(void){
 //	Scheduler_SetTask(Task_LcdUpdate);
 
 	RTOS_Init();
-
 	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
 	RTOS_SetTask(Task_UartSend, 0, 1000);
 	//***********************************************
-	microDelay(100000);
 	__enable_irq();
 	//************************************************************************************
 	while(1)
