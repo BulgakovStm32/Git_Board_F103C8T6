@@ -25,7 +25,7 @@ void Uart1Init(uint16_t usartBrr){
  	//Инициализация портов. PA9(U1TX), PA10(U1RX).
 	GPIOA->CRH &= ~(GPIO_CRH_CNF9 | GPIO_CRH_CNF10);	
 	GPIOA->CRH |= GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9;//PA9(U1TX)  - выход, альтернативный режим push-pull.																							 //PA9(U1TX) - тактирование 50МГц.
-	GPIOA->CRH |= GPIO_CRH_CNF10_0;				         //PA10(U1RX) - Floating input.
+	GPIOA->CRH |= GPIO_CRH_CNF10_0;				   //PA10(U1RX) - Floating input.
   //--------------------
   //Инициализация USART1.
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN;//Включение тактирование USART1.

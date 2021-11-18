@@ -18,7 +18,6 @@ typedef struct{
 
 static Time_t Time;
 //---------------------------
-
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
 DS18B20_t Sensor_3;
@@ -69,44 +68,24 @@ void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_BIG);
 	Lcd_Print("o ");
 	Lcd_ChrBig('C');
+}
+//************************************************************
+void Temperature_TxtDisplay(DS18B20_t *sensor){
 
-//	Lcd_Print(" (PinA");
-//	Lcd_BinToDec(sensor->GPIO_PIN, 1, LCD_CHAR_SIZE_NORM);
-//	Lcd_Chr(')');
+	uint32_t temperature = sensor->TEMPERATURE;
+	//-------------------
+	Txt_Print("Sens");
+	Txt_BinToDec(sensor->SENSOR_NUMBER, 1);
+	Txt_Print("= ");
+	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Txt_Chr('-');
+	else                    								Txt_Chr('+');
+	Txt_BinToDec(temperature/10, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(temperature%10, 1);
+	Txt_Print(" C\n");
 }
 //*******************************************************************************************
 //*******************************************************************************************
-#define RADIUS 15.0
-#define X_0	   64
-#define Y_0	   0
-#define RADIAN	((2*M_PI)/120.0)
-//************************************************************
-void Task_UartSendData(void){
-
-//	static uint8_t txBuf[] = {"_TERMOMETR_\r"};
-	//-----------------------------
-//	//BinToDecWithDot(timeStamp, txBuf);
-//	txBuf[7] = '\t';
-//
-//	//BinToDecWithoutDot(encodTicks, txBuf+8);
-//	txBuf[14] = '\t';
-//
-//	//BinToDecWithDot(angle, txBuf+15);
-//	txBuf[22] = '\t';
-//
-//	//BinToDecWithDot(speed, txBuf+23);
-//	txBuf[30] = '\r';
-
-
-
-	//DMA1Ch4StartTx(txBuf, sizeof(txBuf)-1);
-	UartTextBuf()[127] = '\r';
-
-	DMA1Ch4StartTx(UartTextBuf(), 128);
-	//-----------------------------
-	//Scheduler_SetTimerTask(Task_UartSendData, 1000);
-}
-//************************************************************
 void Task_Temperature_Read(void){
 
 	TemperatureSens_ReadTemperature(&Sensor_1);
@@ -118,8 +97,6 @@ void Task_Temperature_Read(void){
 //************************************************************
 void Task_Lcd(void){
 
-	//static uint32_t x1 = 0;
-	//static uint32_t y1 = 0;
 	static uint32_t secCounter = 0;
 	//-----------------------------
 	Led_Blink1(RTOS_GetTickCount());					     //Мигание светодиодами.
@@ -128,27 +105,21 @@ void Task_Lcd(void){
 	//-----------------------------
 	//Шапка
 	Lcd_SetCursor(1, 1);
-	Lcd_Print("_THERMOMETER_");
+	Lcd_Print("_THERMOMETER_(+BT)");
 
 	//Вывод времени.
 	Lcd_SetCursor(1, 2);
 	Lcd_Print("Time: ");
 	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
 	Lcd_Chr(':');
-	Lcd_BinToDec(Time.min, 2, LCD_CHAR_SIZE_NORM); //минуты
+	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM); //минуты
 	Lcd_Chr(':');
-	Lcd_BinToDec(Time.sec, 2, LCD_CHAR_SIZE_NORM); //секунды
+	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM); //секунды
 
 	//Вывод темперетуры DS18B20.
 	Temperature_Display(&Sensor_1, 1, 3);
 	Temperature_Display(&Sensor_2, 1, 5);
 	Temperature_Display(&Sensor_3, 1, 7);
-
-	//Рисование графики.
-//	float rad_temp = Time.sec * RADIAN;
-//	x1 = (uint32_t)(X_0 + RADIUS * (float)cos(rad_temp));
-//	y1 = (uint32_t)(Y_0 + RADIUS * (float)sin(rad_temp));
-//	Lcd_Line(X_0, Y_0, x1, y1, PIXEL_ON);
 	//-----------------------------
 	//Scheduler_SetTask(Task_Lcd);
 }
@@ -176,6 +147,31 @@ void Task_LcdUpdate(void){
 	//Scheduler_SetTask(Task_LcdUpdate);
 	//Scheduler_SetTimerTask(Task_LcdUpdate, 1000);
 	//LedPC13Toggel();
+}
+//************************************************************
+void Task_UartSend(void){
+
+	Txt_Chr('\f');
+
+	Txt_Print("_THERMOMETER_(+BT)\n");
+
+	Txt_Print("Time: ");
+	Txt_BinToDec(Time.hour, 2);//часы
+	Txt_Chr(':');
+	Txt_BinToDec(Time.min, 2); //минуты
+	Txt_Chr(':');
+	Txt_BinToDec(Time.sec, 2); //секунды
+	Txt_Chr('\n');
+
+	//Вывод темперетуры DS18B20.
+	Temperature_TxtDisplay(&Sensor_1);
+	Temperature_TxtDisplay(&Sensor_2);
+	Temperature_TxtDisplay(&Sensor_3);
+	//Txt_Chr('\n');
+
+	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
+	Txt_Buf()->bufIndex = 0;
+	//-----------------------------
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -219,8 +215,6 @@ int main(void){
 	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
 	//Ини-я OLED SSD1306
-	//I2C1_Init();
-	//I2C1_DMAInit();
 	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 //	//Ини-я диспетчера.
@@ -236,6 +230,7 @@ int main(void){
 
 	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
+	RTOS_SetTask(Task_UartSend, 0, 1000);
 	//***********************************************
 	//msDelay(500);
 	//************************************************************************************
