@@ -11,11 +11,11 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-static uint8_t   I2C_SlaveAddr;
-static uint8_t  *I2C_pBuf;
-static uint16_t  I2C_TxCnt;
-static uint8_t   I2C_TxSize;
-static uint8_t   I2C_Mode;
+//static uint8_t   I2C_SlaveAddr;
+//static uint8_t  *I2C_pBuf;
+//static uint16_t  I2C_TxCnt;
+//static uint8_t   I2C_TxSize;
+//static uint8_t   I2C_Mode;
 //*******************************************************************************************
 //*******************************************************************************************
 static uint32_t I2C_LongWaitTransmitters(I2C_TypeDef *i2c){
