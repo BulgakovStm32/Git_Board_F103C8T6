@@ -132,13 +132,8 @@ static void DS18B20_ReadTemperature(DS18B20_t *sensor){
 	if(data & 0x0000F800)
 	{
 		sensor->TEMPERATURE_SIGN = DS18B20_SIGN_NEGATIVE;
-
 		data  = (data ^ 0x0000FFFF) + 1;
 		data &= 0x00000FFF;//Маска для выделения 12 бит.
-
-//			data  = ~data;
-//			data += 1;
-//			data &= 0x00000FFF;
 	}
 	else sensor->TEMPERATURE_SIGN = DS18B20_SIGN_POSITIVE;
 

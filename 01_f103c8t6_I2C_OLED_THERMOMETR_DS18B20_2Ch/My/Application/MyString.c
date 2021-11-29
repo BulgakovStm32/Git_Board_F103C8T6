@@ -76,7 +76,29 @@ uint8_t Txt_BinToDec(uint32_t var, uint32_t num){
 	return num+1;
 }
 //**********************************************************
+void Txt_u8ToHex(uint8_t var){
 
+	uint8_t ch;
+	//--------------------
+	ch = (var >> 4) & 0x0F;
+	if(ch <= 9) ch += '0';
+	else		ch += ('A' - 10);
+	Txt_Chr(ch);
+
+	ch = var & 0x0F;
+	if(ch <= 9) ch += '0';
+	else		ch += ('A' - 10);
+	Txt_Chr(ch);
+}
+//**********************************************************
+void Txt_u32ToHex(uint32_t var){
+
+	Txt_Print("0x");
+	Txt_u8ToHex((uint8_t)((var & 0xFF000000) >> 24));
+	Txt_u8ToHex((uint8_t)((var & 0x00FF0000) >> 16));
+	Txt_u8ToHex((uint8_t)((var & 0x0000FF00) >> 8));
+	Txt_u8ToHex((uint8_t)( var & 0x000000FF));
+}
 //**********************************************************
 
 //**********************************************************

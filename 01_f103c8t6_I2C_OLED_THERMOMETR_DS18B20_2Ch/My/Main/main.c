@@ -218,7 +218,10 @@ void Task_LcdUpdate(void){
 //************************************************************
 void Task_UartSend(void){
 
+	//--------------------------------
 	Txt_Chr('\f');
+
+	Txt_Print("******************\n");
 
 	Txt_Print("_THERMOMETER_(+BT)\n");
 
@@ -236,6 +239,45 @@ void Task_UartSend(void){
 	Temperature_TxtDisplay(&Sensor_3);
 	//Txt_Chr('\n');
 
+	//--------------------------------
+	//Вывод данных DS2782.
+	//Вывод адреса на шине I2C
+	Txt_Chr('\n');
+	Txt_Print("DS2782_I2C_ADDR:");
+	Txt_Print("0x");
+	Txt_u8ToHex(DS2782.I2C_Address);
+	Txt_Chr('\n');
+
+	//Вывод Unique ID (factory option)
+	Txt_Print("DS2782_ID:");
+	Txt_Print("0x");
+	Txt_u8ToHex(DS2782.ID);
+	Txt_Chr('\n');
+
+	//Вывод температуры.
+	Txt_Print("Bat_T=");
+	Txt_BinToDec(DS2782.Temperature/10, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(DS2782.Temperature%10, 1);
+	Txt_Print(" C");
+	Txt_Chr('\n');
+
+	//Вывод напряжения на АКБ.
+	Txt_Print("Bat_U=");
+	Txt_BinToDec(DS2782.Voltage/100, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(DS2782.Voltage%100, 2);
+	Txt_Chr('V');
+	Txt_Chr('\n');
+
+	//Вывод тока потребления от АКБ.
+	Txt_Print("Bat_I=");
+	if(DS2782.Current < 0)Txt_Chr('-');
+	else                  Txt_Chr(' ');
+
+	Txt_Chr('\n');
+	Txt_Print("******************\n");
+	//--------------------------------
 	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
 	Txt_Buf()->bufIndex = 0;
 }

@@ -14,7 +14,7 @@
 //#include "core_cm3.h"
 
 //*******************************************************************************************
-#define TXT_BUF_SIZE	128
+#define TXT_BUF_SIZE	256
 
 //**********************************
 typedef struct{
@@ -36,7 +36,8 @@ TxtBuf_t* Txt_Buf(void);
 void 	  Txt_Chr(uint8_t ch);
 uint8_t   Txt_Print(char *txt);
 uint8_t   Txt_BinToDec(uint32_t var, uint32_t num);
-
+void      Txt_u8ToHex(uint8_t var);
+void      Txt_u32ToHex(uint32_t var);
 
 //*******************************************************************************************
 //*******************************************************************************************
