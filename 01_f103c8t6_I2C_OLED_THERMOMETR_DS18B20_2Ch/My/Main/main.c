@@ -112,7 +112,7 @@ void Task_DS2782(void){
 	DS2782_GetID(&DS2782);         //получение Unique ID (factory option)
 	DS2782_GetTemperature(&DS2782);//получение температуры.
 	DS2782_GetVoltage(&DS2782);    //получение напряжения на АКБ.
-//	DS2782_GetCurrent(&DS2782);    //получения тока потребления от АКБ.
+	DS2782_GetCurrent(&DS2782);    //получения тока потребления от АКБ.
 
 	//Расчет кулонов.
 //	uint16_t coulombTemp = 0;
@@ -159,15 +159,20 @@ void Task_Lcd_DS2782(void){
 	Lcd_Chr('V');
 
 	//Вывод тока потребления от АКБ.
+	int16_t temp = DS2782.Current;
+
 	Lcd_SetCursor(1, 7);
 	Lcd_Print("Bat_I=");
-	if(DS2782.Current < 0)Lcd_Chr('-');
-	else                  Lcd_Chr(' ');
 
-//	uint32_t temp = (DS2782.Current ^ 0xffff) + 1;	//Уберем знак
-//
-//	Lcd_BinToDec((uint32_t)temp, 4, LCD_CHAR_SIZE_NORM);
-//	Lcd_Print("mA");
+	if(temp < 0)
+	{
+		temp = (temp ^ 0xFFFF) + 1;//Уберем знак.
+		Lcd_Chr('-');
+	}
+	else Lcd_Chr(' ');
+
+	Lcd_BinToDec(temp, 4, LCD_CHAR_SIZE_NORM);
+	Lcd_Print("mA");
 }
 //************************************************************
 void Task_Temperature_Read(void){

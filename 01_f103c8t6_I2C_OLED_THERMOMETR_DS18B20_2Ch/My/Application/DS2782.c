@@ -67,14 +67,12 @@ void DS2782_GetVoltage(DS2782_t *ds){
 	ds->Voltage = ((adcTemp + 500000) / 1000000);
 }
 //************************************************************
-//Не отлажено!!
+//Получения тока потребления от АКБ.
 void DS2782_GetCurrent(DS2782_t *ds){
 
-	//Получения тока потребления от АКБ.
 	uint16_t temp = DS2782_ReadADC(Register_CURRENT, 2);
 	int16_t  currentTemp = ( ((temp << 8) & 0xFF00) | ((temp >> 8) & 0x00FF) );
-
-	int32_t currentAdcTemp = currentTemp * 1563;
+	int32_t  currentAdcTemp = currentTemp * 1563;
 	ds->Current = ((currentAdcTemp + 5000) / 10000);
 }
 //************************************************************
