@@ -173,6 +173,11 @@ void Task_Lcd_DS2782(void){
 
 	Lcd_BinToDec(temp, 4, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("mA");
+
+	//Вывод значения встроенного АЦП. Канал 8(PB0).
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("ADC=");
+	Lcd_BinToDec(Adc_GetMeas(8), 5, LCD_CHAR_SIZE_NORM);
 }
 //************************************************************
 void Task_Temperature_Read(void){
@@ -297,6 +302,7 @@ int main(void){
 	SysTick_Init();
 	microDelay_Init();
 	Uart1Init(USART1_BRR);
+	Adc_Init();
 
 	microDelay(100000);//Эта задержка нужна для стабилизации напряжения патания.
 					   //Без задержки LCD-дисплей не работает.

@@ -21,7 +21,7 @@
 //-----------------------------------------------------------------------------
 //Аппатартный уровень.
 void     Adc_Init(void);
-uint16_t Adc_GetMeas(uint8_t channel);
+uint32_t Adc_GetMeas(uint8_t channel);
 uint16_t Adc_GetRegDR(ADC_TypeDef *adc);
 
 uint16_t Adc_GetRegJDRx(ADC_TypeDef *adc, uint8_t ch);

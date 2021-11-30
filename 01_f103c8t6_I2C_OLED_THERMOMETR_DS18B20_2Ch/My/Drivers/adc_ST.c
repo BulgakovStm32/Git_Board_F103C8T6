@@ -17,9 +17,12 @@ void Adc_Init(void){
 //					GPIO_CRL_CNF5 | GPIO_CRL_MODE5 );//PC5 - аналоговый вход.
 
 
-	GPIOA->CRL &= ~(GPIO_CRL_CNF0 | GPIO_CRL_MODE0 | //PA0 - аналоговый вход.
-					GPIO_CRL_CNF1 | GPIO_CRL_MODE1 | //PA1 - аналоговый вход.
-					GPIO_CRL_CNF2 | GPIO_CRL_MODE2 );//PA2 - аналоговый вход.
+//	GPIOA->CRL &= ~(GPIO_CRL_CNF0 | GPIO_CRL_MODE0 | //PA0 - аналоговый вход.
+//					GPIO_CRL_CNF1 | GPIO_CRL_MODE1 | //PA1 - аналоговый вход.
+//					GPIO_CRL_CNF2 | GPIO_CRL_MODE2 );//PA2 - аналоговый вход.
+
+	GPIOB->CRL &= ~(GPIO_CRL_CNF0 | GPIO_CRL_MODE0 | //PB0 - аналоговый вход.
+					GPIO_CRL_CNF1 | GPIO_CRL_MODE1 );//PB1 - аналоговый вход.
 	//--------------------	
 	RCC->CFGR &= ~RCC_CFGR_ADCPRE;	   //
 	RCC->CFGR |=  RCC_CFGR_ADCPRE_DIV8;//предделитель 8 (72МГц/8 = 9МГц).
@@ -69,13 +72,14 @@ void Adc_Loop(void){
 }
 //-----------------------------------------------------------------------------
 //Одно измерение АЦП.
-uint16_t Adc_GetMeas(uint8_t adcChannel){
+uint32_t Adc_GetMeas(uint8_t adcChannel){
   
 	ADC1->SQR3 = adcChannel;      	  //загрузить номер канала.
 	ADC1->CR2 |= ADC_CR2_SWSTART;     //запуск преобразования в регулярном канале.
 	while(!(ADC1->SR & ADC_SR_EOC)){};//дождаться окончания преобразования
 	//Вычитать значение самокалибровки ненужно, АЦП это делает сам.
-	return (uint16_t)((ADC1->DR * ADC_QUANT) / 10000);//(uint16_t)((ADC1->DR * 8068) / 10000);
+	//return (uint16_t)((ADC1->DR * ADC_QUANT) / 10000);//(uint16_t)((ADC1->DR * 8068) / 10000);
+	return ADC1->DR;
 }
 //-----------------------------------------------------------------------------
 uint16_t Adc_GetRegDR(ADC_TypeDef *adc){
