@@ -174,10 +174,36 @@ void Task_Lcd_DS2782(void){
 	Lcd_BinToDec(temp, 4, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("mA");
 
-	//Вывод значения встроенного АЦП. Канал 8(PB0).
+
+	//----------------------------------------------
+	//Вывод значения встроенного АЦП.
+	#define VREF      2480UL 				  	//Опроное напряжение в мв. Измеряется внешним вольтметром как можно точнее.
+	#define VDD		  3254UL 				  	//Напряжение питания в мв. Измеряется внешним вольтметром как можно точнее.
+	#define ADC_RES	  4096UL 				    //Количество квантов АЦП. 2^12 = 4096.
+	#define ADC_QUANT ((VDD * 10000) / ADC_RES) //Вес кванта АЦП.
+	#define K_RESIST_DIVIDE 2
+
+	#define ADC_CH_VREF  9    //канал АЦП, к которому подключен внешний ИОН.
+	#define ADC_CH_MEAS  8    //канал АЦП, которым измеряем напряжениа на АКБ.
+
+	//Измерение напряжения АКБ.
+	uint32_t adcCode = Adc_GetMeas(ADC_CH_MEAS);
+	adcCode = (adcCode * ADC_QUANT) / 5000; //(adcCode * ADC_QUANT) / 10000;
+
+	Lcd_SetCursor(14, 1);
+	Lcd_Print("BAT:");
+	Lcd_BinToDec(adcCode, 4, LCD_CHAR_SIZE_NORM);
+
+	//Измерение напряжения внешнего ИОН.
+	adcCode = Adc_GetMeas(ADC_CH_VREF);
 	Lcd_SetCursor(1, 8);
 	Lcd_Print("ADC=");
-	Lcd_BinToDec(Adc_GetMeas(8), 5, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(adcCode, 5, LCD_CHAR_SIZE_NORM);
+
+	//Расчет напряжения питания через внешний ИОН.
+	adcCode = (VREF * ADC_RES) / adcCode;
+	Lcd_Print(" Vdd=");
+	Lcd_BinToDec(adcCode, 5, LCD_CHAR_SIZE_NORM);
 }
 //************************************************************
 void Task_Temperature_Read(void){
