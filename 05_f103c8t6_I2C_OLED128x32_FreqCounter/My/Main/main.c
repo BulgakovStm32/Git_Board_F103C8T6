@@ -232,7 +232,6 @@ int main(void){
 	TIM3_InitForEncoder();
 	TIM3_SetCounter(81);
 
-
 	__enable_irq();
 	msDelay(500);
 	//***********************************************
