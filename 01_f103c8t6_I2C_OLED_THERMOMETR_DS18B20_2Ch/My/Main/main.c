@@ -105,6 +105,31 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//Вывод значения встроенного АЦП.
+#define VREF      2480UL 				  	//Опроное напряжение в мв. Измеряется внешним вольтметром как можно точнее.
+#define VDD		  3254UL 				  	//Напряжение питания в мв. Измеряется внешним вольтметром как можно точнее.
+#define ADC_RES	  4096UL 				    //Количество квантов АЦП. 2^12 = 4096.
+#define ADC_QUANT ((VDD * 10000) / ADC_RES) //Вес кванта АЦП.
+#define K_RESIST_DIVIDE 2
+
+#define ADC_CH_VREF  9    //канал АЦП, к которому подключен внешний ИОН.
+#define ADC_CH_MEAS  8    //канал АЦП, которым измеряем напряжениа на АКБ.
+
+typedef struct{
+	uint32_t Bat_V;
+	uint32_t Vdd_V;
+	uint32_t Vref_V;
+}AdcMeas_t;
+
+AdcMeas_t	AdcMeas;
+//----------------------------------------------
+void Task_AdcMeas(void){
+
+	AdcMeas.Bat_V  = ((Adc_GetMeas(ADC_CH_MEAS) * ADC_QUANT) / 10000) * K_RESIST_DIVIDE;//Измерение напряжения АКБ.
+	AdcMeas.Vref_V = Adc_GetMeas(ADC_CH_VREF);	                   //Измерение напряжения внешнего ИОН.
+	AdcMeas.Vdd_V  = (VREF * ADC_RES) / Adc_GetMeas(ADC_CH_VREF);  //Расчет напряжения питания через внешний ИОН.
+}
+//************************************************************
 //Работа с микросхемой DS2782.
 void Task_DS2782(void){
 
@@ -113,16 +138,6 @@ void Task_DS2782(void){
 	DS2782_GetTemperature(&DS2782);//получение температуры.
 	DS2782_GetVoltage(&DS2782);    //получение напряжения на АКБ.
 	DS2782_GetCurrent(&DS2782);    //получения тока потребления от АКБ.
-
-	//Расчет кулонов.
-//	uint16_t coulombTemp = 0;
-//
-//	Coulomb_Calc(currentAdcTemp);
-//
-//	Lcd_SetCursor(1, 8);
-//	Lcd_Print("Coulomb=");
-//	Lcd_BinToDec(coulombTemp, 4, LCD_CHAR_SIZE_NORM);
-//	Lcd_Print("q");
 }
 //************************************************************
 void Task_Lcd_DS2782(void){
@@ -174,36 +189,22 @@ void Task_Lcd_DS2782(void){
 	Lcd_BinToDec(temp, 4, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("mA");
 
-
 	//----------------------------------------------
 	//Вывод значения встроенного АЦП.
-	#define VREF      2480UL 				  	//Опроное напряжение в мв. Измеряется внешним вольтметром как можно точнее.
-	#define VDD		  3254UL 				  	//Напряжение питания в мв. Измеряется внешним вольтметром как можно точнее.
-	#define ADC_RES	  4096UL 				    //Количество квантов АЦП. 2^12 = 4096.
-	#define ADC_QUANT ((VDD * 10000) / ADC_RES) //Вес кванта АЦП.
-	#define K_RESIST_DIVIDE 2
-
-	#define ADC_CH_VREF  9    //канал АЦП, к которому подключен внешний ИОН.
-	#define ADC_CH_MEAS  8    //канал АЦП, которым измеряем напряжениа на АКБ.
 
 	//Измерение напряжения АКБ.
-	uint32_t adcCode = Adc_GetMeas(ADC_CH_MEAS);
-	adcCode = (adcCode * ADC_QUANT) / 5000; //(adcCode * ADC_QUANT) / 10000;
-
 	Lcd_SetCursor(14, 1);
 	Lcd_Print("BAT:");
-	Lcd_BinToDec(adcCode, 4, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(AdcMeas.Bat_V, 4, LCD_CHAR_SIZE_NORM);
 
 	//Измерение напряжения внешнего ИОН.
-	adcCode = Adc_GetMeas(ADC_CH_VREF);
 	Lcd_SetCursor(1, 8);
 	Lcd_Print("ADC=");
-	Lcd_BinToDec(adcCode, 5, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(Adc_GetMeas(ADC_CH_VREF), 5, LCD_CHAR_SIZE_NORM);
 
 	//Расчет напряжения питания через внешний ИОН.
-	adcCode = (VREF * ADC_RES) / adcCode;
 	Lcd_Print(" Vdd=");
-	Lcd_BinToDec(adcCode, 5, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(AdcMeas.Vdd_V, 5, LCD_CHAR_SIZE_NORM);
 }
 //************************************************************
 void Task_Temperature_Read(void){
@@ -378,6 +379,7 @@ int main(void){
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
 	RTOS_SetTask(Task_UartSend, 0, 1000);
 	RTOS_SetTask(Task_DS2782, 0, 250);
+	RTOS_SetTask(Task_AdcMeas, 0, 250);
 	//***********************************************
 	__enable_irq();
 	//************************************************************************************
