@@ -28,4 +28,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>00_Lib</name>
+			<type>2</type>
+			<location>D:/04_Git/Git_Board_F103C8T6/00_Lib</location>
+		</link>
+	</linkedResources>
 </projectDescription>
