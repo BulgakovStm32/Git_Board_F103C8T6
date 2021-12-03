@@ -4,7 +4,6 @@
  *  Created on: 20 дек. 2020 г.
  *      Author: Zver
  */
-
 #ifndef I2C_ST_H_
 #define I2C_ST_H_
 //*******************************************************************************************
@@ -37,14 +36,14 @@ void I2C_Init(I2C_TypeDef *i2c);
 void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
 void I2C_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
 
-
+//Работа через DMA. Не отлажена!!!
 void I2C1_Init(void);
 void I2C1_DMAInit(void);
 void I2C1_DMAStartTx(uint8_t *pData, uint32_t size);
 void I2C1_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t size);
 
 uint32_t I2C_Write2(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
-//работа по прерываниям. Не отлажена!!!
+//Работа по прерываниям. Не отлажена!!!
 void I2C_Int_Init(I2C_TypeDef *i2c);
 void I2C_Int_StartSendData(I2C_TypeDef *i2c, uint8_t slaveAddr, uint8_t *pBuf, uint16_t len);
 //*******************************************************************************************

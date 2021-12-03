@@ -16,6 +16,9 @@
 //static uint16_t  I2C_TxCnt;
 //static uint8_t   I2C_TxSize;
 //static uint8_t   I2C_Mode;
+
+static I2C_TypeDef	*selectedI2C1;
+static I2C_TypeDef	*selectedI2C2;
 //*******************************************************************************************
 //*******************************************************************************************
 static uint32_t I2C_LongWaitTransmitters(I2C_TypeDef *i2c){
@@ -91,8 +94,9 @@ void I2C_Init(I2C_TypeDef *i2c){
 	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;//Включаем тактирование GPIOB
 	//------------------------------
 	//Тактирование I2C_1
-	if(i2c == I2C1)
+	if((i2c == I2C1) && (selectedI2C1 != I2C1))
 		{
+			selectedI2C1 = I2C1;
 			RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 			//Инициализация портов.
 			//I2C1_SCL - PB6
@@ -104,12 +108,12 @@ void I2C_Init(I2C_TypeDef *i2c){
 			AFIO->MAPR |= AFIO_MAPR_I2C1_REMAP;
 			GPIOB->CRH |= GPIO_CRH_MODE8_1 | GPIO_CRH_MODE9_1 |
 					      GPIO_CRH_CNF8    | GPIO_CRH_CNF9;
-
 		}
 	//------------------------------
 	//Тактирование I2C_2
-	if(i2c == I2C2)
+	else if((i2c == I2C2) && (selectedI2C2 != I2C2))
 		{
+			selectedI2C1 = I2C2;
 			RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
 			//Инициализация портов.
 			//I2C2_SCL - PB10
@@ -117,6 +121,7 @@ void I2C_Init(I2C_TypeDef *i2c){
 			GPIOB->CRH |= GPIO_CRH_MODE10_1 | GPIO_CRH_MODE11_1 |
 						  GPIO_CRH_CNF10    | GPIO_CRH_CNF11;
 		}
+	else return;
 	//------------------------------
 	//Инициализация I2C.
 	i2c->CR2  &= ~I2C_CR2_FREQ;   //
@@ -134,20 +139,18 @@ void I2C_Init(I2C_TypeDef *i2c){
 //**********************************************************
 void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
-//	uint32_t wait_count = 0;
-	//---------------------
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
-	while(!(i2c->SR1 & I2C_SR1_SB)){};//Ожидание формирования Start condition.
-	(void)i2c->SR1;				      //Для сброса флага SB необходимо прочитать SR1
+	if(I2C_LongWaitStartCondition(i2c)) return;//Ожидание формирования Start condition.
+	(void)i2c->SR1;				               //Для сброса флага SB необходимо прочитать SR1
 	//Передаем адрес slave + Запись.
 	i2c->DR = deviceAddr | I2C_MODE_WRITE;
-	while(!(i2c->SR1 & I2C_SR1_ADDR)){};//Ожидаем окончания передачи адреса и
-	(void)i2c->SR1;				        //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;				        //
+	if(I2C_LongWaitAddressSend(i2c)) return;//Ожидаем окончания передачи адреса
+	(void)i2c->SR1;				             //сбрасываем бит ADDR (чтением SR1 и SR2):
+	(void)i2c->SR2;				             //
 	//Передача адреса в который хотим записать.
 	i2c->DR = regAddr;
-	while(!(i2c->SR1 & I2C_SR1_TXE)){};
+	if(I2C_LongWaitTransmitters(i2c)) return;
 	//передача данных на запись.
 	for(uint16_t i = 0; i < len; i++)
 		{
