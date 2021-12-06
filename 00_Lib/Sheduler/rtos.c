@@ -1,5 +1,5 @@
 /*
- *
+ * rtos.c
  *
  *    Created on:
  *        Author:
@@ -8,13 +8,12 @@
  * За основу взят планировщик задач с сайта ChipEnable.ru
  * http://chipenable.ru/index.php/programming-avr/item/110-planirovschik.html
  */
-
 #include "rtos.h"
 //*******************************************************************************************
 //*******************************************************************************************
 
 volatile static Task_t   TaskArray[MAX_TASKS];// очередь задач
-volatile static uint16_t arrayTail = 0;		  // "хвост" очереди
+volatile static uint32_t arrayTail = 0;		  // "хвост" очереди
 volatile static uint32_t TickCount = 0;		  //
 
 //*******************************************************************************************
@@ -48,7 +47,7 @@ void RTOS_Init(void){
 /* Добавление задачи в список
  *
  */
-void RTOS_SetTask(void(*taskFunc)(void), uint16_t taskDelay, uint16_t taskPeriod){
+void RTOS_SetTask(void(*taskFunc)(void), uint32_t taskDelay, uint32_t taskPeriod){
    
    if(!taskFunc) return;
 

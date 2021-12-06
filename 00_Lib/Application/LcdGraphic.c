@@ -371,7 +371,7 @@ void Lcd_Image(const uint8_t *imageData){
     }
 }
 //*****************************************************************************
-uint8_t Lcd_BinToDec(uint16_t var, uint8_t num, uint8_t charSize){
+uint8_t Lcd_BinToDec(uint16_t var, uint8_t num, lcd_char_size_e charSize){
 
 	uint8_t DecArray[5];
 	uint8_t	temp;

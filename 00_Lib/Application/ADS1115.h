@@ -12,14 +12,66 @@
 #include "main.h"
 
 //*******************************************************************************************
-#define ADS1115_ADDR (0b1001000 << 1)
-#define ADS1115_I2C	I2C2
+#define ADS1115_I2C_ADDR 	(0b1001000 << 1)
+#define ADS1115_I2C			I2C2
 
+//Регистры ADS1115.
+#define ADS1115_CONVERSION_REG_ADDR	 0 //Регистр хранения результата преобразования
+#define ADS1115_CONFIG_REG_ADDR		 1 //Конфигурационный регистр
+#define ADS1115_LoTHRESHOLD_REG_ADDR 2 //Регистр уставки, минимальное значение	
+#define ADS1115_HiTHRESHOLD_REG_ADDR 3 //Регистр уставки, максимальное значение	00000011
+
+//Описание регистра конфигурации ADS1115_CONFIG_REG.
+//MUX - Настройка мультиплексора.
+#define ADS1115_MUX_Pos			12
+#define ADS1115_MUX_AIN0_AIN1	0 //AINp=AIN0 и AINn=AIN1 (умолч)
+#define ADS1115_MUX_AIN0_AIN3	1 //AINp=AIN0 и AINn=AIN3
+#define ADS1115_MUX_AIN1_AIN3	2 //AINp=AIN1 и AINn=AIN3
+#define ADS1115_MUX_AIN2_AIN3	3 //AINp=AIN2 и AINn=AIN3
+#define ADS1115_MUX_AIN0_GND	4 //AINp=AIN0 и AINn=GND
+#define ADS1115_MUX_AIN1_GND	5 //AINp=AIN1 и AINn=GND
+#define ADS1115_MUX_AIN2_GND	6 //AINp=AIN2 и AINn=GND
+#define ADS1115_MUX_AIN3_GND	7 //AINp=AIN3 и AINn=GND
+
+//PGA - Коэффициент усиления усилителя
+#define ADS1115_PGA_Pos			9
+#define ADS1115_PGA_2_3			0 //FS=±6,144 В
+#define ADS1115_PGA_1			1 //FS=±4,096 В
+#define ADS1115_PGA_2			2 //FS=±2,048 В  (умолч.)
+#define ADS1115_PGA_4			3 //FS=±1,024 В
+#define ADS1115_PGA_8			4 //FS=±0,512 В
+#define ADS1115_PGA_16			5 //FS=±0,256 В
+//#define ADS1115_PGA_16		6 //FS=±0,256 В
+//#define ADS1115_PGA_16		7 //FS=±0,256 В
+
+//MODE - Режим работы.
+#define ADS1115_MODE_Pos		8
+#define ADS1115_MODE_CONTINUOUS	0 //Непрерывное преобразование
+#define ADS1115_MODE_SINGLE		1 //Одиночное преобразование, режим пониженного потребления (умолч)
+
+//DR - Частота дискретизации.
+#define ADS1115_DR_Pos			5
+#define ADS1115_DR_8Hz			0
+#define ADS1115_DR_16Hz			1
+#define ADS1115_DR_32Hz			2
+#define ADS1115_DR_64Hz			3
+#define ADS1115_DR_128Hz		4 //128 ГЦ (умолч)
+#define ADS1115_DR_250Hz		5
+#define ADS1115_DR_475Hz		6
+#define ADS1115_DR_860Hz		7
+//**********************************
+typedef struct{
+	I2C_TypeDef *i2c;
+	uint8_t		I2cAddr;
+	uint16_t	ConfigReg;
+	uint16_t	ConversionReg;
+}ADS1115_t;
 //*******************************************************************************************
 //*******************************************************************************************
-void 	 ADS1115_Init(I2C_TypeDef *i2c);
-uint16_t ADS1115_GetData(void);
-void   	 ADS1115_SelectInput(uint8_t ch);
+void 	 ADS1115_Init(ADS1115_t *ads1115);
+void     ADS1115_SelectChannel(ADS1115_t *ads1115, uint32_t ch);
+uint16_t ADS1115_GetAdcData(ADS1115_t *ads1115);
+void     ADS1115_ReadAdcData(ADS1115_t *ads1115);
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* ADS1115_H_ */

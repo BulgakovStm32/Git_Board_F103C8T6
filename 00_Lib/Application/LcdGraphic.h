@@ -22,9 +22,15 @@
 #define PIXEL_ON	        1
 #define PIXEL_XOR	        2
 //режимы отображения символов - используются в функциях вывода текстов.
-#define LCD_CHAR_SIZE_NORM	0
-#define LCD_CHAR_SIZE_BIG	1
-#define LCD_CHAR_SIZE_BOLD	2
+typedef enum{
+	LCD_CHAR_SIZE_NORM = 0,
+	LCD_CHAR_SIZE_BIG,
+	LCD_CHAR_SIZE_BOLD,
+}lcd_char_size_e;
+
+//#define LCD_CHAR_SIZE_NORM	0
+//#define LCD_CHAR_SIZE_BIG	1
+//#define LCD_CHAR_SIZE_BOLD	2
 //*******************************************************************************************
 //*******************************************************************************************
 void     Lcd_Init		     (void);
@@ -51,7 +57,7 @@ uint8_t Lcd_PrintBold(char *txt);
 uint8_t Lcd_PrintBig (char *txt);
 void Lcd_Image       (const uint8_t *imageData);
 
-uint8_t Lcd_BinToDec(uint16_t var, uint8_t num, uint8_t charSize);
+uint8_t Lcd_BinToDec(uint16_t var, uint8_t num, lcd_char_size_e charSize);
 void    Lcd_u8ToHex (uint8_t hexChar);
 void    Lcd_u32ToHex(uint32_t varHex);
 //*******************************************************************************************
