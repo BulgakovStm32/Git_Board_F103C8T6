@@ -24,14 +24,14 @@
 //Описание регистра конфигурации ADS1115_CONFIG_REG.
 //MUX - Настройка мультиплексора.
 #define ADS1115_MUX_Pos			12
-#define ADS1115_MUX_AIN0_AIN1	0 //AINp=AIN0 и AINn=AIN1 (умолч)
-#define ADS1115_MUX_AIN0_AIN3	1 //AINp=AIN0 и AINn=AIN3
-#define ADS1115_MUX_AIN1_AIN3	2 //AINp=AIN1 и AINn=AIN3
-#define ADS1115_MUX_AIN2_AIN3	3 //AINp=AIN2 и AINn=AIN3
-#define ADS1115_MUX_AIN0_GND	4 //AINp=AIN0 и AINn=GND
-#define ADS1115_MUX_AIN1_GND	5 //AINp=AIN1 и AINn=GND
-#define ADS1115_MUX_AIN2_GND	6 //AINp=AIN2 и AINn=GND
-#define ADS1115_MUX_AIN3_GND	7 //AINp=AIN3 и AINn=GND
+#define ADS1115_MUX_AIN0_AIN1	0 //000 : AINP = AIN0 and AINN = AIN1 (default)
+#define ADS1115_MUX_AIN0_AIN3	1 //001 : AINP = AIN0 and AINN = AIN3
+#define ADS1115_MUX_AIN1_AIN3	2 //010 : AINP = AIN1 and AINN = AIN3
+#define ADS1115_MUX_AIN2_AIN3	3 //011 : AINP = AIN2 and AINN = AIN3
+#define ADS1115_MUX_AIN0_GND	4 //100 : AINP = AIN0 and AINN = GND
+#define ADS1115_MUX_AIN1_GND	5 //101 : AINP = AIN1 and AINN = GND
+#define ADS1115_MUX_AIN2_GND	6 //110 : AINP = AIN2 and AINN = GND
+#define ADS1115_MUX_AIN3_GND	7 //111 : AINP = AIN3 and AINN = GND
 
 //PGA - Коэффициент усиления усилителя
 #define ADS1115_PGA_Pos			9

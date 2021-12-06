@@ -101,13 +101,13 @@ void I2C_Init(I2C_TypeDef *i2c){
 			//Инициализация портов.
 			//I2C1_SCL - PB6
 			//I2C1_SDA - PB7
-			//GPIOB->CRL |= GPIO_CRL_MODE6_1 | GPIO_CRL_MODE7_1 |
-			//		      GPIO_CRL_CNF6    | GPIO_CRL_CNF7;
+			GPIOB->CRL |= GPIO_CRL_MODE6_1 | GPIO_CRL_MODE7_1 |
+					      GPIO_CRL_CNF6    | GPIO_CRL_CNF7;
 
 			//Ремап SCL/PB8, SDA/PB9)
-			AFIO->MAPR |= AFIO_MAPR_I2C1_REMAP;
-			GPIOB->CRH |= GPIO_CRH_MODE8_1 | GPIO_CRH_MODE9_1 |
-					      GPIO_CRH_CNF8    | GPIO_CRH_CNF9;
+			//AFIO->MAPR |= AFIO_MAPR_I2C1_REMAP;
+			//GPIOB->CRH |= GPIO_CRH_MODE8_1 | GPIO_CRH_MODE9_1 |
+			//		      GPIO_CRH_CNF8    | GPIO_CRH_CNF9;
 		}
 	//------------------------------
 	//Тактирование I2C_2
@@ -148,6 +148,7 @@ void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *p
 	if(I2C_LongWaitAddressSend(i2c)) return;//Ожидаем окончания передачи адреса
 	(void)i2c->SR1;				             //сбрасываем бит ADDR (чтением SR1 и SR2):
 	(void)i2c->SR2;				             //
+
 	//Передача адреса в который хотим записать.
 	i2c->DR = regAddr;
 	if(I2C_LongWaitTransmitters(i2c)) return;

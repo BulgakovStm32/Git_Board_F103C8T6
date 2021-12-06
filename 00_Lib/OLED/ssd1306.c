@@ -98,7 +98,8 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 	ssd1306_I2C_WriteCMD(0x22); //
 
 	ssd1306_I2C_WriteCMD(0xDA); //--set com pins hardware configuration
-	ssd1306_I2C_WriteCMD(0x12);
+	//ssd1306_I2C_WriteCMD(0x12);//SSD1306 128x64
+	ssd1306_I2C_WriteCMD(0x22);//SSD1306 128x32
 
 	ssd1306_I2C_WriteCMD(0xDB); //--set vcomh
 	ssd1306_I2C_WriteCMD(0x20); //0x20,0.77xVcc
