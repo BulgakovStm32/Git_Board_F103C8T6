@@ -53,20 +53,20 @@ uint16_t ADS1115_GetAdcData(ADS1115_t *ads1115){
 			 ADS1115_CONVERSION_REG_ADDR,
 			 (uint8_t*)&adcCode, 2);
 
-	ads1115->ConversionReg = ((adcCode<<8)&0xFF00) | adcCode;
+	ads1115->ConversionReg = ((adcCode<<8)&0xFF00) | (adcCode>>8);
 	return ads1115->ConversionReg;
 }
 //************************************************************
 void ADS1115_ReadAdcData(ADS1115_t *ads1115){
 
-	uint16_t adcCode = 0;
+	volatile uint16_t adcCode = 0;
 
 	i2c_read(ads1115->i2c,
 			 ads1115->I2cAddr,
 			 ADS1115_CONVERSION_REG_ADDR,
 			 (uint8_t*)&adcCode, 2);
 
-	ads1115->ConversionReg = ((adcCode<<8)&0xFF00) | adcCode;
+	ads1115->ConversionReg = ((adcCode<<8)&0xFF00) | (adcCode>>8);
 }
 //*******************************************************************************************
 //*******************************************************************************************

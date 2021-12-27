@@ -69,7 +69,7 @@ void Time_Display(uint32_t cursor_x, uint32_t cursor_y){
 //*******************************************************************************************
 //Работа с АЦП ADS1115.
 const char Text_Header[]  = "_ADS1115_";
-const char Text_I2cAddr[] = "ADS115_I2C_ADDR:";
+const char Text_I2cAddr[] = "ADS115_I2C_ADDR:0x";
 const char Text_AdcCode[] = "ADS115_ADC_CODE=";
 
 //************************************************************
@@ -97,7 +97,7 @@ void Task_Display_ADS1115(void){
 	//Вывод значения АЦП.
 	Lcd_SetCursor(1, 4);
 	Lcd_Print((char*)Text_AdcCode);
-	Lcd_BinToDec(ADS1115.ConversionReg, 6, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(ADS1115.ConversionReg, 5, LCD_CHAR_SIZE_NORM);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -236,18 +236,18 @@ int main(void){
 	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я АЦП ADS1115.
-	ADS1115.i2c        = ADS1115_I2C;
-	ADS1115.I2cAddr    = ADS1115_I2C_ADDR;
-	ADS1115.ConfigReg |= (ADS1115_MUX_AIN0_GND    << ADS1115_MUX_Pos) | //Выбор канала.
-						 (ADS1115_PGA_1           << ADS1115_PGA_Pos) | //Коэффициент усиления усилителя.
-						 (ADS1115_MODE_CONTINUOUS << ADS1115_MODE_Pos)| //Режим работы.
-						 (ADS1115_DR_8Hz          << ADS1115_DR_Pos);   //Частота дискретизации.
+	ADS1115.i2c       = ADS1115_I2C;
+	ADS1115.I2cAddr   = ADS1115_I2C_ADDR;
+	ADS1115.ConfigReg = (ADS1115_MUX_AIN0_GND    << ADS1115_MUX_Pos) | //Выбор канала.
+						(ADS1115_PGA_1           << ADS1115_PGA_Pos) | //Коэффициент усиления усилителя.
+						(ADS1115_MODE_CONTINUOUS << ADS1115_MODE_Pos)| //Режим работы.
+						(ADS1115_DR_8Hz          << ADS1115_DR_Pos);   //Частота дискретизации.
 	ADS1115_Init(&ADS1115);
 	//***********************************************
 	//Ини-я диспетчера и постановка задач в очередь.
 	RTOS_Init();
 	RTOS_SetTask(Task_LcdUpdate, 0, 20);
-	RTOS_SetTask(Task_ADS1115, 0, 1000);
+	RTOS_SetTask(Task_ADS1115, 0, 100);
 	//***********************************************
 	__enable_irq();
 	//************************************************************************************
