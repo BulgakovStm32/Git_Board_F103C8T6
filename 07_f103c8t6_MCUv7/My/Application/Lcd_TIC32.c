@@ -65,7 +65,7 @@ static uint8_t *pic;
 //Инициализация PCF8531
 void Lcd_TIC32_Init(void){
 
-	I2C_Init(LCD_TIC32_I2C);
+	I2C_Init(LCD_TIC32_I2C, 0);
 	//-------------------------
 	I2C_StartAndSendDeviceAddr(LCD_TIC32_I2C, LCD_TIC32_ADDR);
 	//на основн стр

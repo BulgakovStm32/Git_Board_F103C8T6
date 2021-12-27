@@ -64,7 +64,7 @@ static void ssd1306_I2C_WriteCMD(uint8_t cmd){
 uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 
 	/* Init I2C */
-	I2C_Init(i2c);
+	I2C_Init(i2c, 0);
 
 	/* Init LCD */
 	ssd1306_I2C_WriteCMD(0xAE); //display off
