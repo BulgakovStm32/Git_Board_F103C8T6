@@ -239,8 +239,8 @@ void Task_Lcd(void){
 //************************************************************
 void Task_LcdUpdate(void){
 
-	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
-	else										 LedPC13Off();
+//	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
+//	else										 LedPC13Off();
 
 	RTOS_SetTask(Task_Lcd, 0, 0);
 	//RTOS_SetTask(Task_Lcd_DS2782, 0, 0);
@@ -356,10 +356,17 @@ int main(void){
 	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
 	//Ини-я OLED SSD1306
-	SSD1306_Init(SSD1306_I2C);
+	//SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я DS2782.
 	//DS2782_Init(DS2782_I2C);
+	//***********************************************
+	//Отладка I2C по прерываниям.
+	static uint8_t i2cBuf[3] = {1, 2, 3};
+
+	I2C_IT_Init(I2C1, 0);
+	I2C_IT_StartTx(I2C1, SSD1306_I2C_ADDR, 0x55, i2cBuf, 3);
+
 	//***********************************************
 	//Ини-я диспетчера.
 //	Scheduler_Init();
@@ -370,10 +377,10 @@ int main(void){
 //	Scheduler_SetTask(Task_Lcd);
 //	Scheduler_SetTask(Task_LcdUpdate);
 
-	RTOS_Init();
-	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	RTOS_SetTask(Task_LcdUpdate, 		0, 20);
-	RTOS_SetTask(Task_UartSend, 		0, 1000);
+//	RTOS_Init();
+//	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
+//	RTOS_SetTask(Task_LcdUpdate, 		0, 20);
+//	RTOS_SetTask(Task_UartSend, 		0, 1000);
 
 	//RTOS_SetTask(Task_DS2782, 0, 250);
 	//RTOS_SetTask(Task_AdcMeas, 0, 250);
@@ -383,7 +390,7 @@ int main(void){
 	while(1)
 	{
 		//Scheduler_Loop();
-		RTOS_DispatchLoop();
+//		RTOS_DispatchLoop();
 		//__WFI();//Sleep
 	}
 	//************************************************************************************
@@ -393,14 +400,14 @@ int main(void){
 //Прерывание каждую милисекунду.
 void SysTick_Handler(void){
 
-	static uint32_t secCounter = 0;
-	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
-	Time_Calculation(secCounter);						     //Преобразование времени
-
-	//Scheduler_TimerServiceLoop();
-	RTOS_TimerServiceLoop();
-	msDelay_Loop();
-	Blink_Loop();
+//	static uint32_t secCounter = 0;
+//	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
+//	Time_Calculation(secCounter);						     //Преобразование времени
+//
+//	//Scheduler_TimerServiceLoop();
+//	RTOS_TimerServiceLoop();
+//	msDelay_Loop();
+//	Blink_Loop();
 }
 //*******************************************************************************************
 //******************************************************************************************
