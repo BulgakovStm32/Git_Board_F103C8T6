@@ -65,16 +65,16 @@ void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 	uint32_t temperature = sensor->TEMPERATURE;
 	//-------------------
 	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_PrintBig("Sens");
-	Lcd_BinToDec(sensor->SENSOR_NUMBER, 1, LCD_CHAR_SIZE_BIG);
-	Lcd_PrintBig("= ");
-	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Lcd_ChrBig('-');
-	else                    								Lcd_ChrBig('+');
-	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_BIG);
-	Lcd_ChrBig('.');
-	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_BIG);
+	Lcd_Print("Sens");
+	Lcd_BinToDec(sensor->SENSOR_NUMBER, 1, LCD_CHAR_SIZE_NORM);
+	Lcd_Print("= ");
+	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Lcd_Chr('-');
+	else                    								Lcd_Chr('+');
+	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_Chr('.');
+	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("o ");
-	Lcd_ChrBig('C');
+	Lcd_Chr('C');
 }
 //************************************************************
 void Temperature_TxtDisplay(DS18B20_t *sensor){
@@ -212,8 +212,6 @@ void Task_Temperature_Read(void){
 	TemperatureSens_ReadTemperature(&Sensor_1);
 	TemperatureSens_ReadTemperature(&Sensor_2);
 	TemperatureSens_ReadTemperature(&Sensor_3);
-	//-----------------------------
-	//Scheduler_SetTimerTask(Task_Temperature_Read, 1000);
 }
 //************************************************************
 void Task_Lcd(void){
@@ -231,16 +229,14 @@ void Task_Lcd(void){
 
 	//Вывод темперетуры DS18B20.
 	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 5);
-	Temperature_Display(&Sensor_3, 1, 7);
-	//-----------------------------
-	//Scheduler_SetTask(Task_Lcd);
+	Temperature_Display(&Sensor_2, 1, 4);
+	Temperature_Display(&Sensor_3, 1, 5);
 }
 //************************************************************
 void Task_LcdUpdate(void){
 
-//	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
-//	else										 LedPC13Off();
+	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
+	else										 LedPC13Off();
 
 	RTOS_SetTask(Task_Lcd, 0, 0);
 	//RTOS_SetTask(Task_Lcd_DS2782, 0, 0);
@@ -316,6 +312,20 @@ void Task_UartSend(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//Работа с GPS L96-M33
+#define GPS_I2C				I2C1
+#define GPS_I2C_ADDR		(0x10 << 1)
+#define GPS_I2C_RX_BUF_SIZE	256
+
+static uint8_t GpsRxBuf[GPS_I2C_RX_BUF_SIZE] = {0,};
+
+//************************************************************
+void Task_GPS(void){
+
+	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0, GpsRxBuf, 255);
+}
+//*******************************************************************************************
+//*******************************************************************************************
 int main(void){
 
 	//-----------------------------
@@ -356,16 +366,15 @@ int main(void){
 	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
 	//Ини-я OLED SSD1306
-	//SSD1306_Init(SSD1306_I2C);
+	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я DS2782.
 	//DS2782_Init(DS2782_I2C);
 	//***********************************************
 	//Отладка I2C по прерываниям.
-	static uint8_t i2cBuf[3] = {1, 2, 3};
-
-	I2C_IT_Init(I2C1, 0);
-	I2C_IT_StartTx(I2C1, SSD1306_I2C_ADDR, 0x55, i2cBuf, 3);
+//	static uint8_t i2cBuf[3] = {1, 2, 3};
+//	I2C_IT_Init(I2C1, 0);
+//	I2C_IT_StartTx(I2C1, SSD1306_I2C_ADDR, 0x55, i2cBuf, 3);
 
 	//***********************************************
 	//Ини-я диспетчера.
@@ -377,11 +386,12 @@ int main(void){
 //	Scheduler_SetTask(Task_Lcd);
 //	Scheduler_SetTask(Task_LcdUpdate);
 
-//	RTOS_Init();
-//	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-//	RTOS_SetTask(Task_LcdUpdate, 		0, 20);
-//	RTOS_SetTask(Task_UartSend, 		0, 1000);
+	RTOS_Init();
+	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
+	RTOS_SetTask(Task_LcdUpdate, 		0, 20);
+	RTOS_SetTask(Task_GPS, 				0, 1000);
 
+	//RTOS_SetTask(Task_UartSend, 		0, 1000);
 	//RTOS_SetTask(Task_DS2782, 0, 250);
 	//RTOS_SetTask(Task_AdcMeas, 0, 250);
 	//***********************************************
@@ -389,8 +399,7 @@ int main(void){
 	//************************************************************************************
 	while(1)
 	{
-		//Scheduler_Loop();
-//		RTOS_DispatchLoop();
+		RTOS_DispatchLoop();
 		//__WFI();//Sleep
 	}
 	//************************************************************************************
@@ -400,14 +409,13 @@ int main(void){
 //Прерывание каждую милисекунду.
 void SysTick_Handler(void){
 
-//	static uint32_t secCounter = 0;
-//	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
-//	Time_Calculation(secCounter);						     //Преобразование времени
-//
-//	//Scheduler_TimerServiceLoop();
-//	RTOS_TimerServiceLoop();
-//	msDelay_Loop();
-//	Blink_Loop();
+	static uint32_t secCounter = 0;
+	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
+	Time_Calculation(secCounter);						     //Преобразование времени
+
+	RTOS_TimerServiceLoop();
+	msDelay_Loop();
+	Blink_Loop();
 }
 //*******************************************************************************************
 //******************************************************************************************
