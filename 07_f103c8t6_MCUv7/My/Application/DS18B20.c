@@ -13,7 +13,7 @@
 //*******************************************************************************************
 //*******************************************************************************************
 //Функция задержки в микросекундах.
-static void OneWire_usDelay(uint32_t us){
+__STATIC_INLINE void OneWire_usDelay(const uint32_t us){
 
 	microDelay(us);
 
@@ -22,7 +22,7 @@ static void OneWire_usDelay(uint32_t us){
 //	while(us--);
 }
 //**********************************************************
-static void OneWire_GpioInit(DS18B20_t *sensor){
+static void OneWire_GpioInit(const DS18B20_t *sensor){
 
 	uint32_t pin = sensor->GPIO_PIN;
 	//---------------------
@@ -48,10 +48,10 @@ static void OneWire_GpioInit(DS18B20_t *sensor){
 	}
 }
 //**********************************************************
-static uint8_t OneWire_Reset(DS18B20_t *sensor){
+static uint8_t OneWire_Reset(const DS18B20_t *sensor){
 
   uint16_t status = 0;
-  uint32_t pin    = ( 1 << sensor->GPIO_PIN);
+  uint32_t pin    = (1 << sensor->GPIO_PIN);
   //---------------------
   //низкий уровень
   sensor->GPIO_PORT->ODR &= ~pin;
@@ -65,7 +65,7 @@ static uint8_t OneWire_Reset(DS18B20_t *sensor){
   return status;
 }
 //**********************************************************
-static void OneWire_WriteBit(DS18B20_t *sensor, uint8_t bit){
+static void OneWire_WriteBit(const DS18B20_t *sensor, uint8_t bit){
 
 	uint32_t pin = (1 << sensor->GPIO_PIN);
 	//---------------------
@@ -80,7 +80,7 @@ static void OneWire_WriteBit(DS18B20_t *sensor, uint8_t bit){
 	else    OneWire_usDelay(DELAY_WRITE_0_PAUSE);
 }
 //**********************************************************
-static void OneWire_WriteByte(DS18B20_t *sensor, uint8_t data){
+static void OneWire_WriteByte(const DS18B20_t *sensor, uint8_t data){
 
 	for(uint8_t i = 0; i < 8; i++)
 	{
@@ -88,7 +88,7 @@ static void OneWire_WriteByte(DS18B20_t *sensor, uint8_t data){
 	}
 }
 //**********************************************************
-static uint8_t OneWire_ReadBit(DS18B20_t *sensor){
+static uint8_t OneWire_ReadBit(const DS18B20_t *sensor){
 
 	uint8_t  bit = 0;
 	uint32_t pin = (1 << sensor->GPIO_PIN);

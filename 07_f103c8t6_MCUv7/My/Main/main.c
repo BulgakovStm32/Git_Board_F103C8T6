@@ -11,6 +11,7 @@
  */
 //*******************************************************************************************
 //*******************************************************************************************
+
 #include "main.h"
 
 //*******************************************************************************************
@@ -206,7 +207,8 @@ void Task_Lcd_DS2782(void){
 	Lcd_Print(" Vdd=");
 	Lcd_BinToDec(AdcMeas.Vdd_V, 5, LCD_CHAR_SIZE_NORM);
 }
-//************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 void Task_Temperature_Read(void){
 
 	TemperatureSens_ReadTemperature(&Sensor_1);
@@ -214,11 +216,7 @@ void Task_Temperature_Read(void){
 	TemperatureSens_ReadTemperature(&Sensor_3);
 }
 //************************************************************
-void Task_Lcd(void){
-
-	//Мигание светодиодами.
-//	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
-//	else										 LedPC13Off();
+void Task_Temperature_Display(void){
 
 	//Шапка
 	Lcd_SetCursor(1, 1);
@@ -238,7 +236,7 @@ void Task_LcdUpdate(void){
 	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
 	else										 LedPC13Off();
 
-	RTOS_SetTask(Task_Lcd, 0, 0);
+	RTOS_SetTask(Task_Temperature_Display, 0, 0);
 	//RTOS_SetTask(Task_Lcd_DS2782, 0, 0);
 
 	Lcd_Update(); //вывод сделан для SSD1306
@@ -378,22 +376,14 @@ int main(void){
 
 	//***********************************************
 	//Ини-я диспетчера.
-//	Scheduler_Init();
-//
-//	//Постановка задач в очередь.
-//	Scheduler_SetTask(Task_UartSendData);
-//	Scheduler_SetTask(Task_Temperature_Read);
-//	Scheduler_SetTask(Task_Lcd);
-//	Scheduler_SetTask(Task_LcdUpdate);
-
 	RTOS_Init();
 	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	RTOS_SetTask(Task_LcdUpdate, 		0, 20);
 	RTOS_SetTask(Task_GPS, 				0, 1000);
 
 	//RTOS_SetTask(Task_UartSend, 		0, 1000);
-	//RTOS_SetTask(Task_DS2782, 0, 250);
-	//RTOS_SetTask(Task_AdcMeas, 0, 250);
+	//RTOS_SetTask(Task_DS2782, 		0, 250);
+	//RTOS_SetTask(Task_AdcMeas, 		0, 250);
 	//***********************************************
 	__enable_irq();
 	//************************************************************************************
