@@ -46,8 +46,11 @@ void I2C_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *p
 //Работа по прерываниям.
 void 	I2C_IT_Init(I2C_TypeDef *i2c, uint32_t remap);
 void 	I2C_IT_StartTx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
+void 	I2C_IT_StartRx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
 uint8_t I2C_IT_GetState(void);
 
+
+//Работа чере DMA. Не отлажено!!!
 void I2C1_Init(void);
 void I2C1_DMAInit(void);
 void I2C1_DMAStartTx(uint8_t *pData, uint32_t size);

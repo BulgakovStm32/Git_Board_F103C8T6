@@ -280,6 +280,8 @@ void TemperatureSens_StartConvertTemperature(DS18B20_t *sensor){
 //**********************************************************
 void TemperatureSens_ReadTemperature(DS18B20_t *sensor){
 
+	if(!sensor->GPIO_PORT) return;
+
 	if(OneWire_Reset(sensor))
 	{
 		sensor->TEMPERATURE = 0;

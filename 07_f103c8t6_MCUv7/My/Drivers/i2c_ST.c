@@ -175,13 +175,13 @@ void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *p
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
 	if(I2C_LongWait(i2c, I2C_SR1_SB)) return;//Ожидание формирования Start condition.
-	(void)i2c->SR1;				      //Для сброса флага SB необходимо прочитать SR1
+	(void)i2c->SR1;				      		 //Для сброса флага SB необходимо прочитать SR1
 
 	//Передаем адрес slave + Запись.
 	i2c->DR = deviceAddr | I2C_MODE_WRITE;
 	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;				        //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;				        //
+	(void)i2c->SR1;				        	   //сбрасываем бит ADDR (чтением SR1 и SR2):
+	(void)i2c->SR2;				        	   //
 
 	//Передача адреса в который хотим записать.
 	i2c->DR = regAddr;
@@ -201,13 +201,13 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
 	if(I2C_LongWait(i2c, I2C_SR1_SB)) return;//Ожидание формирования Start condition.
-	(void)i2c->SR1;//Для сброса флага SB необходимо прочитать SR1
+	(void)i2c->SR1;							 //Для сброса флага SB необходимо прочитать SR1
 
 	//Передаем адрес slave + Запись.
 	i2c->DR = deviceAddr | I2C_MODE_WRITE;
 	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;//сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;//
+	(void)i2c->SR1;							   //сбрасываем бит ADDR (чтением SR1 и SR2):
+	(void)i2c->SR2;							   //
 
 	//Передача адреса с которого начинаем чтение.
 	i2c->DR = regAddr;
@@ -217,31 +217,31 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 	i2c->CR1 |= I2C_CR1_STOP; //Это команда нужня для работы с DS2782. Без нее не работает
 	i2c->CR1 |= I2C_CR1_START;
 	if(I2C_LongWait(i2c, I2C_SR1_SB)) return;//Ожидание формирования Start condition.
-	(void)i2c->SR1;//Для сброса флага SB необходимо прочитать SR1
+	(void)i2c->SR1;							 //Для сброса флага SB необходимо прочитать SR1
 
 	//Передаем адрес slave + Чтение.
 	i2c->DR = deviceAddr | I2C_MODE_READ;
 	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;//сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;//
+	(void)i2c->SR1;							   //сбрасываем бит ADDR (чтением SR1 и SR2):
+	(void)i2c->SR2;							   //
 	//прием даннных
 	if(len == 1)
 		{
-			i2c->CR1 &= ~I2C_CR1_ACK;                //Фомирование NACK после приема последнего байта.
+			i2c->CR1 &= ~I2C_CR1_ACK;                	  //Фомирование NACK после приема последнего байта.
 			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-			*(pBuf + 0) = i2c->DR;				     //считали принятый байт.
+			*(pBuf + 0) = i2c->DR;				          //считали принятый байт.
 		}
 	else
 		{
 			for(uint16_t i = 0; i < (len-1); i++)
 				{
-					i2c->CR1 |= I2C_CR1_ACK; 			     //Фомирование ACK после приема байта
+					i2c->CR1 |= I2C_CR1_ACK; 			          //Фомирование ACK после приема байта
 					if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-					*(pBuf + i) = i2c->DR;			         //считали принятый
+					*(pBuf + i) = i2c->DR;			         	  //считали принятый
 				}
-			i2c->CR1 &= ~I2C_CR1_ACK;                //Фомирование NACK после приема последнего байта.
+			i2c->CR1 &= ~I2C_CR1_ACK;                	  //Фомирование NACK после приема последнего байта.
 			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-			*(pBuf + len - 1) = i2c->DR;		     //считали принятый байт.
+			*(pBuf + len - 1) = i2c->DR;		     	  //считали принятый байт.
 		}
 	//---------------------
 	STOP:
@@ -250,13 +250,16 @@ void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pB
 //*******************************************************************************************
 //*******************************************************************************************
 //****************************Работа I2C по прерываниям.*************************************
-static uint8_t I2CState		= 0;
+static uint8_t I2cItState	= 0;
 
 static uint8_t SlaveAddr    = 0;
 static uint8_t SlaveRegAddr = 0;
 
-static uint8_t *ptrTxBuf  = 0;
-static uint32_t TxBufSize = 0;
+static uint8_t *ptrTxBuf  	= 0;
+static uint32_t TxBufSize 	= 0;
+
+static uint8_t *ptrRxBuf  	= 0;
+static uint32_t RxBufSize 	= 0;
 
 //**********************************************************
 void I2C_IT_Init(I2C_TypeDef *i2c, uint32_t remap){
@@ -274,20 +277,31 @@ void I2C_IT_Init(I2C_TypeDef *i2c, uint32_t remap){
 	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
 }
 //**********************************************************
-void I2C_IT_StartTx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len){
+void I2C_IT_StartTx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pTxBuf, uint32_t len){
 
 	SlaveAddr    = deviceAddr;
 	SlaveRegAddr = regAddr;
-	ptrTxBuf     = pBuf;
+	ptrTxBuf     = pTxBuf;
 	TxBufSize    = len;
 
-	i2c->CR1 |= I2C_CR1_START;
-	I2CState = 1;
+	i2c->CR1  |= I2C_CR1_START;
+	I2cItState = 1;
+}
+//**********************************************************
+void I2C_IT_StartRx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pRxBuf, uint32_t len){
+
+	SlaveAddr    = deviceAddr;
+	SlaveRegAddr = regAddr;
+	ptrRxBuf     = pRxBuf;
+	RxBufSize    = len;
+
+	i2c->CR1  |= I2C_CR1_START;
+	I2cItState = 1;
 }
 //**********************************************************
 uint8_t I2C_IT_GetState(void){
 
-	return I2CState;
+	return I2cItState;
 }
 //*******************************************************************************************
 //Обработчик прерывания событий I2C
@@ -309,7 +323,7 @@ void I2C1_EV_IRQHandler(void){
 	{
 		(void)I2C1->SR1; //сбрасываем бит ADDR (чтением SR1 и SR2):
 		(void)I2C1->SR2;
-		I2C1->DR = SlaveRegAddr;   //Передача адреса в который хотим записать.
+		I2C1->DR   = SlaveRegAddr;   //Передача адреса в который хотим записать.
 		I2C1->CR2 |= I2C_CR2_ITBUFEN;//Разрешение прерывания по опустощению буфера Tx.
 		return;
 	}
@@ -329,8 +343,8 @@ void I2C1_EV_IRQHandler(void){
 		{
 			I2C1->CR2 &= ~I2C_CR2_ITBUFEN;//Запрет прерывания по опостощению буфера Tx.
 			I2C1->CR1 |= I2C_CR1_STOP;    //Формируем Stop
-			I2CState = 0;
-			txCount  = 0;
+			I2cItState = 0;
+			txCount    = 0;
 		}
 		return;
 	}

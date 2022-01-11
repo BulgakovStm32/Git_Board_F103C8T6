@@ -29,6 +29,8 @@ DS18B20_t Sensor_2;
 DS18B20_t Sensor_3;
 
 DS2782_t  DS2782;
+
+Encoder_t Encoder;
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -220,15 +222,24 @@ void Task_Temperature_Display(void){
 
 	//Шапка
 	Lcd_SetCursor(1, 1);
-	Lcd_Print("_THERMOMETER_(+BT)");
+	Lcd_Print("_MCUv7_");
 
 	//Вывод времени.
 	Time_Display(1, 2);
 
+	//Енкодер.
+	static uint16_t tempReg = 0;
+	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
+	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
+
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("Encoder=");
+	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
+
 	//Вывод темперетуры DS18B20.
 	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 4);
-	Temperature_Display(&Sensor_3, 1, 5);
+	//Temperature_Display(&Sensor_2, 1, 4);
+	//Temperature_Display(&Sensor_3, 1, 5);
 }
 //************************************************************
 void Task_LcdUpdate(void){
@@ -340,28 +351,43 @@ int main(void){
 	//***********************************************
 	//Ини-я DS18B20
 	Sensor_1.GPIO_PORT     = GPIOA;
-	Sensor_1.GPIO_PIN      = 2;
+	Sensor_1.GPIO_PIN      = 3;
 	Sensor_1.SENSOR_NUMBER = 1;
 	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_1);
 	TemperatureSens_SetResolution(&Sensor_1);
 	TemperatureSens_StartConvertTemperature(&Sensor_1);
 
-	Sensor_2.GPIO_PORT     = GPIOA;
-	Sensor_2.GPIO_PIN      = 1;
-	Sensor_2.SENSOR_NUMBER = 2;
-	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
-	TemperatureSens_GpioInit(&Sensor_2);
-	TemperatureSens_SetResolution(&Sensor_2);
-	TemperatureSens_StartConvertTemperature(&Sensor_2);
+//	Sensor_2.GPIO_PORT     = GPIOA;
+//	Sensor_2.GPIO_PIN      = 1;
+//	Sensor_2.SENSOR_NUMBER = 2;
+//	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
+//	TemperatureSens_GpioInit(&Sensor_2);
+//	TemperatureSens_SetResolution(&Sensor_2);
+//	TemperatureSens_StartConvertTemperature(&Sensor_2);
+//
+//	Sensor_3.GPIO_PORT     = GPIOA;
+//	Sensor_3.GPIO_PIN      = 0;
+//	Sensor_3.SENSOR_NUMBER = 3;
+//	Sensor_3.RESOLUTION    = DS18B20_Resolution_12_bit;
+//	TemperatureSens_GpioInit(&Sensor_3);
+//	TemperatureSens_SetResolution(&Sensor_3);
+//	TemperatureSens_StartConvertTemperature(&Sensor_3);
+	//***********************************************
+	//Инициализация Энкодера.
+	Encoder.GPIO_PORT_A = GPIOA;
+	Encoder.GPIO_PIN_A  = 0;
 
-	Sensor_3.GPIO_PORT     = GPIOA;
-	Sensor_3.GPIO_PIN      = 0;
-	Sensor_3.SENSOR_NUMBER = 3;
-	Sensor_3.RESOLUTION    = DS18B20_Resolution_12_bit;
-	TemperatureSens_GpioInit(&Sensor_3);
-	TemperatureSens_SetResolution(&Sensor_3);
-	TemperatureSens_StartConvertTemperature(&Sensor_3);
+	Encoder.GPIO_PORT_B = GPIOA;
+	Encoder.GPIO_PIN_B  = 1;
+
+	Encoder.GPIO_PORT_BUTTON = GPIOA;
+	Encoder.GPIO_PIN_BUTTON  = 7;
+
+	Encoder_Init(&Encoder);
+	//***********************************************
+	//Инициализация	ШИМ
+	TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C);
@@ -378,7 +404,7 @@ int main(void){
 	//Ини-я диспетчера.
 	RTOS_Init();
 	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	RTOS_SetTask(Task_LcdUpdate, 		0, 20);
+	RTOS_SetTask(Task_LcdUpdate, 		0, 5);
 	RTOS_SetTask(Task_GPS, 				0, 1000);
 
 	//RTOS_SetTask(Task_UartSend, 		0, 1000);
@@ -386,13 +412,13 @@ int main(void){
 	//RTOS_SetTask(Task_AdcMeas, 		0, 250);
 	//***********************************************
 	__enable_irq();
-	//************************************************************************************
+	//**************************************************************
 	while(1)
 	{
 		RTOS_DispatchLoop();
 		//__WFI();//Sleep
 	}
-	//************************************************************************************
+	//**************************************************************
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -406,6 +432,7 @@ void SysTick_Handler(void){
 	RTOS_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
+	Encoder_ScanLoop(&Encoder);
 }
 //*******************************************************************************************
 //******************************************************************************************

@@ -41,6 +41,7 @@
 //#include "Filters.h"
 //#include "AHT10.h"
 #include "DS2782.h"
+#include "Encoder.h"
 
 #include "ssd1306.h"
 #include "MyString.h"
