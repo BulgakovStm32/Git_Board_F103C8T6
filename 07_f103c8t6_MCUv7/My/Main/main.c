@@ -331,7 +331,7 @@ static uint8_t GpsRxBuf[GPS_I2C_RX_BUF_SIZE] = {0,};
 //************************************************************
 void Task_GPS(void){
 
-	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0, GpsRxBuf, 255);
+	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0, GpsRxBuf, 1 );
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -403,8 +403,8 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	RTOS_SetTask(Task_LcdUpdate, 		0, 5);
+	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
+	//RTOS_SetTask(Task_LcdUpdate, 		0, 5);
 	RTOS_SetTask(Task_GPS, 				0, 1000);
 
 	//RTOS_SetTask(Task_UartSend, 		0, 1000);
