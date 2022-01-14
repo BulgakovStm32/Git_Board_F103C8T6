@@ -31,10 +31,18 @@
 #define I2C_STATE_TXReg_EMPTY		3
 #define I2C_STATE_EV8_1				4
 #define I2C_STATE_EV8				5
+
+//--------------------------
+#define I2C_MODE_MASTER	0
+#define I2C_MODE_SLAVE	1
+
+//--------------------------
+
+
 //*******************************************************************************************
 //*******************************************************************************************
 void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t slaveAddr, uint32_t remap);
-
+void I2C_Slave_Read(I2C_TypeDef *i2c, uint8_t regAddr, uint8_t *pBuf, uint16_t len);
 
 
 void 	I2C_Init(I2C_TypeDef *i2c, uint32_t remap);
@@ -52,6 +60,11 @@ void 	I2C_IT_Init(I2C_TypeDef *i2c, uint32_t remap);
 void 	I2C_IT_StartTx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
 void 	I2C_IT_StartRx(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
 uint8_t I2C_IT_GetState(void);
+
+
+void I2C_IT_Slave_Init(I2C_TypeDef *i2c, uint32_t slaveAddr, uint32_t remap);
+void I2C_IT_Slave_StartRx(uint8_t *pRxBuf, uint32_t len);
+void I2C_IT_Slave_StartTx(uint8_t *pTxBuf, uint32_t len);
 
 
 //Работа чере DMA. Не отлажено!!!
