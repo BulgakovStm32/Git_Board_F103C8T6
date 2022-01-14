@@ -86,43 +86,16 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 //**********************************************************
 uint8_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
-	uint32_t wait = 0;
-	//---------------------
-	//Ждем освобождения шины. - не отлажено!!!
-	while(i2c->SR2 & I2C_SR2_BUSY)
-		{
-			if(++wait >= I2C_WAIT)
-			{
-				i2c->CR1 |=	I2C_CR1_SWRST;
-				return 1;
-			}
-		}
-	wait = 0;
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
-	while(!(i2c->SR1 & I2C_SR1_SB))//Ожидание формирования Start condition.
-		{
-			if(++wait >= I2C_WAIT)
-				{
-					i2c->CR1 |=	I2C_CR1_SWRST;
-					return 1;
-				}
-		}
-	wait = 0;
-	(void)i2c->SR1;				    //Для сброса флага SB необходимо прочитать SR1
-	//Передаем адрес slave.
+	if(I2C_LongWait(i2c, I2C_SR1_SB)) return 1;//Ожидание формирования Start condition.
+	(void)i2c->SR1;				      		   //Для сброса флага SB необходимо прочитать SR1
+
+	//Передаем адрес.
 	i2c->DR = deviceAddr;
-	while(!(i2c->SR1 & I2C_SR1_ADDR))//Ожидаем окончания передачи адреса и
-		{
-			if(++wait >= I2C_WAIT)
-				{
-					i2c->CR1 |=	I2C_CR1_SWRST;
-					return 1;
-				}
-		}
-	wait = 0;
-	(void)i2c->SR1;				      //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;				      //
+	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return 1;//Ожидаем окончания передачи адреса
+	(void)i2c->SR1;				        	     //сбрасываем бит ADDR (чтением SR1 и SR2):
+	(void)i2c->SR2;				        	     //
 
 	return 0;
 }
@@ -130,40 +103,44 @@ uint8_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 void I2C_SendData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
 
 	for(uint16_t i = 0; i < len; i++)
-		{
-			i2c->DR = *(pBuf + i);
-			while(!(i2c->SR1 & I2C_SR1_TXE));//Ждем освобождения буфера
-		}
+	{
+		i2c->DR = *(pBuf + i);
+		//while(!(i2c->SR1 & I2C_SR1_TXE));//Ждем освобождения буфера
+		if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;
+	}
 }
 //**********************************************************
 void I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
 
+	//прием даннных
 	if(len == 1)
-		{
-			i2c->CR1 &= ~I2C_CR1_ACK;           //Фомирование NACK после приема последнего байта.
-			while(!(i2c->SR1 & I2C_SR1_RXNE)){};//ожидаем окончания приема байта
-			*(pBuf + 0) = i2c->DR;				//считали принятый байт.
-			i2c->CR1 |= I2C_CR1_STOP;           //Формируем Stop
-		}
+	{
+		//i2c->CR1 &= ~I2C_CR1_ACK;                  	  //Фомирование NACK после приема последнего байта.
+		//if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
+		i2c->CR1 &= ~I2C_CR1_ACK;
+		*(pBuf + 0) = i2c->DR;				       	  //считали принятый байт.
+	}
 	else
+	{
+		for(uint16_t i = 0; i < (len-1); i++)
 		{
-			for(uint16_t i = 0; i < (len-1); i++)
-				{
-					i2c->CR1 |= I2C_CR1_ACK; 			//Фомирование ACK после приема байта
-					while(!(i2c->SR1 & I2C_SR1_RXNE)){};//ожидаем окончания приема байта
-					*(pBuf + i) = i2c->DR;			    //считали принятый
-				}
-
-			i2c->CR1 &= ~I2C_CR1_ACK;           //Фомирование NACK после приема последнего байта.
-			while(!(i2c->SR1 & I2C_SR1_RXNE)){};//ожидаем окончания приема байта
-			*(pBuf + len - 1) = i2c->DR;		//считали принятый байт.
-			i2c->CR1 |= I2C_CR1_STOP;           //Формируем Stop
+			*(pBuf + i) = i2c->DR;						  //считали принятый
+			i2c->CR1 |= I2C_CR1_ACK; 			          //Фомирование ACK после приема байта
+			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
+			//*(pBuf + i) = i2c->DR;			              //считали принятый
 		}
+		i2c->CR1 &= ~I2C_CR1_ACK;                  	  //Фомирование NACK после приема последнего байта.
+		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
+		*(pBuf + len - 1) = i2c->DR;		          //считали принятый байт.
+	}
+	STOP:
+	i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
 }
 //**********************************************************
 void I2C_Stop(I2C_TypeDef *i2c){
 
-	while(!(i2c->SR1 & I2C_SR1_BTF));//Ждем окончания передачи
+	//while(!(i2c->SR1 & I2C_SR1_BTF));//Ждем окончания передачи
+	if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
 	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
 }
 //*******************************************************************************************

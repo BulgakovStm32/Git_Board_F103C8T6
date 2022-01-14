@@ -331,7 +331,37 @@ static uint8_t GpsRxBuf[GPS_I2C_RX_BUF_SIZE] = {0,};
 //************************************************************
 void Task_GPS(void){
 
-	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0, GpsRxBuf, 1 );
+	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0xAE, GpsRxBuf, 1 );
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//Запросы для отлаживания STM32 I2C в режиме Slave.
+#define STM32_SLAVE_I2C		  I2C1
+#define STM32_SLAVE_I2C_ADDR (0x05 << 1)
+
+static uint8_t txBuf[32] = {0};
+static uint8_t rxBuf[32] = {0};
+//************************************************************
+void Task_STM32_Master_Write(void){
+
+	txBuf[0]++;
+	txBuf[1] = txBuf[0] + 1;
+	txBuf[2] = txBuf[1] + 1;
+
+	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == 0)
+	{
+		I2C_SendData(STM32_SLAVE_I2C, txBuf, 3);
+		I2C_Stop(STM32_SLAVE_I2C);
+	}
+}
+//************************************************************
+void Task_STM32_Master_Read(void){
+
+	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_READ) == 0)
+	{
+		I2C_ReadData(STM32_SLAVE_I2C, rxBuf, 3);
+		//I2C_Stop(STM32_SLAVE_I2C);
+	}
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -343,20 +373,20 @@ int main(void){
 	Gpio_Init();
 	SysTick_Init();
 	microDelay_Init();
-	Uart1Init(USART1_BRR);
-	Adc_Init();
+	//Uart1Init(USART1_BRR);
+	//Adc_Init();
 
 	microDelay(100000);//Эта задержка нужна для стабилизации напряжения патания.
 					   //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Ини-я DS18B20
-	Sensor_1.GPIO_PORT     = GPIOA;
-	Sensor_1.GPIO_PIN      = 3;
-	Sensor_1.SENSOR_NUMBER = 1;
-	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
-	TemperatureSens_GpioInit(&Sensor_1);
-	TemperatureSens_SetResolution(&Sensor_1);
-	TemperatureSens_StartConvertTemperature(&Sensor_1);
+//	Sensor_1.GPIO_PORT     = GPIOA;
+//	Sensor_1.GPIO_PIN      = 3;
+//	Sensor_1.SENSOR_NUMBER = 1;
+//	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
+//	TemperatureSens_GpioInit(&Sensor_1);
+//	TemperatureSens_SetResolution(&Sensor_1);
+//	TemperatureSens_StartConvertTemperature(&Sensor_1);
 
 //	Sensor_2.GPIO_PORT     = GPIOA;
 //	Sensor_2.GPIO_PIN      = 1;
@@ -387,13 +417,15 @@ int main(void){
 	Encoder_Init(&Encoder);
 	//***********************************************
 	//Инициализация	ШИМ
-	TIM3_InitForPWM();
+//	TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я OLED SSD1306
-	SSD1306_Init(SSD1306_I2C);
+	//SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я DS2782.
 	//DS2782_Init(DS2782_I2C);
+
+	I2C_Init(STM32_SLAVE_I2C, 0);
 	//***********************************************
 	//Отладка I2C по прерываниям.
 //	static uint8_t i2cBuf[3] = {1, 2, 3};
@@ -405,7 +437,9 @@ int main(void){
 	RTOS_Init();
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	//RTOS_SetTask(Task_LcdUpdate, 		0, 5);
-	RTOS_SetTask(Task_GPS, 				0, 1000);
+	//RTOS_SetTask(Task_GPS, 				0, 500);
+	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
+	RTOS_SetTask(Task_STM32_Master_Read,  0, 600);
 
 	//RTOS_SetTask(Task_UartSend, 		0, 1000);
 	//RTOS_SetTask(Task_DS2782, 		0, 250);
