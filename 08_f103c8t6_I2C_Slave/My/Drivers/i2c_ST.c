@@ -426,9 +426,7 @@ void I2C1_EV_IRQHandler(void){
 			else
 			{
 				I2C1->DR = *(ptrTxBuf + 0);
-				//I2C1->DR = *(ptrTxBuf + 1);
-				//txCount += 2;
-				txCount = 1;
+				txCount  = 1;
 			}
 		}
 		//Master
@@ -449,16 +447,9 @@ void I2C1_EV_IRQHandler(void){
 		//Slave
 		if(I2cMode == I2C_MODE_SLAVE)
 		{
-			if(txCount < TxBufSize)
-			{
-				I2C1->DR = *(ptrTxBuf + txCount);
-				txCount++;
-			}
-			else
-			{
-				txCount = 0;
-				I2C1->SR1 &= ~I2C_SR1_AF;
-			}
+			I2C1->DR = *(ptrTxBuf + txCount);
+			txCount++;
+			if(txCount >= TxBufSize)txCount = 0;
 		}
 		//Master
 		else
@@ -498,22 +489,22 @@ void I2C1_EV_IRQHandler(void){
 	//STOP
 	if(I2C1->SR1 & I2C_SR1_STOPF)
 	{
-		(void)I2C1->SR1; //сбрасываем бит STOPF
-		I2C1->CR1 &= ~I2C_CR1_STOP;
+		(void)I2C1->SR1; 		   //сбрасываем бит STOPF
+		I2C1->CR1 &= ~I2C_CR1_STOP;//
 	}
 }
 //**********************************************************
 //Обработчик прерывания ошибок I2C
 void I2C1_ER_IRQHandler(void){
 
-	//LedPC13Toggel();
+	LedPC13Toggel();
 	//------------------------------
 	//NACK - Acknowledge failure
 	if(I2C1->SR1 & I2C_SR1_AF)
 	{
 		I2C1->SR1 &= ~I2C_SR1_AF; //Сброс AF.
-		I2C1->CR1 |= I2C_CR1_STOP;//Формируем Stop
-		return;
+		//I2C1->CR1 |= I2C_CR1_STOP;//Формируем Stop
+		//return;
 	}
 	//------------------------------
 	//Bus error

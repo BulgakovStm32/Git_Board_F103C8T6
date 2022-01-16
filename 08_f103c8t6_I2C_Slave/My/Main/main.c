@@ -57,84 +57,6 @@ uint32_t Led_Blink(uint32_t millis, uint32_t period, uint32_t switch_on_time){
 	}
 	return flag;
 }
-//************************************************************
-void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
-
-	uint32_t temperature = sensor->TEMPERATURE;
-	//-------------------
-	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_Print("Sens");
-	Lcd_BinToDec(sensor->SENSOR_NUMBER, 1, LCD_CHAR_SIZE_NORM);
-	Lcd_Print("= ");
-	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Lcd_Chr('-');
-	else                    								Lcd_Chr('+');
-	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_NORM);
-	Lcd_Chr('.');
-	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_NORM);
-	Lcd_Print("o ");
-	Lcd_Chr('C');
-}
-//************************************************************
-void Temperature_TxtDisplay(DS18B20_t *sensor){
-
-	uint32_t temperature = sensor->TEMPERATURE;
-	//-------------------
-	Txt_Print("Sens");
-	Txt_BinToDec(sensor->SENSOR_NUMBER, 1);
-	Txt_Print("= ");
-	if(TemperatureSens_Sign(sensor) & DS18B20_SIGN_NEGATIVE)Txt_Chr('-');
-	else                    								Txt_Chr('+');
-	Txt_BinToDec(temperature/10, 2);
-	Txt_Chr('.');
-	Txt_BinToDec(temperature%10, 1);
-	Txt_Print(" C\n");
-}
-//************************************************************
-void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
-
-	//Вывод времени.
-	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_Print("Time: ");
-	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
-	Lcd_Chr(':');
-	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM); //минуты
-	Lcd_Chr(':');
-	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM); //секунды
-}
-//*******************************************************************************************
-//*******************************************************************************************
-void Task_Temperature_Read(void){
-
-	TemperatureSens_ReadTemperature(&Sensor_1);
-	TemperatureSens_ReadTemperature(&Sensor_2);
-	TemperatureSens_ReadTemperature(&Sensor_3);
-}
-//************************************************************
-void Task_Temperature_Display(void){
-
-	//Шапка
-	Lcd_SetCursor(1, 1);
-	Lcd_Print("_MCUv7_");
-
-	//Вывод времени.
-	Time_Display(1, 2);
-
-	//Вывод темперетуры DS18B20.
-	Temperature_Display(&Sensor_1, 1, 3);
-	//Temperature_Display(&Sensor_2, 1, 4);
-	//Temperature_Display(&Sensor_3, 1, 5);
-}
-//************************************************************
-void Task_LcdUpdate(void){
-
-	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
-	else										 LedPC13Off();
-
-	RTOS_SetTask(Task_Temperature_Display, 0, 0);
-
-	Lcd_Update(); //вывод сделан для SSD1306
-	Lcd_ClearVideoBuffer();
-}
 //*******************************************************************************************
 //*******************************************************************************************
 //Запросы для отлаживания STM32 I2C в режиме Slave.
@@ -146,15 +68,26 @@ static uint8_t rxBuf[32] = {0};
 //************************************************************
 void Task_STM32_Slave_Write(void){
 
-	txBuf[0]++;
-	txBuf[1] = txBuf[0] + 1;
-	txBuf[2] = txBuf[1] + 1;
-	txBuf[3] = txBuf[2] + 1;
+//	txBuf[0]++;
+//	txBuf[1] = txBuf[0] + 1;
+//	txBuf[2] = txBuf[1] + 1;
+//	txBuf[3] = txBuf[2] + 1;
 }
 //************************************************************
 void Task_STM32_Slave_Read(void){
 
-	LedPC13Toggel();
+//	LedPC13Toggel();
+}
+//************************************************************
+void Task_Temperature_Read(void){
+
+	TemperatureSens_ReadTemperature(&Sensor_1);
+	TemperatureSens_ReadTemperature(&Sensor_2);
+	TemperatureSens_ReadTemperature(&Sensor_3);
+
+	txBuf[0] = (uint8_t)Sensor_1.TEMPERATURE_SIGN;
+	txBuf[1] = (uint8_t)(Sensor_1.TEMPERATURE >> 8);
+	txBuf[2] = (uint8_t)Sensor_1.TEMPERATURE;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -213,14 +146,9 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	RTOS_SetTask(Task_STM32_Slave_Write,0, 500);
+	RTOS_SetTask(Task_Temperature_Read, 0, 1000);
+	//RTOS_SetTask(Task_STM32_Slave_Write,0, 500);
 	//RTOS_SetTask(Task_STM32_Slave_Read, 0, 500);
-
-	//RTOS_SetTask(Task_LcdUpdate, 		0, 5);
-	//RTOS_SetTask(Task_UartSend, 		0, 1000);
-	//RTOS_SetTask(Task_DS2782, 		0, 250);
-	//RTOS_SetTask(Task_AdcMeas, 		0, 250);
 	//***********************************************
 	__enable_irq();
 	//**************************************************************
