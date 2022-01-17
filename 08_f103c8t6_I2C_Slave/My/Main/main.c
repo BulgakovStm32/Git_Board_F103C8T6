@@ -85,9 +85,18 @@ void Task_Temperature_Read(void){
 	TemperatureSens_ReadTemperature(&Sensor_2);
 	TemperatureSens_ReadTemperature(&Sensor_3);
 
-	txBuf[0] = (uint8_t)Sensor_1.TEMPERATURE_SIGN;
+	txBuf[0] = (uint8_t) Sensor_1.TEMPERATURE_SIGN;
 	txBuf[1] = (uint8_t)(Sensor_1.TEMPERATURE >> 8);
-	txBuf[2] = (uint8_t)Sensor_1.TEMPERATURE;
+	txBuf[2] = (uint8_t) Sensor_1.TEMPERATURE;
+
+	txBuf[3] = (uint8_t) Sensor_2.TEMPERATURE_SIGN;
+	txBuf[4] = (uint8_t)(Sensor_2.TEMPERATURE >> 8);
+	txBuf[5] = (uint8_t) Sensor_2.TEMPERATURE;
+
+	txBuf[6] = 0xC6;
+	txBuf[7] = 0xC7;
+	txBuf[8] = 0xC8;
+	txBuf[9] = 0xC9;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -114,14 +123,14 @@ int main(void){
 	TemperatureSens_SetResolution(&Sensor_1);
 	TemperatureSens_StartConvertTemperature(&Sensor_1);
 
-//	Sensor_2.GPIO_PORT     = GPIOA;
-//	Sensor_2.GPIO_PIN      = 1;
-//	Sensor_2.SENSOR_NUMBER = 2;
-//	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
-//	TemperatureSens_GpioInit(&Sensor_2);
-//	TemperatureSens_SetResolution(&Sensor_2);
-//	TemperatureSens_StartConvertTemperature(&Sensor_2);
-//
+	Sensor_2.GPIO_PORT     = GPIOA;
+	Sensor_2.GPIO_PIN      = 1;
+	Sensor_2.SENSOR_NUMBER = 2;
+	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
+	TemperatureSens_GpioInit(&Sensor_2);
+	TemperatureSens_SetResolution(&Sensor_2);
+	TemperatureSens_StartConvertTemperature(&Sensor_2);
+
 //	Sensor_3.GPIO_PORT     = GPIOA;
 //	Sensor_3.GPIO_PIN      = 0;
 //	Sensor_3.SENSOR_NUMBER = 3;
