@@ -24,13 +24,15 @@ static uint32_t I2C_LongWait(I2C_TypeDef *i2c, uint32_t flag){
 	//---------------------
 	while(!(i2c->SR1 & flag))//Ожидаем окончания ....
 	{
-		if(++wait_count >= I2C_WAIT) return 1;
+		if(++wait_count >= I2C_WAIT_TIMEOUT) return 1;
 	}
 	return 0;
 }
 //**********************************************************
+static _i2c_ClearBuf(uint8_t *pBuf, uint16_t len){
 
-
+	for(uint16_t i=0; i<len; i++) *(pBuf+i) = 0;
+}
 //*******************************************************************************************
 //*******************************************************************************************
 void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
@@ -84,7 +86,7 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 	for(uint8_t i = 0; i < 255; i++){__NOP();};
 }
 //**********************************************************
-uint8_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
+uint32_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
@@ -104,125 +106,91 @@ void I2C_SendData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
 
 	for(uint16_t i = 0; i < len; i++)
 	{
+		if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;//Ждем освобождения буфера
 		i2c->DR = *(pBuf + i);
-		//while(!(i2c->SR1 & I2C_SR1_TXE));//Ждем освобождения буфера
-		if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;
 	}
-}
-//**********************************************************
-void I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
-
-	//прием даннных
-	if(len == 1)
-	{
-		//i2c->CR1 &= ~I2C_CR1_ACK;                  	  //Фомирование NACK после приема последнего байта.
-		//if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-		i2c->CR1 &= ~I2C_CR1_ACK;
-		*(pBuf + 0) = i2c->DR;				       	  //считали принятый байт.
-	}
-	else
-	{
-		for(uint16_t i = 0; i < (len-1); i++)
-		{
-			*(pBuf + i) = i2c->DR;						  //считали принятый
-			i2c->CR1 |= I2C_CR1_ACK; 			          //Фомирование ACK после приема байта
-			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-			//*(pBuf + i) = i2c->DR;			              //считали принятый
-		}
-		i2c->CR1 &= ~I2C_CR1_ACK;                  	  //Фомирование NACK после приема последнего байта.
-		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-		*(pBuf + len - 1) = i2c->DR;		          //считали принятый байт.
-	}
-	STOP:
-	i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
-}
-//**********************************************************
-void I2C_Stop(I2C_TypeDef *i2c){
-
-	//while(!(i2c->SR1 & I2C_SR1_BTF));//Ждем окончания передачи
 	if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
 	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
+}
+//**********************************************************
+//прием даннных
+void I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
+
+	//receiving 1 byte
+	if(len == 1)
+	{
+		i2c->CR1 &= ~I2C_CR1_ACK;//Фомирование NACK.
+		i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop.
+		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return;//ожидаем окончания приема байта
+		*(pBuf + 0) = i2c->DR;				       //считали принятый байт.
+		i2c->CR1 |= I2C_CR1_ACK;				   //to be ready for another reception
+		return;
+	}
+	//receiving 2 bytes
+	else if(len == 2)
+	{
+		i2c->CR1 |=  I2C_CR1_POS;//
+		i2c->CR1 &= ~I2C_CR1_ACK;//Фомирование NACK.
+		if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
+		i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop.
+		*(pBuf + 0) = i2c->DR;	 //считали принятый байт.
+		*(pBuf + 1) = i2c->DR;	 //считали принятый байт.
+		i2c->CR1 &= ~I2C_CR1_POS;//
+		i2c->CR1 |= I2C_CR1_ACK; //to be ready for another reception
+		return;
+	}
+	//receiving more than 2 bytes
+	else
+	{
+		uint16_t i;
+		for(i=0; i<(len-3); i++)
+		{
+			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return;
+			*(pBuf + i) = i2c->DR;//Read DataN
+		}
+		//Вычитываем оставшиеся 3 байта.
+		if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
+		i2c->CR1 &= ~I2C_CR1_ACK; //Фомирование NACK
+		*(pBuf + i + 0) = i2c->DR;//Read DataN-2
+		i2c->CR1 |= I2C_CR1_STOP; //Формируем Stop
+		*(pBuf + i + 1) = i2c->DR;//Read DataN-1
+		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return;
+		*(pBuf + i + 2) = i2c->DR;//Read DataN
+		i2c->CR1 |= I2C_CR1_ACK;
+	}
 }
 //*******************************************************************************************
 //*******************************************************************************************
 void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
-//	uint32_t wait_count = 0;
-	//---------------------
-	//Формирование Start condition.
-	i2c->CR1 |= I2C_CR1_START;
-	if(I2C_LongWait(i2c, I2C_SR1_SB)) return;//Ожидание формирования Start condition.
-	(void)i2c->SR1;				      		 //Для сброса флага SB необходимо прочитать SR1
-
-	//Передаем адрес slave + Запись.
-	i2c->DR = deviceAddr | I2C_MODE_WRITE;
-	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;				        	   //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;				        	   //
+	//Формирование Start + AddrSlave|Write.
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_WRITE) != 0) return;
 
 	//Передача адреса в который хотим записать.
 	i2c->DR = regAddr;
 	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;
+
 	//передача данных на запись.
-	for(uint16_t i = 0; i < len; i++)
-		{
-			i2c->DR = *(pBuf + i);
-			if(I2C_LongWait(i2c, I2C_SR1_TXE)) goto STOP;//Ждем освобождения буфера
-		}
-	STOP:
-	i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+	I2C_SendData(i2c, pBuf, len);
 }
 //**********************************************************
 void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
-	//Формирование Start condition.
-	i2c->CR1 |= I2C_CR1_START;
-	if(I2C_LongWait(i2c, I2C_SR1_SB)) return;//Ожидание формирования Start condition.
-	(void)i2c->SR1;							 //Для сброса флага SB необходимо прочитать SR1
-
-	//Передаем адрес slave + Запись.
-	i2c->DR = deviceAddr | I2C_MODE_WRITE;
-	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;							   //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;							   //
+	//Формирование Start + AddrSlave|Write.
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_WRITE) != 0) return;
 
 	//Передача адреса с которого начинаем чтение.
 	i2c->DR = regAddr;
 	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;
 	//---------------------
 	//Формирование reStart condition.
-	i2c->CR1 |= I2C_CR1_STOP; //Это команда нужня для работы с DS2782. Без нее не работает
-	i2c->CR1 |= I2C_CR1_START;
-	if(I2C_LongWait(i2c, I2C_SR1_SB)) return;//Ожидание формирования Start condition.
-	(void)i2c->SR1;							 //Для сброса флага SB необходимо прочитать SR1
+	i2c->CR1 |= I2C_CR1_STOP; //Это команда нужна для работы с DS2782. Без нее не работает
 
-	//Передаем адрес slave + Чтение.
-	i2c->DR = deviceAddr | I2C_MODE_READ;
-	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;							   //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;							   //
+	//Формирование Start + AddrSlave|Read.
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_READ) != 0) return;
+
 	//прием даннных
-	if(len == 1)
-		{
-			i2c->CR1 &= ~I2C_CR1_ACK;                	  //Фомирование NACK после приема последнего байта.
-			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-			*(pBuf + 0) = i2c->DR;				          //считали принятый байт.
-		}
-	else
-		{
-			for(uint16_t i = 0; i < (len-1); i++)
-				{
-					i2c->CR1 |= I2C_CR1_ACK; 			          //Фомирование ACK после приема байта
-					if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-					*(pBuf + i) = i2c->DR;			         	  //считали принятый
-				}
-			i2c->CR1 &= ~I2C_CR1_ACK;                	  //Фомирование NACK после приема последнего байта.
-			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) goto STOP;//ожидаем окончания приема байта
-			*(pBuf + len - 1) = i2c->DR;		     	  //считали принятый байт.
-		}
-	//---------------------
-	STOP:
-	i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+	I2C_ReadData(i2c, pBuf, len);
 }
 //*******************************************************************************************
 //*******************************************************************************************

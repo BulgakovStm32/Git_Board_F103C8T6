@@ -31,6 +31,9 @@ DS18B20_t Sensor_3;
 DS2782_t  DS2782;
 
 Encoder_t Encoder;
+
+static uint8_t I2cTxBuf[32] = {0};
+static uint8_t I2cRxBuf[32] = {0};
 //*******************************************************************************************
 //*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
@@ -232,13 +235,23 @@ void Task_Temperature_Display(void){
 	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
 	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
 
-	Lcd_SetCursor(1, 4);
+	Lcd_SetCursor(1, 5);
 	Lcd_Print("Encoder=");
 	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
 
 	//Вывод темперетуры DS18B20.
+	Sensor_1.SENSOR_NUMBER    = 1;
+	Sensor_1.TEMPERATURE_SIGN = I2cRxBuf[0];
+	Sensor_1.TEMPERATURE  	  = (uint32_t)(I2cRxBuf[1] << 8);
+	Sensor_1.TEMPERATURE 	 |= (uint32_t)I2cRxBuf[2];
+
+	Sensor_2.SENSOR_NUMBER    = 2;
+	Sensor_2.TEMPERATURE_SIGN = I2cRxBuf[3];
+	Sensor_2.TEMPERATURE      = (uint32_t)(I2cRxBuf[4] << 8);
+	Sensor_2.TEMPERATURE 	 |= (uint32_t)I2cRxBuf[5];
+
 	Temperature_Display(&Sensor_1, 1, 3);
-	//Temperature_Display(&Sensor_2, 1, 4);
+	Temperature_Display(&Sensor_2, 1, 4);
 	//Temperature_Display(&Sensor_3, 1, 5);
 }
 //************************************************************
@@ -339,19 +352,16 @@ void Task_GPS(void){
 #define STM32_SLAVE_I2C		  I2C1
 #define STM32_SLAVE_I2C_ADDR (0x05 << 1)
 
-static uint8_t txBuf[32] = {0};
-static uint8_t rxBuf[32] = {0};
 //************************************************************
 void Task_STM32_Master_Write(void){
 
-	txBuf[0]++;
-	txBuf[1] = txBuf[0] + 1;
-	txBuf[2] = txBuf[1] + 1;
+	I2cTxBuf[0]++;
+	I2cTxBuf[1] = I2cTxBuf[0] + 1;
+	I2cTxBuf[2] = I2cTxBuf[1] + 1;
 
 	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == 0)
 	{
-		I2C_SendData(STM32_SLAVE_I2C, txBuf, 3);
-		I2C_Stop(STM32_SLAVE_I2C);
+		I2C_SendData(STM32_SLAVE_I2C, I2cTxBuf, 3);
 	}
 }
 //************************************************************
@@ -359,8 +369,14 @@ void Task_STM32_Master_Read(void){
 
 	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_READ) == 0)
 	{
-		I2C_ReadData(STM32_SLAVE_I2C, rxBuf, 3);
-		//I2C_Stop(STM32_SLAVE_I2C);
+		I2C_ReadData(STM32_SLAVE_I2C, I2cRxBuf, 6);
+	}
+	else
+	{
+		for(uint16_t i=0; i<6; i++)
+		{
+			*(I2cRxBuf+i) = 0;
+		}
 	}
 }
 //*******************************************************************************************
@@ -420,12 +436,12 @@ int main(void){
 //	TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я OLED SSD1306
-	//SSD1306_Init(SSD1306_I2C);
+	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я DS2782.
 	//DS2782_Init(DS2782_I2C);
 
-	I2C_Init(STM32_SLAVE_I2C, 0);
+	//I2C_Init(STM32_SLAVE_I2C, 0);
 	//***********************************************
 	//Отладка I2C по прерываниям.
 //	static uint8_t i2cBuf[3] = {1, 2, 3};
@@ -436,10 +452,10 @@ int main(void){
 	//Ини-я диспетчера.
 	RTOS_Init();
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	//RTOS_SetTask(Task_LcdUpdate, 		0, 5);
+	RTOS_SetTask(Task_LcdUpdate, 		0, 10);
 	//RTOS_SetTask(Task_GPS, 				0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
-	RTOS_SetTask(Task_STM32_Master_Read,  0, 600);
+	RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 
 	//RTOS_SetTask(Task_UartSend, 		0, 1000);
 	//RTOS_SetTask(Task_DS2782, 		0, 250);
