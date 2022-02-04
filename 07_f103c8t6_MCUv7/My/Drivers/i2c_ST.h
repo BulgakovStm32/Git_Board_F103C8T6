@@ -25,7 +25,7 @@
 //#define I2C_CR2_VALUE   (APB1_CLK / 1000000)
 //#define I2C_CCR_VALUE	((APB1_CLK / I2C_BAUD_RATE) / 2)
 //#define I2C_TRISE_VALUE ((1 / (I2C_TRISE * (APB1_CLK / 1000000))) + 1)
-#define I2C_WAIT_TIMEOUT	7000U
+#define I2C_WAIT_TIMEOUT	10000U
 //--------------------------
 #define I2C_MODE_READ  			1
 #define I2C_MODE_WRITE 			0
@@ -62,12 +62,18 @@ uint32_t I2C_IT_GetData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 void I2C_IT_EV_Handler(I2C_TypeDef *i2c);//Обработчик прерывания событий I2C
 void I2C_IT_ER_Handler(I2C_TypeDef *i2c);//Обработчик прерывания ошибок I2C
 
-//Работа чере DMA. Не отлажено!!!
-void I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap);
 
-void I2C1_DMAInit(void);
-void I2C1_DMAStartTx(uint8_t *pData, uint32_t size);
-void I2C1_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t size);
+//Работа чере DMA. Не отлажено!!!
+#define I2C1_TX_DMAChannel	DMA1_Channel6
+#define I2C1_RX_DMAChannel	DMA1_Channel7
+
+#define I2C2_TX_DMAChannel	DMA1_Channel4
+#define I2C2_RX_DMAChannel	DMA1_Channel5
+
+void I2C_DMA_Init   (I2C_TypeDef *i2c, DMA_Channel_TypeDef *dma, uint32_t remap);
+void I2C_DMA_StartTx(DMA_Channel_TypeDef *dma, uint8_t *pData, uint32_t size);
+
+void I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t size);
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* I2C_ST_H_ */

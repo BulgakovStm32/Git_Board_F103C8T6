@@ -82,7 +82,7 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c);
  * @retval None
  */
 //void SSD1306_UpdateScreen(void);
-void SSD1306_UpdateScreen(uint8_t *pBuf);
+void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size);
 
 /**
  * @brief  Toggles pixels invertion inside internal RAM

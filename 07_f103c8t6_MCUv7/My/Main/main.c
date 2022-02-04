@@ -232,28 +232,28 @@ void Task_Temperature_Display(void){
 	Time_Display(1, 2);
 
 	//Енкодер.
-	static uint16_t tempReg = 0;
-	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
-	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
-
-	Lcd_SetCursor(1, 5);
-	Lcd_Print("Encoder=");
-	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
-
-	//Вывод темперетуры DS18B20.
-	Sensor_1.SENSOR_NUMBER    = 1;
-	Sensor_1.TEMPERATURE_SIGN = I2cRxBuf[0];
-	Sensor_1.TEMPERATURE  	  = (uint32_t)(I2cRxBuf[1] << 8);
-	Sensor_1.TEMPERATURE 	 |= (uint32_t)I2cRxBuf[2];
-
-	Sensor_2.SENSOR_NUMBER    = 2;
-	Sensor_2.TEMPERATURE_SIGN = I2cRxBuf[3];
-	Sensor_2.TEMPERATURE      = (uint32_t)(I2cRxBuf[4] << 8);
-	Sensor_2.TEMPERATURE 	 |= (uint32_t)I2cRxBuf[5];
-
-	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 4);
-	//Temperature_Display(&Sensor_3, 1, 5);
+//	static uint16_t tempReg = 0;
+//	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
+//	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
+//
+//	Lcd_SetCursor(1, 5);
+//	Lcd_Print("Encoder=");
+//	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
+//
+//	//Вывод темперетуры DS18B20.
+//	Sensor_1.SENSOR_NUMBER    = 1;
+//	Sensor_1.TEMPERATURE_SIGN = I2cRxBuf[0];
+//	Sensor_1.TEMPERATURE  	  = (uint32_t)(I2cRxBuf[1] << 8);
+//	Sensor_1.TEMPERATURE 	 |= (uint32_t)I2cRxBuf[2];
+//
+//	Sensor_2.SENSOR_NUMBER    = 2;
+//	Sensor_2.TEMPERATURE_SIGN = I2cRxBuf[3];
+//	Sensor_2.TEMPERATURE      = (uint32_t)(I2cRxBuf[4] << 8);
+//	Sensor_2.TEMPERATURE 	 |= (uint32_t)I2cRxBuf[5];
+//
+//	Temperature_Display(&Sensor_1, 1, 3);
+//	Temperature_Display(&Sensor_2, 1, 4);
+//	//Temperature_Display(&Sensor_3, 1, 5);
 
 	Lcd_SetCursor(9, 1);
 	Lcd_Print("I2CErr=");
@@ -262,14 +262,18 @@ void Task_Temperature_Display(void){
 //************************************************************
 void Task_LcdUpdate(void){
 
-	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
-	else										 LedPC13Off();
+//	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
+//	else										 LedPC13Off();
 
 	RTOS_SetTask(Task_Temperature_Display, 0, 0);
 	//RTOS_SetTask(Task_Lcd_DS2782, 0, 0);
 
+	LedPC13On();
+
 	Lcd_Update(); //вывод сделан для SSD1306
-	Lcd_ClearVideoBuffer();
+	//Lcd_ClearVideoBuffer();
+
+	LedPC13Off();
 }
 //************************************************************
 void Task_UartSend(void){
@@ -388,41 +392,47 @@ void Task_STM32_Master_Read(void){
 //************************************************************
 void Task_STM32_I2C_DMA_Send(void){
 
-	LedPC13Toggel();
+	//LedPC13Toggel();
 	//--------------------------------
 	static uint8_t sendBuf[32] = {0xAA, 0xAB, 0xAC, 0xAD, 0xAE};
 
-	/* Enable the peripheral clock DMA1 */
-	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+//	/* Enable the peripheral clock DMA1 */
+//	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+//
+//	DMA1_Channel6->CCR &= ~DMA_CCR_EN;	   // Channel disable
+//
+//	/* DMA1 Channel6 I2C1_TX config */
+//	DMA1_Channel6->CPAR  = (uint32_t)&(I2C1->DR);// Peripheral address.
+//	DMA1_Channel6->CMAR  = (uint32_t)sendBuf;    // Memory address.
+//	DMA1_Channel6->CNDTR = 5; 		   		     // Data size.
+//
+//	DMA1_Channel6->CCR = (3 << DMA_CCR_PL_Pos)   | // PL[1:0]: Channel priority level - 11: Very high.
+//						 (0 << DMA_CCR_PSIZE_Pos)| // PSIZE[1:0]: Peripheral size - 00: 8-bits.
+//						 (0 << DMA_CCR_MSIZE_Pos)| // MSIZE[1:0]: Memory size     - 00: 8-bits.
+//						 DMA_CCR_MINC |			   // MINC: Memory increment mode - Memory increment mode enabled.
+//						 DMA_CCR_DIR  |            // DIR:  Data transfer direction: 1 - Read from memory.
+//						 //DMA_CCR_CIRC | 		   // CIRC: Circular mode
+//						 //DMA_CCR_TEIE | 		   // TEIE: Transfer error interrupt enable
+//						 //DMA_CCR_HTIE | 		   // HTIE: Half transfer interrupt enable
+//						 DMA_CCR_TCIE;// | 		   // TCIE: Transfer complete interrupt enable
+//						 //DMA_CCR_EN;			   // EN: Channel enable
+//
+//	NVIC_SetPriority(DMA1_Channel6_IRQn, 0);// Set priority
+//	NVIC_EnableIRQ(DMA1_Channel6_IRQn);     // Enable DMA1_Channel6_IRQn
+//	//DMA1_Channel6->CCR |= DMA_CCR_EN;       // Channel enable
 
-	DMA1_Channel6->CCR &= ~DMA_CCR_EN;	   // Channel disable
+//	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, SSD1306_I2C_ADDR | I2C_MODE_WRITE)) return;
+//	I2C_SendByte(STM32_SLAVE_I2C, 0x01);
+//
+//	//I2C1->CR2 |= I2C_CR2_LAST;  	  //DMA Last Transfer
+//	I2C1->CR2 |= I2C_CR2_DMAEN; 	  //DMAEN(DMA requests enable)
+//	DMA1_Channel6->CCR |= DMA_CCR_EN; // Channel enable
 
-	/* DMA1 Channel6 I2C1_TX config */
-	DMA1_Channel6->CPAR  = (uint32_t)&(I2C1->DR);// Peripheral address.
-	DMA1_Channel6->CMAR  = (uint32_t)sendBuf;    // Memory address.
-	DMA1_Channel6->CNDTR = 5; 		   		     // Data size.
+	LedPC13On();
 
-	DMA1_Channel6->CCR = (3 << DMA_CCR_PL_Pos)   | // PL[1:0]: Channel priority level - 11: Very high.
-						 (0 << DMA_CCR_PSIZE_Pos)| // PSIZE[1:0]: Peripheral size - 00: 8-bits.
-						 (0 << DMA_CCR_MSIZE_Pos)| // MSIZE[1:0]: Memory size     - 00: 8-bits.
-						 DMA_CCR_MINC |			   // MINC: Memory increment mode - Memory increment mode enabled.
-						 DMA_CCR_DIR  |            // DIR:  Data transfer direction: 1 - Read from memory.
-						 //DMA_CCR_CIRC | 		   // CIRC: Circular mode
-						 //DMA_CCR_TEIE | 		   // TEIE: Transfer error interrupt enable
-						 //DMA_CCR_HTIE | 		   // HTIE: Half transfer interrupt enable
-						 DMA_CCR_TCIE;// | 		   // TCIE: Transfer complete interrupt enable
-						 //DMA_CCR_EN;			   // EN: Channel enable
+	I2C_DMA_Write(STM32_SLAVE_I2C, SSD1306_I2C_ADDR, 0, sendBuf, 5);
 
-	NVIC_SetPriority(DMA1_Channel6_IRQn, 0);// Set priority
-	NVIC_EnableIRQ(DMA1_Channel6_IRQn);     // Enable DMA1_Channel6_IRQn
-	//DMA1_Channel6->CCR |= DMA_CCR_EN;       // Channel enable
-
-	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, SSD1306_I2C_ADDR | I2C_MODE_WRITE)) return;
-	I2C_SendByte(STM32_SLAVE_I2C, 0x01);
-
-	//I2C1->CR2 |= I2C_CR2_LAST;  	  //DMA Last Transfer
-	I2C1->CR2 |= I2C_CR2_DMAEN; 	  //DMAEN(DMA requests enable)
-	DMA1_Channel6->CCR |= DMA_CCR_EN; // Channel enable
+	LedPC13Off();
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -478,7 +488,7 @@ int main(void){
 //	TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я OLED SSD1306
-//	SSD1306_Init(SSD1306_I2C);
+	SSD1306_Init(SSD1306_I2C);
 	//***********************************************
 	//Ини-я DS2782.
 	//DS2782_Init(DS2782_I2C);
@@ -491,15 +501,15 @@ int main(void){
 //	I2C_IT_StartTx(I2C1, SSD1306_I2C_ADDR, 0x55, i2cBuf, 3);
 
 	//Отладка I2C+DMA.
-	I2C_DMA_Init(STM32_SLAVE_I2C, 0);
+	I2C_DMA_Init(I2C1, I2C1_TX_DMAChannel, 0);
 
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	//RTOS_SetTask(Task_LcdUpdate, 		  0, 10);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 50);
 	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
-	RTOS_SetTask(Task_STM32_I2C_DMA_Send, 0, 500);
+	//RTOS_SetTask(Task_STM32_I2C_DMA_Send, 0, 500);
 
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	//RTOS_SetTask(Task_GPS, 			0, 500);
