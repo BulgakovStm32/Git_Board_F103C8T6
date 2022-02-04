@@ -21,9 +21,9 @@ void Blink_Loop(void){
 		}
 }
 //-----------------------------------------------------------------------------
-uint16_t Blink(BlinkIntervalEnum_t interval){
+uint32_t Blink(BlinkIntervalEnum_t interval){
 	
-	if(BlinkReg & (1 << interval)) return 0xFFFF;
-	else											     return 0;
+	if(BlinkReg & (1 << interval)) return 1;
+	else						   return 0;
 }
 //-----------------------------------------------------------------------------

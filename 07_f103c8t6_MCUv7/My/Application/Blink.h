@@ -18,7 +18,7 @@ typedef enum{
 }BlinkIntervalEnum_t;
 //-----------------------------------------------------------------------------
 void     Blink_Loop(void);
-uint16_t Blink(BlinkIntervalEnum_t interval);
+uint32_t Blink(BlinkIntervalEnum_t interval);
 //-----------------------------------------------------------------------------
 #endif /*_Blink_H*/
 
