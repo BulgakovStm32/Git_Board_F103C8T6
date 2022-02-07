@@ -2,11 +2,11 @@
 #include "LcdGraphic.h"
 
 //*********************************************************************************************
-static uint8_t  lcdTextBuf[LCD_TEXT_BUFFER_SIZE];	   //буфер для вывода текста
-static uint8_t  lcdVideoBuffer[LCD_VIDEO_BUFFER_SIZE]; //Cache buffer in SRAM 128*64 bits or 1024 bytes
-static uint16_t LcdCacheIdx = 0;                       //Cache index
+static uint8_t  lcdTextBuf[LCD_TEXT_BUFFER_SIZE] = {0,};	 //буфер для вывода текста
+static uint8_t  lcdVideoBuffer[LCD_VIDEO_BUFFER_SIZE] = {0,};//Cache buffer in SRAM 128*64 bits or 1024 bytes
+static uint16_t LcdCacheIdx = 0;                             //Cache index
 
-static uint8_t  UartTextBuffer[128] ={0,};
+static uint8_t  UartTextBuffer[128] = {0,};
 static uint16_t UartTextBufferIndex = 0;
 //*****************************
 extern const unsigned char Ascii_Tab_12864[];//Рабочая.

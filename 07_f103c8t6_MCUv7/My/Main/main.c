@@ -37,6 +37,7 @@ static uint8_t  I2CRxBuf[32] = {0};
 static uint32_t I2CNacCount  = 0;
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
 void IncrementOnEachPass(uint32_t *var, uint16_t event){
 
 		   uint16_t riseReg  = 0;
@@ -110,6 +111,7 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_Chr(':');
 	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM); //секунды
 }
+//*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //Вывод значения встроенного АЦП.
@@ -215,6 +217,7 @@ void Task_Lcd_DS2782(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
 void Task_Temperature_Read(void){
 
 	TemperatureSens_ReadTemperature(&Sensor_1);
@@ -223,6 +226,8 @@ void Task_Temperature_Read(void){
 }
 //************************************************************
 void Task_Temperature_Display(void){
+
+	LedPC13On();
 
 	//Шапка
 	Lcd_SetCursor(1, 1);
@@ -258,18 +263,28 @@ void Task_Temperature_Display(void){
 	Lcd_SetCursor(9, 1);
 	Lcd_Print("I2CErr=");
 	Lcd_BinToDec(I2CNacCount, 4, LCD_CHAR_SIZE_NORM);
+
+	LedPC13Off();
 }
 //************************************************************
+void Task_STM32_Master_Read(void);
+
+
 void Task_LcdUpdate(void){
+
+	LedPC13On();
 
 //	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
 //	else										 LedPC13Off();
 
-	RTOS_SetTask(Task_Temperature_Display, 0, 0);
+	RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
+	RTOS_SetTask(Task_Temperature_Display, 5, 0);
 	//RTOS_SetTask(Task_Lcd_DS2782, 0, 0);
 
 	Lcd_Update(); //вывод сделан для SSD1306
 	//Lcd_ClearVideoBuffer();
+
+	LedPC13Off();
 }
 //************************************************************
 void Task_UartSend(void){
@@ -339,6 +354,7 @@ void Task_UartSend(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
 //Работа с GPS L96-M33
 #define GPS_I2C				I2C1
 #define GPS_I2C_ADDR		(0x10 << 1)
@@ -351,6 +367,7 @@ void Task_GPS(void){
 
 	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0xAE, GpsRxBuf, 1 );
 }
+//*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //Запросы для отлаживания STM32 I2C в режиме Slave.
@@ -374,36 +391,22 @@ void Task_STM32_Master_Read(void){
 
 	LedPC13On();
 
-//	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, SSD1306_I2C_ADDR | I2C_MODE_READ) == 0)
-//	{
-//		I2C_ReadData(STM32_SLAVE_I2C, I2cRxBuf, 6);
-//	}
-//	else
-//	{
-//		I2cNacCount++;
-//		for(uint16_t i=0; i<6; i++)
-//		{
-//			*(I2cRxBuf+i) = 0;
-//		}
-//	}
-
-	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, 0, I2CRxBuf, 6) != 0)
+	if(I2C_DMA_State() == I2C_DMA_READY)
 	{
-		I2CNacCount++;
-		for(uint16_t i=0; i<6; i++)
+		if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, 6) != 0)
 		{
-			*(I2CRxBuf+i) = 0;
+			I2CNacCount++;
+			for(uint16_t i=0; i<6; i++)
+			{
+				*(I2CRxBuf+i) = 0;
+			}
+			I2C_DMA_Init(I2C1, I2C1_TX_DMAChannel, 0);
 		}
 	}
+
 	LedPC13Off();
 }
-//************************************************************
-void Task_STM32_I2C_DMA_Send(void){
-
-	static uint8_t sendBuf[32] = {0xAA, 0xAB, 0xAC, 0xAD, 0xAE};
-	//--------------------------------
-	I2C_DMA_Write(STM32_SLAVE_I2C, SSD1306_I2C_ADDR, 0, sendBuf, 5);
-}
+//*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 int main(void){
@@ -455,13 +458,14 @@ int main(void){
 	Encoder_Init(&Encoder);
 	//***********************************************
 	//Инициализация	ШИМ
-//	TIM3_InitForPWM();
+	//TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я DS2782.
 	//DS2782_Init(DS2782_I2C);
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C);
+	Lcd_ClearVideoBuffer();
 	//***********************************************
 	//Отладка I2C по прерываниям.
 //	static uint8_t i2cBuf[3] = {1, 2, 3};
@@ -473,10 +477,9 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 45);
-	RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 40);
+	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
-	//RTOS_SetTask(Task_STM32_I2C_DMA_Send, 0, 500);
 
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	//RTOS_SetTask(Task_GPS, 			0, 500);
