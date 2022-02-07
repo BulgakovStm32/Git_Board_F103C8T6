@@ -66,7 +66,6 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 
 	/* Init I2C */
 	I2C_Init(i2c, 0);
-
 	/* Init LCD */
 	ssd1306_I2C_WriteCMD(0xAE); //display off
 	ssd1306_I2C_WriteCMD(0x20); //Set Memory Addressing Mode
@@ -112,67 +111,8 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 
 	ssd1306_I2C_WriteCMD(0xAF); //--turn on SSD1306 panel
 	//-------------------------
-	//работа по прерываниям I2C.
-
-//	uint8_t InitBuf[28] = {
-//
-//		0xAE, //display off
-//		0x20, //Set Memory Addressing Mode
-//		0x01, //00,Horizontal Addressing Mode;
-//			  //01,Vertical Addressing Mode;
-//			  //10,Page Addressing Mode (RESET);
-//			  //11,Invalid
-//		0xB0, //Set Page Start Address for Page Addressing Mode,0-7
-//		//
-//		0xC8, //Set COM Output Scan Direction
-//		0x00, //---set low column address
-//		0x10, //---set high column address
-//		0x40, //--set start line address
-//		//
-//		0x81, //--set contrast control register
-//		50,
-//		//
-//		0xA1, //--set segment re-map 0 to 127
-//		0xA6, //--set normal display
-//		0xA8, //--set multiplex ratio(1 to 64)
-//		0x3F, //
-//		//
-//		0xA4, //0xa4,Output follows RAM content;0xa5,Output ignores RAM content
-//		0xD3, //-set display offset
-//		0x00, //-not offset
-//		0xD5, //--set display clock divide ratio/oscillator frequency
-//		0xF0, //--set divide ratio
-//		0xD9, //--set pre-charge period
-//		0x22, //
-//		//
-//		0xDA, //--set com pins hardware configuration
-//		0x12,
-//		//
-//		0xDB, //--set vcomh
-//		0x20, //0x20,0.77xVcc
-//		//
-//		0x8D, //--set DC-DC enable
-//		0x14, //
-//		//
-//		0xAF, //--turn on SSD1306 panel
-//	};
-//	//------------
-//	I2C_Int_StartSendData(SSD1306_I2C, SSD1306_I2C_ADDR, InitBuf, 28);
-
 	pVideoBuffer = Lcd_pVideoBuffer();
 
-//	msDelay(1000);
-
-	/* Clear screen */
-//	SSD1306_Fill(SSD1306_COLOR_WHITE);
-	/* Update screen */
-//	SSD1306_UpdateScreen();
-	/* Set default values */
-//	SSD1306.CurrentX = 0;
-//	SSD1306.CurrentY = 0;
-	/* Initialized OK */
-//	SSD1306.Initialized = 1;
-	/* Return OK */
 	return 1;
 }
 //***********************************************************************
@@ -188,34 +128,36 @@ void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size){
 //		ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
 //	}
 
+	//-------------------------
+	static uint32_t m = 0;
+	if(I2C_DMA_State() != I2C_DMA_READY)return;
+	if(m < 8)
+	{
+		ssd1306_I2C_WriteCMD(0xB0 + m);//Set Page Start Address for Page Addressing Mode,0-7
+		ssd1306_I2C_WriteCMD(0x00);    //Set low column address ,смещение вывода изображениея на 2 столбца.
+		ssd1306_I2C_WriteCMD(0x10);    //Set high column address
+		/* Write data buf*/
+		ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
+		m++;
+	}
+	else m = 0;
+	//-------------------------
 
-//	static uint16_t m = 0;
-//	if(m < 8)
-//	{
-//		ssd1306_I2C_WriteCMD(0xB0 + m);//Set Page Start Address for Page Addressing Mode,0-7
-//		ssd1306_I2C_WriteCMD(0x00);    //Set low column address ,смещение вывода изображениея на 2 столбца.
-//		ssd1306_I2C_WriteCMD(0x10);    //Set high column address
+//    //Передача данных для дисплея 0,95"
+//	if(I2C_DMA_State() != I2C_DMA_READY)return;
 //
-//		/* Write multi data */
-//		ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * m], SSD1306_WIDTH);
-//		m++;
-//	}
-//	else m = 0;
-
-
-    //Передача данных для дисплея 0,95"
-	ssd1306_I2C_WriteCMD(0x20);//настройка адресации
-	ssd1306_I2C_WriteCMD(0x00);//
-
-	ssd1306_I2C_WriteCMD(0x21);//установка столбца
-	ssd1306_I2C_WriteCMD(0);   //Начальный столбец.
-	ssd1306_I2C_WriteCMD(127); //Конечный столбец.
-
-	ssd1306_I2C_WriteCMD(0x22);//установка страницы
-	ssd1306_I2C_WriteCMD(0);   //Начальная страница.
-	ssd1306_I2C_WriteCMD(7);   //Конечная страница.
-
-	ssd1306_I2C_WriteDataBuf(pBuf, size);
+//	ssd1306_I2C_WriteCMD(0x20);//настройка адресации
+//	ssd1306_I2C_WriteCMD(0x00);//
+//
+//	ssd1306_I2C_WriteCMD(0x21);//установка столбца
+//	ssd1306_I2C_WriteCMD(0);   //Начальный столбец.
+//	ssd1306_I2C_WriteCMD(127); //Конечный столбец.
+//
+//	ssd1306_I2C_WriteCMD(0x22);//установка страницы
+//	ssd1306_I2C_WriteCMD(0);   //Начальная страница.
+//	ssd1306_I2C_WriteCMD(7);   //Конечная страница.
+//
+//	ssd1306_I2C_WriteDataBuf(pBuf, size);
 }
 //***********************************************************************
 void SSD1306_ToggleInvert(void) {
