@@ -85,6 +85,7 @@ void Task_Temperature_Read(void){
 	TemperatureSens_ReadTemperature(&Sensor_2);
 	TemperatureSens_ReadTemperature(&Sensor_3);
 
+
 	txBuf[0] = (uint8_t) Sensor_1.TEMPERATURE_SIGN;
 	txBuf[1] = (uint8_t)(Sensor_1.TEMPERATURE >> 8);
 	txBuf[2] = (uint8_t) Sensor_1.TEMPERATURE;
