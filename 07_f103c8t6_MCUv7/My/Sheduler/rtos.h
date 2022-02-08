@@ -34,7 +34,7 @@ typedef struct{
 //*******************************************************************************************
 // Прототипы фукнций
 void 	 RTOS_Init(void);
-void     RTOS_SetTask(void(*taskFunc)(void), uint16_t taskDelay, uint16_t taskPeriod);
+void     RTOS_SetTask(void(*taskFunc)(void), uint32_t taskDelay, uint32_t taskPeriod);
 void     RTOS_DeleteTask(void(*taskFunc)(void));
 void     RTOS_DispatchLoop(void);
 void     RTOS_TimerServiceLoop(void);

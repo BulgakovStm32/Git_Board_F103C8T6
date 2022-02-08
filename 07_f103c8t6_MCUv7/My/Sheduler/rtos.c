@@ -49,13 +49,15 @@ void RTOS_Init(void){
 /* Добавление задачи в список
  *
  */
-void RTOS_SetTask(void(*taskFunc)(void), uint16_t taskDelay, uint16_t taskPeriod){
+void RTOS_SetTask(void(*taskFunc)(void), uint32_t taskDelay, uint32_t taskPeriod){
    
 	volatile Task_t *task = &TaskArray[0];
 	//-----------------------------
 	if(!taskFunc) return;
-
-	for(uint32_t i = 0; i < ArrayTail; i++)  // поиск задачи в текущем списке
+	if(taskDelay != 0) taskDelay -= 1;//Без этого задержка запуска задачи на 1мС больше.
+									  //Почему не понятно!!!
+	//Поиск задачи в текущем списке
+	for(uint32_t i = 0; i < ArrayTail; i++)
 	{
 		if(task->pFunc == taskFunc)// если нашли, то обновляем переменные
 		{
@@ -94,7 +96,7 @@ void RTOS_DeleteTask(void(*taskFunc)(void)){
 			_disableInterrupt();  //Глобальное запрещение прерываний.
 			if(i != (ArrayTail-1))//переносим последнюю задачу на место удаляемой
 			{
-				TaskArray[i] = TaskArray[ArrayTail - 1];
+				TaskArray[i] = TaskArray[ArrayTail-1];
 			}
 			ArrayTail--;	   //уменьшаем указатель "хвоста"
 			_enableInterrupt();//Глобальное разрешение рерываний.
@@ -117,14 +119,16 @@ void RTOS_DispatchLoop(void){
 		//если флаг на выполнение взведен,
 		if(task->Run == 1)
 		{
+			_disableInterrupt();  //Глобальное запрещение прерываний.
 			function = task->pFunc;// запоминаем задачу, т.к. во время выполнения может измениться индекс
-			if(task->Period == 0) RTOS_DeleteTask(task->pFunc);// если период равен 0
+			if(task->Period == 0) RTOS_DeleteTask(task->pFunc);//если период = 0 - удаляем задачу.
 			else
 			{
-				task->Run = 0; 								  //иначе снимаем флаг запуска
-				if(!task->Delay) task->Delay = task->Period-1;//если задача не изменила задержку задаем ее
-															  //задача для себя может сделать паузу
+				task->Run = 0; 								      //иначе снимаем флаг запуска
+				if(task->Delay == 0) task->Delay = task->Period-1;//если задача не изменила задержку задаем ее
+															      //задача для себя может сделать паузу   ????????? не понятно
 			}
+			_enableInterrupt();//Глобальное разрешение рерываний.
 			//выполняем задачу
 			(*function)();
 		}

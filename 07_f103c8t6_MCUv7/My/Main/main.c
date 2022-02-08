@@ -274,11 +274,8 @@ void Task_LcdUpdate(void){
 
 	LedPC13On();
 
-//	if(Led_Blink(RTOS_GetTickCount(), 1000, 50)) LedPC13On();
-//	else										 LedPC13Off();
-
-	RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
-	RTOS_SetTask(Task_Temperature_Display, 5, 0);
+	RTOS_SetTask(Task_Temperature_Display, 5,  0);
+	RTOS_SetTask(Task_STM32_Master_Read,   10, 0);
 	//RTOS_SetTask(Task_Lcd_DS2782, 0, 0);
 
 	Lcd_Update(); //вывод сделан для SSD1306
@@ -477,7 +474,7 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 40);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 50);
 	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
 
