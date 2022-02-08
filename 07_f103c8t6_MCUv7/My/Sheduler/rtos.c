@@ -10,11 +10,12 @@
  */
 
 #include "rtos.h"
+
 //*******************************************************************************************
 //*******************************************************************************************
 
 volatile static Task_t   TaskArray[MAX_TASKS];// очередь задач
-volatile static uint16_t arrayTail = 0;		  // "хвост" очереди
+volatile static uint32_t ArrayTail = 0;		  // "хвост" очереди
 volatile static uint32_t TickCount = 0;		  //
 
 //*******************************************************************************************
@@ -42,7 +43,7 @@ void RTOS_Init(void){
 //   TIMSK        |= (1<<TOIE0);                  // разрешаем прерывание по переполнению
 //   TIMER_COUNTER = TIMER_START;                 // загружаем начальное зн. в счетный регистр
 
-   arrayTail = 0;	// "хвост" в 0
+	ArrayTail = 0;//"хвост" в 0
 }
 //**********************************************************
 /* Добавление задачи в список
@@ -50,36 +51,35 @@ void RTOS_Init(void){
  */
 void RTOS_SetTask(void(*taskFunc)(void), uint16_t taskDelay, uint16_t taskPeriod){
    
-   if(!taskFunc) return;
+	volatile Task_t *task = &TaskArray[0];
+	//-----------------------------
+	if(!taskFunc) return;
 
-   for(uint32_t i = 0; i < arrayTail; i++) // поиск задачи в текущем списке
-   {
-      if(TaskArray[i].pFunc == taskFunc)   // если нашли, то обновляем переменные
-      {
-		  _disableInterrupt();//Глобальное запрещение прерываний.
-
-		 TaskArray[i].Delay  = taskDelay;
-		 TaskArray[i].Period = taskPeriod;
-		 TaskArray[i].Run    = 0;
-
-		 _enableInterrupt();//Глобальное разрешение рерываний.
-		 return;
-      }
-   }
-
-   if(arrayTail < MAX_TASKS)	// если такой задачи в списке нет
-   {                            // и есть место,то добавляем
-	   _disableInterrupt();//Глобальное запрещение прерываний.
-
-      TaskArray[arrayTail].pFunc  = taskFunc;
-      TaskArray[arrayTail].Delay  = taskDelay;
-      TaskArray[arrayTail].Period = taskPeriod;
-      TaskArray[arrayTail].Run    = 0;
-
-      arrayTail++;	     // увеличиваем "хвост"
-
-      _enableInterrupt();//Глобальное разрешение рерываний.
-   }
+	for(uint32_t i = 0; i < ArrayTail; i++)  // поиск задачи в текущем списке
+	{
+		if(task->pFunc == taskFunc)// если нашли, то обновляем переменные
+		{
+			_disableInterrupt();//Глобальное запрещение прерываний.
+			task->Delay  = taskDelay;
+			task->Period = taskPeriod;
+			task->Run    = 0;
+			_enableInterrupt();//Глобальное разрешение рерываний.
+			return;
+		}
+		task++;
+	}
+	//Если такой задачи в списке нет и есть место,то добавляем в конец массива
+	if(ArrayTail < MAX_TASKS)
+	{
+		_disableInterrupt();//Глобальное запрещение прерываний.
+		task 		 = &TaskArray[ArrayTail];
+		task->pFunc  = taskFunc;
+		task->Delay  = taskDelay;
+		task->Period = taskPeriod;
+		task->Run    = 0;
+		ArrayTail++;	   // увеличиваем "хвост"
+		_enableInterrupt();//Глобальное разрешение рерываний.
+	}
 }
 //**********************************************************
 /* Удаление задачи из списка
@@ -87,22 +87,20 @@ void RTOS_SetTask(void(*taskFunc)(void), uint16_t taskDelay, uint16_t taskPeriod
  */
 void RTOS_DeleteTask(void(*taskFunc)(void)){
 
-   for(uint32_t i=0; i<arrayTail; i++)   // проходим по списку задач
-   {
-      if(TaskArray[i].pFunc == taskFunc) // если задача в списке найдена
-      {
-    	 _disableInterrupt();//Глобальное запрещение прерываний.
-
-         if(i != (arrayTail - 1))	// переносим последнюю задачу
-         {                       	// на место удаляемой
-            TaskArray[i] = TaskArray[arrayTail - 1];
-         }
-         arrayTail--;	// уменьшаем указатель "хвоста"
-
-         _enableInterrupt();//Глобальное разрешение рерываний.
-         return;
-      }
-   }
+	for(uint32_t i=0; i < ArrayTail; i++) //проходим по списку задач
+	{
+		if(TaskArray[i].pFunc == taskFunc) // если задача в списке найдена
+		{
+			_disableInterrupt();  //Глобальное запрещение прерываний.
+			if(i != (ArrayTail-1))//переносим последнюю задачу на место удаляемой
+			{
+				TaskArray[i] = TaskArray[ArrayTail - 1];
+			}
+			ArrayTail--;	   //уменьшаем указатель "хвоста"
+			_enableInterrupt();//Глобальное разрешение рерываний.
+			return;
+		}
+	}
 }
 //**********************************************************
 /* Диспетчер РТОС, вызывается в main
@@ -110,29 +108,28 @@ void RTOS_DeleteTask(void(*taskFunc)(void)){
  */
 void RTOS_DispatchLoop(void){
 
-   void(*function)(void);
-
-   for(uint32_t i=0; i<arrayTail; i++)                // проходим по списку задач
-   {
-      if (TaskArray[i].Run == 1)                      // если флаг на выполнение взведен,
-      {                                               // запоминаем задачу, т.к. во
-         function = TaskArray[i].pFunc;               // время выполнения может
-                                                      // измениться индекс
-         if(TaskArray[i].Period == 0)
-         {                                            // если период равен 0
-            RTOS_DeleteTask(TaskArray[i].pFunc);      // удаляем задачу из списка,
-         }
-         else
-         {
-            TaskArray[i].Run = 0;                     // иначе снимаем флаг запуска
-            if(!TaskArray[i].Delay)                   // если задача не изменила задержку
-            {                                         // задаем ее
-               TaskArray[i].Delay = TaskArray[i].Period-1;
-            }                                         // задача для себя может сделать паузу
-         }
-         (*function)();                               // выполняем задачу
-      }
-   }
+	void(*function)(void);
+	volatile Task_t *task = &TaskArray[0];
+	//-----------------------------
+	//проходим по списку задач
+	for(uint32_t i=0; i< ArrayTail; i++)
+	{
+		//если флаг на выполнение взведен,
+		if(task->Run == 1)
+		{
+			function = task->pFunc;// запоминаем задачу, т.к. во время выполнения может измениться индекс
+			if(task->Period == 0) RTOS_DeleteTask(task->pFunc);// если период равен 0
+			else
+			{
+				task->Run = 0; 								  //иначе снимаем флаг запуска
+				if(!task->Delay) task->Delay = task->Period-1;//если задача не изменила задержку задаем ее
+															  //задача для себя может сделать паузу
+			}
+			//выполняем задачу
+			(*function)();
+		}
+		task++;
+	}
 }
 //**********************************************************
 /* Таймерная служба РТОС (прерывание аппаратного таймера)
@@ -154,11 +151,14 @@ void RTOS_DispatchLoop(void){
 
 void RTOS_TimerServiceLoop(void){
 
+	volatile Task_t *task = &TaskArray[0];
+	//-----------------------------
 	TickCount++;
-	for(uint32_t i=0; i<arrayTail; i++)                  // проходим по списку задач
+	for(uint32_t i=0; i < ArrayTail; i++)//проходим по списку задач
 	{
-	    if(TaskArray[i].Delay == 0) TaskArray[i].Run = 1;// если время до выполнения истекло взводим флаг запуска,
-	  else TaskArray[i].Delay--;                         // иначе уменьшаем время
+	    if	(task->Delay == 0) task->Run = 1;//если время до выполнения истекло взводим флаг запуска,
+	    else task->Delay--;                  //иначе уменьшаем время
+	    task++;
 	}
 }
 //**********************************************************
