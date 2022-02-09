@@ -85,7 +85,6 @@ void Task_Temperature_Read(void){
 	TemperatureSens_ReadTemperature(&Sensor_2);
 	TemperatureSens_ReadTemperature(&Sensor_3);
 
-
 	txBuf[0] = (uint8_t) Sensor_1.TEMPERATURE_SIGN;
 	txBuf[1] = (uint8_t)(Sensor_1.TEMPERATURE >> 8);
 	txBuf[2] = (uint8_t) Sensor_1.TEMPERATURE;
@@ -94,9 +93,10 @@ void Task_Temperature_Read(void){
 	txBuf[4] = (uint8_t)(Sensor_2.TEMPERATURE >> 8);
 	txBuf[5] = (uint8_t) Sensor_2.TEMPERATURE;
 
-	txBuf[6] = 0xC6;
-	txBuf[7] = 0xC7;
-	txBuf[8] = 0xC8;
+	txBuf[6] = (uint8_t) Sensor_3.TEMPERATURE_SIGN;
+	txBuf[7] = (uint8_t)(Sensor_3.TEMPERATURE >> 8);
+	txBuf[8] = (uint8_t) Sensor_3.TEMPERATURE;
+
 	txBuf[9] = 0xC9;
 }
 //*******************************************************************************************
@@ -116,29 +116,29 @@ int main(void){
 					   //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Ини-я DS18B20
-	Sensor_1.GPIO_PORT     = GPIOA;
-	Sensor_1.GPIO_PIN      = 3;
 	Sensor_1.SENSOR_NUMBER = 1;
+	Sensor_1.GPIO_PORT     = GPIOA;
+	Sensor_1.GPIO_PIN      = 1;
 	Sensor_1.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_1);
 	TemperatureSens_SetResolution(&Sensor_1);
 	TemperatureSens_StartConvertTemperature(&Sensor_1);
 
-	Sensor_2.GPIO_PORT     = GPIOA;
-	Sensor_2.GPIO_PIN      = 1;
 	Sensor_2.SENSOR_NUMBER = 2;
+	Sensor_2.GPIO_PORT     = GPIOA;
+	Sensor_2.GPIO_PIN      = 2;
 	Sensor_2.RESOLUTION    = DS18B20_Resolution_12_bit;
 	TemperatureSens_GpioInit(&Sensor_2);
 	TemperatureSens_SetResolution(&Sensor_2);
 	TemperatureSens_StartConvertTemperature(&Sensor_2);
 
-//	Sensor_3.GPIO_PORT     = GPIOA;
-//	Sensor_3.GPIO_PIN      = 0;
-//	Sensor_3.SENSOR_NUMBER = 3;
-//	Sensor_3.RESOLUTION    = DS18B20_Resolution_12_bit;
-//	TemperatureSens_GpioInit(&Sensor_3);
-//	TemperatureSens_SetResolution(&Sensor_3);
-//	TemperatureSens_StartConvertTemperature(&Sensor_3);
+	Sensor_3.SENSOR_NUMBER = 3;
+	Sensor_3.GPIO_PORT     = GPIOA;
+	Sensor_3.GPIO_PIN      = 3;
+	Sensor_3.RESOLUTION    = DS18B20_Resolution_12_bit;
+	TemperatureSens_GpioInit(&Sensor_3);
+	TemperatureSens_SetResolution(&Sensor_3);
+	TemperatureSens_StartConvertTemperature(&Sensor_3);
 	//***********************************************
 	//Инициализация	ШИМ
 	//TIM3_InitForPWM();
