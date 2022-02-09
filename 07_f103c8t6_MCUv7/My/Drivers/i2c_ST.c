@@ -80,7 +80,7 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
 
 	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
-	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для аостановления работоспособноси после КЗ на линии.
+	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
 
 	i2c->CR2  &= ~I2C_CR2_FREQ;   		  //
 	i2c->CR2  |= (36 << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
@@ -194,6 +194,8 @@ void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *p
 }
 //**********************************************************
 void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
+
+	if(I2C_DMA_State() != I2C_DMA_READY) return;
 
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_WRITE) != 0) return;

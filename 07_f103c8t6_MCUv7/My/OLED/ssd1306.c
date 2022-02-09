@@ -7,6 +7,7 @@
 //*******************************************************************************************
 //*******************************************************************************************
 static uint8_t *pVideoBuffer;//указатель на видеобуфер.
+static uint32_t SSD1306_lcdType = 0; //
 
 /* Private variable */
 static SSD1306_t SSD1306;
@@ -63,7 +64,7 @@ static void ssd1306_I2C_WriteCMD(uint8_t cmd){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
+uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType){
 
 	/* Init I2C */
 	I2C_Init(i2c, 0);
@@ -101,8 +102,11 @@ uint8_t SSD1306_Init(I2C_TypeDef *i2c) {
 	ssd1306_I2C_WriteCMD(0x22); //
 
 	ssd1306_I2C_WriteCMD(0xDA); //--set com pins hardware configuration
+	if(lcdType == SSD1306_128x64) ssd1306_I2C_WriteCMD(0x12);//SSD1306 128x64
+	else						  ssd1306_I2C_WriteCMD(0x22);//SSD1306 128x32
+	SSD1306_lcdType = lcdType;
 	//ssd1306_I2C_WriteCMD(0x12);//SSD1306 128x64
-	ssd1306_I2C_WriteCMD(0x22);//SSD1306 128x32
+	//ssd1306_I2C_WriteCMD(0x22);//SSD1306 128x32
 
 	ssd1306_I2C_WriteCMD(0xDB); //--set vcomh
 	ssd1306_I2C_WriteCMD(0x20); //0x20,0.77xVcc
@@ -132,17 +136,19 @@ void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size){
 	//-------------------------
 	//Передача видеобуфера за 8 раз по 128 байт. 128 байт передаются за 2,12мС.
 	static uint32_t count = 0;
-	if(I2C_DMA_State() != I2C_DMA_READY) return;
+	uint32_t cmd = 0;
 
-	ssd1306_I2C_WriteCMD(0xB0 + count);//Set Page Start Address for Page Addressing Mode,0-7
-	ssd1306_I2C_WriteCMD(0x00);    	   //Set low column address ,смещение вывода изображениея на 2 столбца.
-	ssd1306_I2C_WriteCMD(0x10);    	   //Set high column address
+	if(I2C_DMA_State() != I2C_DMA_READY) return;
+	if(SSD1306_lcdType == SSD1306_128x64) cmd = 0x02;//смещение вывода изображениея на 2 столбца.
+
+	ssd1306_I2C_WriteCMD(0xB0 + count);//Set Page Start Address for Page Addressing Mode,0-7.
+	ssd1306_I2C_WriteCMD((uint8_t)cmd);//Set low column address.
+	ssd1306_I2C_WriteCMD(0x10);    	   //Set high column address.
 	ssd1306_I2C_WriteDataBuf(&pBuf[SSD1306_WIDTH * count], SSD1306_WIDTH);
 	if(++count >= 8) count = 0;
 	//-------------------------
     //Передача данных для дисплея 0,95" - за раз передется 1024 байта(~15,8мС)
-//	if(I2C_DMA_State() != I2C_DMA_READY)return;
-//
+//	if(I2C_DMA_State() != I2C_DMA_READY) return;
 //	ssd1306_I2C_WriteCMD(0x20);//настройка адресации
 //	ssd1306_I2C_WriteCMD(0x00);//
 //

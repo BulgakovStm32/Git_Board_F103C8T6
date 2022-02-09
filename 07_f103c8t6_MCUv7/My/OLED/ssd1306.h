@@ -27,6 +27,9 @@ SDA        |PB7          |Serial data line
 /* SSD1306 settings */
 #define SSD1306_WIDTH	128	//SSD1306 width in pixels
 #define SSD1306_HEIGHT	64  //SSD1306 LCD height in pixels
+
+#define SSD1306_128x64	1
+#define SSD1306_128x32	0
 //********************************************
 /**
  * @brief  Font structure used on my LCD libraries
@@ -73,7 +76,7 @@ typedef struct {
  *           - 0: LCD was not detected on I2C port
  *           - > 0: LCD initialized OK and ready to use
  */
-uint8_t SSD1306_Init(I2C_TypeDef *i2c);
+uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType);
 
 /**
  * @brief  Updates buffer from internal RAM to LCD
