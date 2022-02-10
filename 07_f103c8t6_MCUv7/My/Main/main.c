@@ -465,7 +465,7 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 15);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 25);
 	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
 
