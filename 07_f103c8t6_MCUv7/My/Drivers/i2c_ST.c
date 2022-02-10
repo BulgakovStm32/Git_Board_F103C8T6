@@ -195,7 +195,7 @@ I2C_State_t I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uin
 //**********************************************************
 I2C_State_t I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
-	//if(I2C_DMA_State() != I2C_DMA_READY) return ;
+	if(I2C_DMA_State() != I2C_DMA_READY) return I2C_BUSY;
 
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK) return I2C_ERR_ADDR;
@@ -514,7 +514,6 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK)
 	{
-		//dma->CCR &= ~DMA_CCR_EN;//DMA Channel disable
 		__enable_irq();
 		return I2C_DMA_NAC;
 	}
@@ -560,7 +559,6 @@ I2C_DMA_State_t I2C_DMA_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != I2C_OK)
 	{
-		//dma->CCR &= ~DMA_CCR_EN;//DMA Channel disable
 		__enable_irq();
 		return I2C_DMA_NAC;
 	}

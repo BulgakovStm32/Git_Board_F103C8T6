@@ -106,8 +106,13 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
 	Lcd_Chr(':');
 	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM); //минуты
-	Lcd_Chr(':');
+	//Lcd_Chr(':');
+	if(Time.sec & 1) Lcd_Chr(':');
+	else			 Lcd_Chr(' ');
 	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM); //секунды
+
+//	if(Time.sec & 1) Lcd_Chr('*');
+//	else			 Lcd_Chr(' ');
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -443,7 +448,7 @@ int main(void){
 	//TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я DS2782.
-	//DS2782_Init(DS2782_I2C);
+	DS2782_Init(DS2782_I2C);
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
