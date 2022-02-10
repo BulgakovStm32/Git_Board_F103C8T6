@@ -49,7 +49,7 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 		//Ремап
 		//I2C1_SCL - PB8
 		//I2C1_SDA - PB9
-		if(remap)
+		if(remap == I2C_GPIO_REMAP)
 		{
 			AFIO->MAPR |= AFIO_MAPR_I2C1_REMAP;
 			GPIOB->CRH |= GPIO_CRH_MODE8_1 | GPIO_CRH_MODE9_1 |
@@ -99,119 +99,119 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 	i2c->CR1 |= I2C_CR1_PE; //Включение модуля I2C.
 }
 //**********************************************************
-uint32_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
+I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
-	if(I2C_LongWait(i2c, I2C_SR1_SB)) return 1;//Ожидание формирования Start condition.
-	(void)i2c->SR1;				      		   //Для сброса флага SB необходимо прочитать SR1
+	if(I2C_LongWait(i2c, I2C_SR1_SB)) return I2C_ERR_START;//Ожидание формирования Start condition.
+	(void)i2c->SR1;			   		//Для сброса флага SB необходимо прочитать SR1
 
 	//Передаем адрес.
 	i2c->DR = deviceAddr;
-	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return 1;//Ожидаем окончания передачи адреса
-	(void)i2c->SR1;				        	     //сбрасываем бит ADDR (чтением SR1 и SR2):
-	(void)i2c->SR2;				        	     //
-
-	return 0;
+	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return I2C_ERR_ADDR;//Ожидаем окончания передачи адреса
+	(void)i2c->SR1;	//сбрасываем бит ADDR (чтением SR1 и SR2):
+	(void)i2c->SR2;	//
+	return I2C_OK;
 }
 //**********************************************************
-void I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
+I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
 
-	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;//Ждем освобождения буфера
+	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения буфера
 	i2c->DR = byte;
+	return I2C_OK;
 }
 //**********************************************************
-void I2C_SendData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
+I2C_State_t I2C_SendData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
 
-	for(uint16_t i = 0; i < len; i++)
+	for(uint32_t i = 0; i < len; i++)
 	{
-		if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;//Ждем освобождения буфера
+		if(I2C_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения буфера
 		i2c->DR = *(pBuf + i);
 	}
-	if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
+	if(I2C_LongWait(i2c, I2C_SR1_BTF)) return I2C_ERR_BTF;
 	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
+	return I2C_OK;
 }
 //**********************************************************
 //прием данных
-void I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
+I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint16_t len){
 
 	//receiving 1 byte
 	if(len == 1)
 	{
 		i2c->CR1 &= ~I2C_CR1_ACK;				   //Фомирование NACK.
 		i2c->CR1 |= I2C_CR1_STOP;				   //Формируем Stop.
-		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return;//ожидаем окончания приема байта
+		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return I2C_ERR_RX_BYTE;//ожидаем окончания приема байта
 		*(pBuf + 0) = i2c->DR;				       //считали принятый байт.
 		i2c->CR1 |= I2C_CR1_ACK;				   //to be ready for another reception
-		return;
 	}
 	//receiving 2 bytes
 	else if(len == 2)
 	{
 		i2c->CR1 |=  I2C_CR1_POS;//
 		i2c->CR1 &= ~I2C_CR1_ACK;//Фомирование NACK.
-		if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
+		if(I2C_LongWait(i2c, I2C_SR1_BTF)) return I2C_ERR_BTF;
 		i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop.
 		*(pBuf + 0) = i2c->DR;	 //считали принятый байт.
 		*(pBuf + 1) = i2c->DR;	 //считали принятый байт.
 		i2c->CR1 &= ~I2C_CR1_POS;//
 		i2c->CR1 |= I2C_CR1_ACK; //to be ready for another reception
-		return;
 	}
 	//receiving more than 2 bytes
 	else
 	{
-		uint16_t i;
+		uint32_t i;
 		for(i=0; i<(len-3); i++)
 		{
-			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return;
+			if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return I2C_ERR_RX_BYTE;
 			*(pBuf + i) = i2c->DR;//Read DataN
 		}
 		//Вычитываем оставшиеся 3 байта.
-		if(I2C_LongWait(i2c, I2C_SR1_BTF)) return;
+		if(I2C_LongWait(i2c, I2C_SR1_BTF)) return I2C_ERR_BTF;
 		i2c->CR1 &= ~I2C_CR1_ACK; //Фомирование NACK
 		*(pBuf + i + 0) = i2c->DR;//Read DataN-2
 		i2c->CR1 |= I2C_CR1_STOP; //Формируем Stop
 		*(pBuf + i + 1) = i2c->DR;//Read DataN-1
-		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return;
+		if(I2C_LongWait(i2c, I2C_SR1_RXNE)) return I2C_ERR_RX_BYTE;
 		*(pBuf + i + 2) = i2c->DR;//Read DataN
 		i2c->CR1 |= I2C_CR1_ACK;
 	}
+	return I2C_OK;
 }
 //*******************************************************************************************
 //*******************************************************************************************
-void I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
+I2C_State_t I2C_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
 	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_WRITE) != 0) return;
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK) return I2C_ERR_ADDR;
 
 	//Передача адреса в который хотим записать.
 	i2c->DR = regAddr;
-	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;
+	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;
 
 	//передача данных на запись.
-	I2C_SendData(i2c, pBuf, len);
+	return(I2C_SendData(i2c, pBuf, len));
 }
 //**********************************************************
-void I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
+I2C_State_t I2C_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint16_t len){
 
-	if(I2C_DMA_State() != I2C_DMA_READY) return;
+	//if(I2C_DMA_State() != I2C_DMA_READY) return ;
 
 	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_WRITE) != 0) return;
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK) return I2C_ERR_ADDR;
 
 	//Передача адреса с которого начинаем чтение.
 	i2c->DR = regAddr;
-	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return;
+	if(I2C_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;
 	//---------------------
 	//Формирование reStart condition.
 	i2c->CR1 |= I2C_CR1_STOP; //Это команда нужна для работы с DS2782. Без нее не работает
 
 	//Формирование Start + AddrSlave|Read.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr | I2C_MODE_READ) != 0) return;
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != I2C_OK) return I2C_ERR_ADDR;
 
 	//прием даннных
-	I2C_ReadData(i2c, pBuf, len);
+	return(I2C_ReadData(i2c, pBuf, len));
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -461,7 +461,7 @@ void I2C2_ER_IRQHandler(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-//**************************Работа чере DMA. Не отлажено!!!**********************************
+//**************************Работа череp DMA.************************************************
 //I2C1_TX -> DMA1_Ch6
 //I2C1_RX -> DMA1_Ch7
 
@@ -470,7 +470,7 @@ void I2C2_ER_IRQHandler(void){
 
 static volatile I2C_DMA_State_t I2cDmaStateReg = I2C_DMA_NOT_INIT;
 //*******************************************************************************************
-void I2C_DMA_Init(I2C_TypeDef *i2c, DMA_Channel_TypeDef *dma, uint32_t remap){
+void I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap){
 
 	I2C_Init(i2c, remap);			 //I2C Config.
 	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
@@ -482,11 +482,11 @@ I2C_DMA_State_t I2C_DMA_State(void){
 	return I2cDmaStateReg;
 }
 //**********************************************************
-uint32_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t size){
+I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t size){
 
 	DMA_Channel_TypeDef *dma;
 	//------------------------------
-	if(I2cDmaStateReg != I2C_DMA_READY) return 1;
+	if(I2cDmaStateReg != I2C_DMA_READY) return I2C_DMA_BUSY;
 
 	__disable_irq();
 	//DMA1Channel config
@@ -512,11 +512,11 @@ uint32_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, ui
 
 	i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
 	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != 0)
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK)
 	{
 		//dma->CCR &= ~DMA_CCR_EN;//DMA Channel disable
 		__enable_irq();
-		return 1;
+		return I2C_DMA_NAC;
 	}
 	//Передача адреса в который хотим записать.
 	i2c->DR = regAddr;
@@ -524,14 +524,14 @@ uint32_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, ui
 	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
-	return 0;
+	return I2C_DMA_BUSY;
 }
 //**********************************************************
-uint32_t I2C_DMA_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint32_t size){
+I2C_DMA_State_t I2C_DMA_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint32_t size){
 
 	DMA_Channel_TypeDef *dma;
 	//------------------------------
-	if(I2cDmaStateReg != I2C_DMA_READY) return 1;
+	if(I2cDmaStateReg != I2C_DMA_READY) return I2C_DMA_BUSY;
 
 	__disable_irq();
 	//DMA1Channel config
@@ -558,18 +558,18 @@ uint32_t I2C_DMA_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint3
 	i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
 				I2C_CR2_LAST;	//DMA Last Transfer.
 	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != 0)
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != I2C_OK)
 	{
 		//dma->CCR &= ~DMA_CCR_EN;//DMA Channel disable
 		__enable_irq();
-		return 1;
+		return I2C_DMA_NAC;
 	}
 	i2c->CR1 |= I2C_CR1_ACK;//to be ready for another reception
 
 	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
-	return 0;
+	return I2C_DMA_BUSY;
 }
 //*******************************************************************************************
 //*******************************************************************************************

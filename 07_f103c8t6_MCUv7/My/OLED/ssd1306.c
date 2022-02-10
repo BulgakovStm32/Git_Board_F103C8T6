@@ -64,10 +64,10 @@ static void ssd1306_I2C_WriteCMD(uint8_t cmd){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType){
+uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType, uint32_t i2cRemap){
 
 	/* Init I2C */
-	I2C_Init(i2c, 0);
+	I2C_Init(i2c, i2cRemap);
 	/* Init LCD */
 	ssd1306_I2C_WriteCMD(0xAE); //display off
 	ssd1306_I2C_WriteCMD(0x20); //Set Memory Addressing Mode

@@ -404,17 +404,11 @@ void Task_STM32_Master_Read(void){
 
 	LedPC13On();
 
-	if(I2C_DMA_State() == I2C_DMA_READY)
+	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
 	{
-		if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, I2C_NUM_BYTE_READ) != 0)
-		{
-			I2CNacCount++;
-			for(uint16_t i = 0; i < I2C_NUM_BYTE_READ; i++)
-			{
-				*(I2CRxBuf+i) = 0;
-			}
-			I2C_DMA_Init(I2C1, I2C1_TX_DMAChannel, 0);
-		}
+		I2CNacCount++;
+		for(uint16_t i = 0; i < I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
+		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
 	}
 
 	LedPC13Off();
@@ -452,7 +446,7 @@ int main(void){
 	//DS2782_Init(DS2782_I2C);
 	//***********************************************
 	//Ини-я OLED SSD1306
-	SSD1306_Init(SSD1306_I2C, SSD1306_128x64);
+	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
 	Lcd_ClearVideoBuffer();
 	//***********************************************
 	//Отладка I2C по прерываниям.
@@ -461,7 +455,7 @@ int main(void){
 //	I2C_IT_StartTx(I2C1, SSD1306_I2C_ADDR, 0x55, i2cBuf, 3);
 
 	//Отладка I2C+DMA.
-	I2C_DMA_Init(I2C1, I2C1_TX_DMAChannel, 0);
+	I2C_DMA_Init(I2C1, I2C_GPIO_NOREMAP);
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
