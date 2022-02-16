@@ -159,7 +159,7 @@ void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size){
 //	ssd1306_I2C_WriteCMD(0x22);//установка страницы
 //	ssd1306_I2C_WriteCMD(0);   //Начальная страница.
 //	ssd1306_I2C_WriteCMD(7);   //Конечная страница.
-//
+
 //	ssd1306_I2C_WriteDataBuf(pBuf, size);
 }
 //***********************************************************************

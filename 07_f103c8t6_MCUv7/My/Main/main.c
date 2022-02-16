@@ -4,10 +4,10 @@
  *  Created on: 19 октября 2021 года.
  *  Autho     : Беляев А.А.
  *
- *	Описание        : Трехканальный измеритель температуры.
- *  Датчики         : DS18B20 - 3шт.
- *  Вывод информации: OLED дисплей SSD1306 128x64;
- *      			  UART1(PA9-U1TX, PA10-U1RX), скорость 9600.
+ *	Описание        :
+ *  Датчики         :
+ *  Вывод информации:
+ *
  */
 //*******************************************************************************************
 //*******************************************************************************************
@@ -105,60 +105,57 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_Print("Time: ");
 	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
 	Lcd_Chr(':');
-	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM); //минуты
+	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM);//минуты
 	//Lcd_Chr(':');
-	if(Time.sec & 1) Lcd_Chr(':');
+	if(Time.sec & 1) Lcd_Chr(':');//Мигание разделительным знаком
 	else			 Lcd_Chr(' ');
-	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM); //секунды
-
-//	if(Time.sec & 1) Lcd_Chr('*');
-//	else			 Lcd_Chr(' ');
+	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM);//секунды
 }
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //Вывод значения встроенного АЦП.
-#define VREF      2480UL 				  	//Опроное напряжение в мв. Измеряется внешним вольтметром как можно точнее.
-#define VDD		  3254UL 				  	//Напряжение питания в мв. Измеряется внешним вольтметром как можно точнее.
-#define ADC_RES	  4096UL 				    //Количество квантов АЦП. 2^12 = 4096.
-#define ADC_QUANT ((VDD * 10000) / ADC_RES) //Вес кванта АЦП.
-#define K_RESIST_DIVIDE 2
-
-#define ADC_CH_VREF  9    //канал АЦП, к которому подключен внешний ИОН.
-#define ADC_CH_MEAS  8    //канал АЦП, которым измеряем напряжениа на АКБ.
-
-typedef struct{
-	uint32_t Bat_V;
-	uint32_t Vdd_V;
-	uint32_t Vref_V;
-}AdcMeas_t;
-
-AdcMeas_t	AdcMeas;
-//----------------------------------------------
-void Task_AdcMeas(void){
-
-	AdcMeas.Bat_V  = ((Adc_GetMeas(ADC_CH_MEAS) * ADC_QUANT) / 10000) * K_RESIST_DIVIDE;//Измерение напряжения АКБ.
-	AdcMeas.Vref_V = Adc_GetMeas(ADC_CH_VREF);	                   //Измерение напряжения внешнего ИОН.
-	AdcMeas.Vdd_V  = (VREF * ADC_RES) / Adc_GetMeas(ADC_CH_VREF);  //Расчет напряжения питания через внешний ИОН.
-}
+//#define VREF      2480UL 				  	//Опроное напряжение в мв. Измеряется внешним вольтметром как можно точнее.
+//#define VDD		  3254UL 				  	//Напряжение питания в мв. Измеряется внешним вольтметром как можно точнее.
+//#define ADC_RES	  4096UL 				    //Количество квантов АЦП. 2^12 = 4096.
+//#define ADC_QUANT ((VDD * 10000) / ADC_RES) //Вес кванта АЦП.
+//#define K_RESIST_DIVIDE 2
+//
+//#define ADC_CH_VREF  9    //канал АЦП, к которому подключен внешний ИОН.
+//#define ADC_CH_MEAS  8    //канал АЦП, которым измеряем напряжениа на АКБ.
+//
+//typedef struct{
+//	uint32_t Bat_V;
+//	uint32_t Vdd_V;
+//	uint32_t Vref_V;
+//}AdcMeas_t;
+//
+//AdcMeas_t	AdcMeas;
+////----------------------------------------------
+//void Task_AdcMeas(void){
+//
+//	AdcMeas.Bat_V  = ((Adc_GetMeas(ADC_CH_MEAS) * ADC_QUANT) / 10000) * K_RESIST_DIVIDE;//Измерение напряжения АКБ.
+//	AdcMeas.Vref_V = Adc_GetMeas(ADC_CH_VREF);	                   //Измерение напряжения внешнего ИОН.
+//	AdcMeas.Vdd_V  = (VREF * ADC_RES) / Adc_GetMeas(ADC_CH_VREF);  //Расчет напряжения питания через внешний ИОН.
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //Работа с микросхемой DS2782.
-
-
 void Task_DS2782(void){
 
 	DS2782_GetI2cAddress(&DS2782); //получение адреса на шине I2C
 	DS2782_GetID(&DS2782);         //получение Unique ID (factory option)
 	DS2782_GetTemperature(&DS2782);//получение температуры.
-	DS2782_GetVoltage(&DS2782);    //получение напряжения на АКБ.
+ 	DS2782_GetVoltage(&DS2782);    //получение напряжения на АКБ.
 	DS2782_GetCurrent(&DS2782);    //получения тока потребления от АКБ.
 }
 //************************************************************
-void Task_Lcd_DS2782(void){
+void Task_DS2782_Display(void){
 
 	LedPC13On();
+
+	Lcd_ClearVideoBuffer();
 
 	//Шапка
 	Lcd_SetCursor(1, 1);
@@ -175,8 +172,8 @@ void Task_Lcd_DS2782(void){
 	//Вывод Unique ID (factory option)
 	Lcd_SetCursor(1, 4);
 	Lcd_Print("DS2782_ID:");
-	Lcd_Print("0x");
-	Lcd_u8ToHex(DS2782.ID);
+	//Lcd_Print("0x");
+	Lcd_u32ToHex(DS2782.ID);
 
 	//Вывод температуры.
 	Lcd_SetCursor(1, 5);
@@ -243,6 +240,8 @@ void Task_Temperature_Display(void){
 
 	LedPC13On();
 
+	Lcd_ClearVideoBuffer();
+
 	//Шапка
 	Lcd_SetCursor(1, 1);
 	Lcd_Print("_MCUv7_");
@@ -265,21 +264,17 @@ void Task_Temperature_Display(void){
 	//Вывод темперетуры DS18B20.
 	Sensor_1.SENSOR_NUMBER    = 1;
 	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
-	Sensor_1.TEMPERATURE  	  = (uint32_t)(I2CRxBuf[1] << 8);
-	Sensor_1.TEMPERATURE 	 |= (uint32_t)I2CRxBuf[2];
+	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
+	Temperature_Display(&Sensor_1, 1, 3);
 
 	Sensor_2.SENSOR_NUMBER    = 2;
 	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
-	Sensor_2.TEMPERATURE      = (uint32_t)(I2CRxBuf[4] << 8);
-	Sensor_2.TEMPERATURE 	 |= (uint32_t)I2CRxBuf[5];
+	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
+	Temperature_Display(&Sensor_2, 1, 4);
 
 	Sensor_3.SENSOR_NUMBER    = 3;
 	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
-	Sensor_3.TEMPERATURE      = (uint32_t)(I2CRxBuf[7] << 8);
-	Sensor_3.TEMPERATURE 	 |= (uint32_t)I2CRxBuf[8];
-
-	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 4);
+	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
 	Temperature_Display(&Sensor_3, 1, 5);
 
 	LedPC13Off();
@@ -289,13 +284,16 @@ void Task_Temperature_Display(void){
 //*******************************************************************************************
 void Task_STM32_Master_Read(void);
 
+//************************************************************
 void Task_LcdUpdate(void){
 
 	LedPC13On();
 
-	RTOS_SetTask(Task_Temperature_Display, 5,  0);
-	RTOS_SetTask(Task_STM32_Master_Read,   10, 0);
-	//RTOS_SetTask(Task_Lcd_DS2782, 15, 0);
+	//RTOS_SetTask(Task_Temperature_Display, 5,  0);
+	//RTOS_SetTask(Task_STM32_Master_Read,   10, 0);
+
+	RTOS_SetTask(Task_DS2782,	  	  15, 0);
+	RTOS_SetTask(Task_DS2782_Display, 20, 0);
 
 	Lcd_Update(); //вывод сделан для SSD1306
 	//Lcd_ClearVideoBuffer();
@@ -387,8 +385,9 @@ void Task_GPS(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //Запросы для отлаживания STM32 I2C в режиме Slave.
-#define STM32_SLAVE_I2C		  I2C1
-#define STM32_SLAVE_I2C_ADDR (0x05 << 1)
+#define STM32_SLAVE_I2C		  			I2C1
+#define STM32_SLAVE_I2C_ADDR 			(0x05 << 1)
+#define STM32_SLAVE_I2C_NUM_BYTE_READ	9
 
 //************************************************************
 void Task_STM32_Master_Write(void){
@@ -397,22 +396,20 @@ void Task_STM32_Master_Write(void){
 	I2CTxBuf[1] = I2CTxBuf[0] + 1;
 	I2CTxBuf[2] = I2CTxBuf[1] + 1;
 
-	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == 0)
+	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == I2C_OK)
 	{
 		I2C_SendData(STM32_SLAVE_I2C, I2CTxBuf, 3);
 	}
 }
 //************************************************************
-#define I2C_NUM_BYTE_READ	9
-
 void Task_STM32_Master_Read(void){
 
 	LedPC13On();
 
-	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
+	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, STM32_SLAVE_I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
 	{
 		I2CNacCount++;
-		for(uint16_t i = 0; i < I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
+		for(uint16_t i = 0; i < STM32_SLAVE_I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
 		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
 	}
 
@@ -448,7 +445,7 @@ int main(void){
 	//TIM3_InitForPWM();
 	//***********************************************
 	//Ини-я DS2782.
-	DS2782_Init(DS2782_I2C);
+	DS2782_Init(DS2782_I2C, I2C_GPIO_NOREMAP);
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
@@ -471,7 +468,6 @@ int main(void){
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	//RTOS_SetTask(Task_GPS, 			0, 500);
 	//RTOS_SetTask(Task_UartSend, 		0, 1000);
-	//RTOS_SetTask(Task_DS2782, 		0, 250);
 	//RTOS_SetTask(Task_AdcMeas, 		0, 250);
 	//***********************************************
 	__enable_irq();

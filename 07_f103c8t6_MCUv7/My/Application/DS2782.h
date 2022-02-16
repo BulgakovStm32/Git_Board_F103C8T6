@@ -19,29 +19,6 @@
 #define DS2782_I2C	I2C1
 
 //************************************************************
-//Регистры DS2782.
-//typedef enum {
-//   Parameter_CONTROL         = 0x60, // Control Register
-//   Parameter_AB              = 0x61, // Accumulation Bias
-//   Parameter_AC              = 0x62, // Aging Capacity (2 bytes)
-//   Parameter_VCHG            = 0x64, // Charge Voltage
-//   Parameter_IMIN            = 0x65, // Minimum Charge Current
-//   Parameter_VAE             = 0x66, // Active Empty Voltage
-//   Parameter_IAE             = 0x67, // Active Empty Current
-//   Parameter_AE_40           = 0x68, // Active Empty 40
-//   Parameter_RSNSP           = 0x69, // Sense Resistor Prime
-//   Parameter_Full_40         = 0x6a, // Full 40 (2 bytes)
-//   Parameter_Full_Slope      = 0x6c, // Full Slope (4 bytes)
-//   Parameter_AE_Slope        = 0x70, // Active Empty Slope (4 bytes)
-//   Parameter_SE_Slope        = 0x74, // Standby Empty Slope (4 bytes)
-//   Parameter_RSGAIN          = 0x78, // Sense Resistor Gain (2 bytes)
-//   Parameter_RSTC            = 0x7a, // Sense Resistor Temperature Coefficient
-//   Parameter_FRSGAIN         = 0x7b, // Factory Gain (2 bytes)
-//   // Reserved, 0x7d
-//   Parameter_Address         = 0x7e, // 2-Wire Slave Address
-//   // Reserved, 0x7f
-// }DS2782_ParameterRegisters_t;
-//************************************************************
 typedef enum{
 	// Name                              Acc.   Size  Description
 	// Reserved, 0x00
@@ -105,8 +82,8 @@ typedef struct{
 }DS2782_t;
 //*******************************************************************************************
 //*******************************************************************************************
-void     DS2782_Init(I2C_TypeDef *i2c);
-uint16_t DS2782_ReadADC(DS2782_Registers_t addrReg, uint8_t len);
+void     DS2782_Init(I2C_TypeDef *i2c, uint32_t i2cRemap);
+uint16_t DS2782_ReadData(DS2782_Registers_t addrReg, uint8_t len);
 
 void     DS2782_GetI2cAddress(DS2782_t *ds);
 void 	 DS2782_GetID(DS2782_t *ds);

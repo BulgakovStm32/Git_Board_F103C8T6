@@ -44,7 +44,7 @@ uint8_t* Lcd_pVideoBuffer(void){
 void Lcd_ClearVideoBuffer(void){
   
 	//забиваем всю память 0
-	for(uint16_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = 0;
+	for(uint32_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = 0;
 }
 //*****************************************************************************
 uint8_t* UartTextBuf(void){
@@ -56,7 +56,7 @@ uint8_t* UartTextBuf(void){
 //*********************************************************************************************
 void Lcd_Filling(uint8_t byte){
   
-	for(uint16_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = byte;
+	for(uint32_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = byte;
 }
 //*****************************************************************************
 //управление пикселем с координатами x,y. mode -> Off, On or Xor.
