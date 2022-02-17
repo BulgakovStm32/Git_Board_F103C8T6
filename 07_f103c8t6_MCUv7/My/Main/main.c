@@ -22,7 +22,8 @@ typedef struct{
 	uint8_t sec;
 }Time_t;
 
-static Time_t Time;
+static Time_t   Time;
+static uint32_t mScounter = 0;
 //---------------------------
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
@@ -32,7 +33,6 @@ Encoder_t Encoder;
 
 static uint8_t  I2CTxBuf[32] = {0};
 static uint8_t  I2CRxBuf[32] = {0};
-static uint32_t I2CNacCount  = 0;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -48,9 +48,10 @@ void IncrementOnEachPass(uint32_t *var, uint16_t event){
 //************************************************************
 void Time_Calculation(uint32_t count){
 
-	Time.hour =  count / 3600;
-	Time.min  = (count % 3600) / 60;
-	Time.sec  =  count % 60;
+	count /= 1000;
+	Time.hour = (uint8_t)((count / 3600) % 24);
+	Time.min  = (uint8_t)((count / 60) % 60);
+	Time.sec  = (uint8_t)(count % 60);
 }
 //************************************************************
 uint32_t Led_Blink(uint32_t millis, uint32_t period, uint32_t switch_on_time){
@@ -144,16 +145,18 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 //Работа с микросхемой DS2782.
 void Task_DS2782(void){
 
-	DS2782_GetI2cAddress(&DS2782); //получение адреса на шине I2C
-	DS2782_GetID(&DS2782);         //получение Unique ID (factory option)
-	DS2782_GetTemperature(&DS2782);//получение температуры.
- 	DS2782_GetVoltage(&DS2782);    //получение напряжения на АКБ.
-	DS2782_GetCurrent(&DS2782);    //получения тока потребления от АКБ.
+	DS2782_GetI2cAddress(&DS2782); 		//получение адреса на шине I2C
+	//DS2782_GetID(&DS2782);         		//получение Unique ID (factory option)
+	DS2782_GetTemperature(&DS2782);		//получение температуры.
+ 	DS2782_GetVoltage(&DS2782);    		//получение напряжения на АКБ.
+	DS2782_GetCurrent(&DS2782);    		//получения тока потребления от АКБ.
+	DS2782_GetAverageCurrent(&DS2782);	//получения усредненного за 28 сек. тока потребления от АКБ.
+	DS2782_GetAccumulatedCurrent(&DS2782);
 }
 //************************************************************
 void Task_DS2782_Display(void){
 
-	LedPC13On();
+	uint32_t temp = 0;
 
 	Lcd_ClearVideoBuffer();
 
@@ -162,6 +165,10 @@ void Task_DS2782_Display(void){
 	Lcd_Print("_DS2782_");
 	//Вывод времени.
 	Time_Display(1, 2);
+	//Вывод ошибок обvена по I2C.
+	Lcd_SetCursor(10, 1);
+	Lcd_Print("I2CNAC=");
+	Lcd_BinToDec(I2C_GetNacCount(DS2782_I2C), 4, LCD_CHAR_SIZE_NORM);
 
 	//Вывод адреса на шине I2C
 	Lcd_SetCursor(1, 3);
@@ -169,43 +176,62 @@ void Task_DS2782_Display(void){
 	Lcd_Print("0x");
 	Lcd_u8ToHex(DS2782.I2C_Address);
 
-	//Вывод Unique ID (factory option)
-	Lcd_SetCursor(1, 4);
-	Lcd_Print("DS2782_ID:");
-	//Lcd_Print("0x");
-	Lcd_u32ToHex(DS2782.ID);
-
 	//Вывод температуры.
-	Lcd_SetCursor(1, 5);
-	Lcd_Print("Bat_T= ");
-	Lcd_BinToDec(DS2782.Temperature/10, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("Bat_T   = ");
+	temp = DS2782.Temperature;
+	Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr('.');
-	Lcd_BinToDec(DS2782.Temperature%10, 1, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
 	Lcd_Print(" C");
 
 	//Вывод напряжения на АКБ.
-	Lcd_SetCursor(1, 6);
-	Lcd_Print("Bat_U= ");
-	Lcd_BinToDec(DS2782.Voltage/100, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_SetCursor(1, 5);
+	Lcd_Print("Bat_U   = ");
+	temp = DS2782.Voltage;
+	Lcd_BinToDec(temp/100, 2, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr('.');
-	Lcd_BinToDec(DS2782.Voltage%100, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(temp%100, 2, LCD_CHAR_SIZE_NORM);
 	Lcd_Chr('V');
-
+	//----------------------------------------------
 	//Вывод тока потребления от АКБ.
-	int16_t temp = DS2782.Current;
+	int16_t currentTemp = DS2782.Current;
 
-	Lcd_SetCursor(1, 7);
-	Lcd_Print("Bat_I=");
+	Lcd_SetCursor(1, 6);
+	Lcd_Print("Bat_I   =");
 
-	if(temp < 0)
+	if(currentTemp < 0)
 	{
-		temp = (temp ^ 0xFFFF) + 1;//Уберем знак.
+		currentTemp = (currentTemp ^ 0xFFFF) + 1;//Уберем знак.
 		Lcd_Chr('-');
 	}
 	else Lcd_Chr(' ');
 
-	Lcd_BinToDec(temp, 4, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(currentTemp, 4, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("mA");
+
+	//----------------------------------------------
+	//Вывод усредненного за 28сек. тока.
+	currentTemp = DS2782.AverageCurrent;
+
+	Lcd_SetCursor(1, 7);
+	Lcd_Print("Bat_Iavr=");
+
+	if(currentTemp < 0)
+	{
+		currentTemp = (currentTemp ^ 0xFFFF) + 1;//Уберем знак.
+		Lcd_Chr('-');
+	}
+	else Lcd_Chr(' ');
+
+	Lcd_BinToDec(currentTemp, 4, LCD_CHAR_SIZE_NORM);
+	Lcd_Print("mA");
+	//----------------------------------------------
+
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("Bat_Iacc=");
+	Lcd_BinToDec(DS2782.AccumulatedCurrent, 5, LCD_CHAR_SIZE_NORM);
+	Lcd_Print("uAh");
 
 	//----------------------------------------------
 	//Вывод значения встроенного АЦП.
@@ -223,148 +249,6 @@ void Task_DS2782_Display(void){
 //	//Расчет напряжения питания через внешний ИОН.
 //	Lcd_Print(" Vdd=");
 //	Lcd_BinToDec(AdcMeas.Vdd_V, 5, LCD_CHAR_SIZE_NORM);
-
-	LedPC13Off();
-}
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-void Task_Temperature_Read(void){
-
-	TemperatureSens_ReadTemperature(&Sensor_1);
-	TemperatureSens_ReadTemperature(&Sensor_2);
-	TemperatureSens_ReadTemperature(&Sensor_3);
-}
-//************************************************************
-void Task_Temperature_Display(void){
-
-	LedPC13On();
-
-	Lcd_ClearVideoBuffer();
-
-	//Шапка
-	Lcd_SetCursor(1, 1);
-	Lcd_Print("_MCUv7_");
-	//Вывод времени.
-	Time_Display(1, 2);
-	//Вывод ошибок обvена по I2C.
-	Lcd_SetCursor(9, 1);
-	Lcd_Print("I2CErr=");
-	Lcd_BinToDec(I2CNacCount, 4, LCD_CHAR_SIZE_NORM);
-
-	//Енкодер.
-	static uint16_t tempReg = 0;
-	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
-	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
-
-	Lcd_SetCursor(1, 6);
-	Lcd_Print("Encoder=");
-	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
-
-	//Вывод темперетуры DS18B20.
-	Sensor_1.SENSOR_NUMBER    = 1;
-	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
-	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
-	Temperature_Display(&Sensor_1, 1, 3);
-
-	Sensor_2.SENSOR_NUMBER    = 2;
-	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
-	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
-	Temperature_Display(&Sensor_2, 1, 4);
-
-	Sensor_3.SENSOR_NUMBER    = 3;
-	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
-	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
-	Temperature_Display(&Sensor_3, 1, 5);
-
-	LedPC13Off();
-}
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-void Task_STM32_Master_Read(void);
-
-//************************************************************
-void Task_LcdUpdate(void){
-
-	LedPC13On();
-
-	//RTOS_SetTask(Task_Temperature_Display, 5,  0);
-	//RTOS_SetTask(Task_STM32_Master_Read,   10, 0);
-
-	RTOS_SetTask(Task_DS2782,	  	  15, 0);
-	RTOS_SetTask(Task_DS2782_Display, 20, 0);
-
-	Lcd_Update(); //вывод сделан для SSD1306
-	//Lcd_ClearVideoBuffer();
-
-	LedPC13Off();
-}
-//************************************************************
-void Task_UartSend(void){
-
-	//--------------------------------
-	Txt_Chr('\f');
-
-	Txt_Print("******************\n");
-
-	Txt_Print("_THERMOMETER_(+BT)\n");
-
-	Txt_Print("Time: ");
-	Txt_BinToDec(Time.hour, 2);//часы
-	Txt_Chr(':');
-	Txt_BinToDec(Time.min, 2); //минуты
-	Txt_Chr(':');
-	Txt_BinToDec(Time.sec, 2); //секунды
-	Txt_Chr('\n');
-
-	//Вывод темперетуры DS18B20.
-	Temperature_TxtDisplay(&Sensor_1);
-	Temperature_TxtDisplay(&Sensor_2);
-	Temperature_TxtDisplay(&Sensor_3);
-	//Txt_Chr('\n');
-
-	//--------------------------------
-	//Вывод данных DS2782.
-	//Вывод адреса на шине I2C
-	Txt_Chr('\n');
-	Txt_Print("DS2782_I2C_ADDR:");
-	Txt_Print("0x");
-	Txt_u8ToHex(DS2782.I2C_Address);
-	Txt_Chr('\n');
-
-	//Вывод Unique ID (factory option)
-	Txt_Print("DS2782_ID:");
-	Txt_Print("0x");
-	Txt_u8ToHex(DS2782.ID);
-	Txt_Chr('\n');
-
-	//Вывод температуры.
-	Txt_Print("Bat_T=");
-	Txt_BinToDec(DS2782.Temperature/10, 2);
-	Txt_Chr('.');
-	Txt_BinToDec(DS2782.Temperature%10, 1);
-	Txt_Print(" C");
-	Txt_Chr('\n');
-
-	//Вывод напряжения на АКБ.
-	Txt_Print("Bat_U=");
-	Txt_BinToDec(DS2782.Voltage/100, 2);
-	Txt_Chr('.');
-	Txt_BinToDec(DS2782.Voltage%100, 2);
-	Txt_Chr('V');
-	Txt_Chr('\n');
-
-	//Вывод тока потребления от АКБ.
-	Txt_Print("Bat_I=");
-	if(DS2782.Current < 0)Txt_Chr('-');
-	else                  Txt_Chr(' ');
-
-	Txt_Chr('\n');
-	Txt_Print("******************\n");
-	//--------------------------------
-	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
-	Txt_Buf()->bufIndex = 0;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -404,17 +288,172 @@ void Task_STM32_Master_Write(void){
 //************************************************************
 void Task_STM32_Master_Read(void){
 
-	LedPC13On();
+//	LedPC13On();
 
 	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, STM32_SLAVE_I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
 	{
-		I2CNacCount++;
 		for(uint16_t i = 0; i < STM32_SLAVE_I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
 		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
 	}
 
-	LedPC13Off();
+//	LedPC13Off();
 }
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//void Task_Temperature_Read(void){
+//
+//	TemperatureSens_ReadTemperature(&Sensor_1);
+//	TemperatureSens_ReadTemperature(&Sensor_2);
+//	TemperatureSens_ReadTemperature(&Sensor_3);
+//}
+//************************************************************
+void Task_Temperature_Display(void){
+
+	Lcd_ClearVideoBuffer();
+
+	//Шапка
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("_MCUv7_");
+	//Вывод времени.
+	Time_Display(1, 2);
+	//Вывод ошибок обvена по I2C.
+	Lcd_SetCursor(10, 1);
+	Lcd_Print("I2CErr=");
+	Lcd_BinToDec(I2C_GetNacCount(STM32_SLAVE_I2C), 4, LCD_CHAR_SIZE_NORM);
+
+	//Енкодер.
+//	static uint16_t tempReg = 0;
+//	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
+//	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
+
+//	Lcd_SetCursor(1, 6);
+//	Lcd_Print("Encoder=");
+//	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
+
+	//Кнопка энкодера.
+	static uint32_t butTemp = 0;
+	IncrementOnEachPass(&butTemp, Encoder.BUTTON_STATE);
+	Lcd_SetCursor(1, 7);
+	Lcd_Print("Button=");
+	Lcd_BinToDec((uint16_t)butTemp, 4, LCD_CHAR_SIZE_NORM);
+
+
+	//Вывод темперетуры DS18B20.
+	Sensor_1.SENSOR_NUMBER    = 1;
+	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
+	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
+	Temperature_Display(&Sensor_1, 1, 3);
+
+	Sensor_2.SENSOR_NUMBER    = 2;
+	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
+	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
+	Temperature_Display(&Sensor_2, 1, 4);
+
+	Sensor_3.SENSOR_NUMBER    = 3;
+	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
+	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
+	Temperature_Display(&Sensor_3, 1, 5);
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void Task_LcdUpdate(void){
+
+	Time_Calculation(mScounter);
+	//Выбор сраниц отображения Енкодером.
+	static uint16_t encoder = 0;
+	Encoder_IncDecParam(&Encoder, &encoder, 1, 0, 2);
+	switch(encoder){
+		//--------------------
+		case 0:
+			RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
+			RTOS_SetTask(Task_Temperature_Display, 10, 0);
+		break;
+		//--------------------
+		case 1:
+			RTOS_SetTask(Task_DS2782,	  	  5,  0);
+			RTOS_SetTask(Task_DS2782_Display, 10, 0);
+		break;
+		//--------------------
+		default:
+			Lcd_ClearVideoBuffer();
+			Lcd_SetCursor(1, 1);
+			Lcd_Print(" EMPTY PAGE ");
+		break;
+		//--------------------
+	}
+
+	//Обновление изображения на экране.
+	//Очистка видеобуфера производится на каждой странице.
+	Lcd_Update(); //вывод сделан для SSD1306
+}
+//************************************************************
+//void Task_UartSend(void){
+//
+//	//--------------------------------
+//	Txt_Chr('\f');
+//
+//	Txt_Print("******************\n");
+//
+//	Txt_Print("_THERMOMETER_(+BT)\n");
+//
+//	Txt_Print("Time: ");
+//	Txt_BinToDec(Time.hour, 2);//часы
+//	Txt_Chr(':');
+//	Txt_BinToDec(Time.min, 2); //минуты
+//	Txt_Chr(':');
+//	Txt_BinToDec(Time.sec, 2); //секунды
+//	Txt_Chr('\n');
+//
+//	//Вывод темперетуры DS18B20.
+//	Temperature_TxtDisplay(&Sensor_1);
+//	Temperature_TxtDisplay(&Sensor_2);
+//	Temperature_TxtDisplay(&Sensor_3);
+//	//Txt_Chr('\n');
+//
+//	//--------------------------------
+//	//Вывод данных DS2782.
+//	//Вывод адреса на шине I2C
+//	Txt_Chr('\n');
+//	Txt_Print("DS2782_I2C_ADDR:");
+//	Txt_Print("0x");
+//	Txt_u8ToHex(DS2782.I2C_Address);
+//	Txt_Chr('\n');
+//
+//	//Вывод Unique ID (factory option)
+//	Txt_Print("DS2782_ID:");
+//	Txt_Print("0x");
+//	Txt_u8ToHex(DS2782.ID);
+//	Txt_Chr('\n');
+//
+//	//Вывод температуры.
+//	Txt_Print("Bat_T=");
+//	Txt_BinToDec(DS2782.Temperature/10, 2);
+//	Txt_Chr('.');
+//	Txt_BinToDec(DS2782.Temperature%10, 1);
+//	Txt_Print(" C");
+//	Txt_Chr('\n');
+//
+//	//Вывод напряжения на АКБ.
+//	Txt_Print("Bat_U=");
+//	Txt_BinToDec(DS2782.Voltage/100, 2);
+//	Txt_Chr('.');
+//	Txt_BinToDec(DS2782.Voltage%100, 2);
+//	Txt_Chr('V');
+//	Txt_Chr('\n');
+//
+//	//Вывод тока потребления от АКБ.
+//	Txt_Print("Bat_I=");
+//	if(DS2782.Current < 0)Txt_Chr('-');
+//	else                  Txt_Chr(' ');
+//
+//	Txt_Chr('\n');
+//	Txt_Print("******************\n");
+//	//--------------------------------
+//	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
+//	Txt_Buf()->bufIndex = 0;
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -433,12 +472,12 @@ int main(void){
 					   //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Инициализация Энкодера.
-	Encoder.GPIO_PORT_A 	 = GPIOA;
-	Encoder.GPIO_PIN_A   	 = 0;
-	Encoder.GPIO_PORT_B 	 = GPIOA;
-	Encoder.GPIO_PIN_B  	 = 1;
-	Encoder.GPIO_PORT_BUTTON = GPIOA;
-	Encoder.GPIO_PIN_BUTTON  = 7;
+	Encoder.GPIO_PORT_A 	 = GPIOB;
+	Encoder.GPIO_PIN_A   	 = 10;
+	Encoder.GPIO_PORT_B 	 = GPIOB;
+	Encoder.GPIO_PIN_B  	 = 11;
+	Encoder.GPIO_PORT_BUTTON = GPIOB;
+	Encoder.GPIO_PIN_BUTTON  = 1;
 	Encoder_Init(&Encoder);
 	//***********************************************
 	//Инициализация	ШИМ
@@ -449,7 +488,7 @@ int main(void){
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
-	Lcd_ClearVideoBuffer();
+	//Lcd_ClearVideoBuffer();
 	//***********************************************
 	//Отладка I2C по прерываниям.
 //	static uint8_t i2cBuf[3] = {1, 2, 3};
@@ -461,7 +500,7 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 25);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 15);
 	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
 
@@ -484,9 +523,7 @@ int main(void){
 //Прерывание каждую милисекунду.
 void SysTick_Handler(void){
 
-	static uint32_t secCounter = 0;
-	IncrementOnEachPass(&secCounter, Blink(INTERVAL_500_mS));//Инкримент счетчика секунд.
-	Time_Calculation(secCounter);						     //Преобразование времени
+	mScounter++;
 
 	RTOS_TimerServiceLoop();
 	msDelay_Loop();

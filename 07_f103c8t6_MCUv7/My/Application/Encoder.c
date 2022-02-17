@@ -67,46 +67,50 @@ void Encoder_ScanLoop(Encoder_t *encoder){
 	uint8_t  currentState =  0;
 	//--------------------
 	//Определение состояния энкодера.
-	static uint8_t oldState = 0; //хранит последовательность состояний энкодера
+	static uint8_t oldStateEncoder = 0; //хранит последовательность состояний энкодера
 
 	//проверяем состояние выводов микроконтроллера
 	if(encoder->GPIO_PORT_A->IDR & pinA) currentState |= 1<<0;
 	if(encoder->GPIO_PORT_B->IDR & pinB) currentState |= 1<<1;
 
 	//если равно предыдущему, то выходим
-	if(currentState != (oldState & 0b00000011))
+	if(currentState != (oldStateEncoder & 0b00000011))
 	{
 		//если не равно, то сдвигаем и сохраняем
-		oldState = (oldState << 2) | currentState;
+		oldStateEncoder = (oldStateEncoder << 2) | currentState;
 		//сравниваем получившуюся последовательность
-		if(oldState == 0b11100001) encoder->ENCODER_STATE = ENCODER_TURN_RIGHT;
-		if(oldState == 0b11010010) encoder->ENCODER_STATE = ENCODER_TURN_LEFT;
+		if(oldStateEncoder == 0b11100001) encoder->ENCODER_STATE = ENCODER_TURN_RIGHT;
+		if(oldStateEncoder == 0b11010010) encoder->ENCODER_STATE = ENCODER_TURN_LEFT;
 	}
 	//--------------------
 	//Опрос кнопки энкодера.
 	static uint8_t oldStateButton = 0; //хранит последовательность состояний кнопки.
+	currentState = 0;
 
 	//проверяем состояние выводов микроконтроллера
-	if(encoder->GPIO_PORT_BUTTON->IDR & pinButton) currentState = 1<<0;
+	if(encoder->GPIO_PORT_BUTTON->IDR & pinButton) currentState |= 1<<0;
+
 	//если равно предыдущему, то выходим
-	if(currentState == (oldStateButton & 0b00000001)) return;
+	//if(currentState == (oldStateButton & 0b00000001)) return;
+
 	//если не равно, то сдвигаем и сохраняем
 	oldStateButton = (oldStateButton << 1) | currentState;
+
 	//сравниваем получившуюся последовательность
-	if(oldStateButton == 0b11110000) encoder->BUTTON_STATE = 1;
-	if(oldStateButton == 0b00001111) encoder->BUTTON_STATE = 0;
+	if(oldStateButton == 0b00000000) encoder->BUTTON_STATE = ENCODER_BUTTON_PRESSED;
+	if(oldStateButton == 0b11111111) encoder->BUTTON_STATE = ENCODER_BUTTON_RELEASED;
 	//--------------------
 }
 //**********************************************************
 /**
  * @brief: Фу-я инкримента/декримента переменной при каждом шелчке энкодера.
- * @In_param: parameter - адрес переменной значение которой хотим  изменять;
+ * @In_param: parameter - адрес переменной значение которой хотим изменять;
  * 			  step - шаг изменения значения переменной;
  *            min  - минимальное значение до которого будет уменьшаться значение переменной;
  *            max  - максимальное значение до которого будет увеличиваться значение переменной.
  * @Out_param:
  */
-void Encoder_IncDecParam(Encoder_t *encoder, uint16_t *parameter, uint32_t step, uint16_t min, uint16_t max){
+void Encoder_IncDecParam(Encoder_t *encoder, uint16_t *parameter, uint32_t step, uint32_t min, uint32_t max){
 
 	//--------------------
 	switch(encoder->ENCODER_STATE){

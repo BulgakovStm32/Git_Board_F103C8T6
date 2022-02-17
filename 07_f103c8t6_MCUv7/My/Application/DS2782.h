@@ -79,6 +79,8 @@ typedef struct{
 	uint32_t Temperature;
 	uint32_t Voltage;
 	int16_t  Current;
+	int16_t  AverageCurrent;
+	uint16_t AccumulatedCurrent;
 }DS2782_t;
 //*******************************************************************************************
 //*******************************************************************************************
@@ -88,10 +90,12 @@ uint16_t DS2782_ReadData(DS2782_Registers_t addrReg, uint8_t len);
 void     DS2782_GetI2cAddress(DS2782_t *ds);
 void 	 DS2782_GetID(DS2782_t *ds);
 void 	 DS2782_GetTemperature(DS2782_t *ds);
-void 	 DS2782_GetCurrent(DS2782_t *ds);
 void 	 DS2782_GetVoltage(DS2782_t *ds);
-void Coulomb_Calc(uint16_t current);
+void 	 DS2782_GetCurrent(DS2782_t *ds);
+void 	 DS2782_GetAverageCurrent(DS2782_t *ds);
+void 	 DS2782_GetAccumulatedCurrent(DS2782_t *ds);
 
+void Coulomb_Calc(uint16_t current);
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* DS2782_H_ */

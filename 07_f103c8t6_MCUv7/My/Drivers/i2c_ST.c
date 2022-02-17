@@ -11,6 +11,10 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
+static uint32_t I2C1NacCount = 0;
+static uint32_t I2C2NacCount = 0;
+//*******************************************************************************************
+//*******************************************************************************************
 static uint32_t I2C_LongWait(I2C_TypeDef *i2c, uint32_t flag){
 
 	uint32_t wait_count = 0;
@@ -108,10 +112,21 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
 	//Передаем адрес.
 	i2c->DR = deviceAddr;
-	if(I2C_LongWait(i2c, I2C_SR1_ADDR)) return I2C_ERR_ADDR;//Ожидаем окончания передачи адреса
+	if(I2C_LongWait(i2c, I2C_SR1_ADDR))//Ожидаем окончания передачи адреса
+	{
+		if(i2c == I2C1) I2C1NacCount++;
+		else			I2C2NacCount++;
+		return I2C_ERR_ADDR;
+	}
 	(void)i2c->SR1;	//сбрасываем бит ADDR (чтением SR1 и SR2):
 	(void)i2c->SR2;	//
 	return I2C_OK;
+}
+//**********************************************************
+uint32_t I2C_GetNacCount(I2C_TypeDef *i2c){
+
+	if(i2c == I2C1) return I2C1NacCount;
+					return I2C2NacCount;
 }
 //**********************************************************
 I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
@@ -239,10 +254,10 @@ void I2C_IT_Init(I2C_TypeDef *i2c, uint32_t remap){
 	i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
 				I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
 
-	NVIC_SetPriority(I2C1_EV_IRQn, 15);//Приоритет прерывания.
-	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
+//	NVIC_SetPriority(I2C1_EV_IRQn, 15);//Приоритет прерывания.
+//	NVIC_EnableIRQ(I2C1_EV_IRQn);      //Разрешаем прерывание.
 
-	NVIC_EnableIRQ(I2C1_EV_IRQn);      //Разрешаем прерывание.
+	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
 	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
 }
 //**********************************************************
@@ -473,6 +488,17 @@ static volatile I2C_DMA_State_t I2cDmaStateReg = I2C_DMA_NOT_INIT;
 void I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap){
 
 	I2C_Init(i2c, remap);			 //I2C Config.
+
+	//Инит-я прерывания.
+	i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
+				I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
+
+//	NVIC_SetPriority(I2C1_EV_IRQn, 15);//Приоритет прерывания.
+//	NVIC_EnableIRQ(I2C1_EV_IRQn);      //Разрешаем прерывание.
+
+	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
+	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
+
 	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
 	I2cDmaStateReg = I2C_DMA_READY;
 }
