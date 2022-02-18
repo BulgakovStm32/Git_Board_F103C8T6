@@ -33,6 +33,8 @@ Encoder_t Encoder;
 
 static uint8_t  I2CTxBuf[32] = {0};
 static uint8_t  I2CRxBuf[32] = {0};
+
+static uint32_t ButtonPressCount = 0;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -290,6 +292,20 @@ void Task_STM32_Master_Read(void){
 
 //	LedPC13On();
 
+	//Складываем приняты данные.
+	Sensor_1.SENSOR_NUMBER    = 1;
+	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
+	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
+
+	Sensor_2.SENSOR_NUMBER    = 2;
+	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
+	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
+
+	Sensor_3.SENSOR_NUMBER    = 3;
+	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
+	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
+
+	//Чтение данных
 	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, STM32_SLAVE_I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
 	{
 		for(uint16_t i = 0; i < STM32_SLAVE_I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
@@ -332,27 +348,27 @@ void Task_Temperature_Display(void){
 //	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
 
 	//Кнопка энкодера.
-	static uint32_t butTemp = 0;
-	IncrementOnEachPass(&butTemp, Encoder.BUTTON_STATE);
+	IncrementOnEachPass(&ButtonPressCount, Encoder.BUTTON_STATE);
 	Lcd_SetCursor(1, 7);
 	Lcd_Print("Button=");
-	Lcd_BinToDec((uint16_t)butTemp, 4, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec((uint16_t)ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
 
 
-	//Вывод темперетуры DS18B20.
-	Sensor_1.SENSOR_NUMBER    = 1;
-	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
-	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
+//	//Вывод темперетуры DS18B20.
+//	Sensor_1.SENSOR_NUMBER    = 1;
+//	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
+//	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
+//
+//	Sensor_2.SENSOR_NUMBER    = 2;
+//	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
+//	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
+//
+//	Sensor_3.SENSOR_NUMBER    = 3;
+//	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
+//	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
+
 	Temperature_Display(&Sensor_1, 1, 3);
-
-	Sensor_2.SENSOR_NUMBER    = 2;
-	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
-	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
 	Temperature_Display(&Sensor_2, 1, 4);
-
-	Sensor_3.SENSOR_NUMBER    = 3;
-	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
-	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
 	Temperature_Display(&Sensor_3, 1, 5);
 }
 //*******************************************************************************************
@@ -367,13 +383,13 @@ void Task_LcdUpdate(void){
 	switch(encoder){
 		//--------------------
 		case 0:
-			RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
-			RTOS_SetTask(Task_Temperature_Display, 10, 0);
+			//RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
+			RTOS_SetTask(Task_Temperature_Display, 5, 0);
 		break;
 		//--------------------
 		case 1:
-			RTOS_SetTask(Task_DS2782,	  	  5,  0);
-			RTOS_SetTask(Task_DS2782_Display, 10, 0);
+			//RTOS_SetTask(Task_DS2782,	  	  5,  0);
+			RTOS_SetTask(Task_DS2782_Display, 5, 0);
 		break;
 		//--------------------
 		default:
@@ -384,76 +400,84 @@ void Task_LcdUpdate(void){
 		//--------------------
 	}
 
+	RTOS_SetTask(Task_STM32_Master_Read, 10, 0);
+	RTOS_SetTask(Task_DS2782,	  	     15, 0);
 	//Обновление изображения на экране.
 	//Очистка видеобуфера производится на каждой странице.
 	Lcd_Update(); //вывод сделан для SSD1306
 }
 //************************************************************
-//void Task_UartSend(void){
-//
-//	//--------------------------------
-//	Txt_Chr('\f');
-//
-//	Txt_Print("******************\n");
-//
-//	Txt_Print("_THERMOMETER_(+BT)\n");
-//
-//	Txt_Print("Time: ");
-//	Txt_BinToDec(Time.hour, 2);//часы
-//	Txt_Chr(':');
-//	Txt_BinToDec(Time.min, 2); //минуты
-//	Txt_Chr(':');
-//	Txt_BinToDec(Time.sec, 2); //секунды
-//	Txt_Chr('\n');
-//
-//	//Вывод темперетуры DS18B20.
-//	Temperature_TxtDisplay(&Sensor_1);
-//	Temperature_TxtDisplay(&Sensor_2);
-//	Temperature_TxtDisplay(&Sensor_3);
-//	//Txt_Chr('\n');
-//
-//	//--------------------------------
-//	//Вывод данных DS2782.
-//	//Вывод адреса на шине I2C
-//	Txt_Chr('\n');
-//	Txt_Print("DS2782_I2C_ADDR:");
-//	Txt_Print("0x");
-//	Txt_u8ToHex(DS2782.I2C_Address);
-//	Txt_Chr('\n');
-//
-//	//Вывод Unique ID (factory option)
-//	Txt_Print("DS2782_ID:");
-//	Txt_Print("0x");
-//	Txt_u8ToHex(DS2782.ID);
-//	Txt_Chr('\n');
-//
-//	//Вывод температуры.
-//	Txt_Print("Bat_T=");
-//	Txt_BinToDec(DS2782.Temperature/10, 2);
-//	Txt_Chr('.');
-//	Txt_BinToDec(DS2782.Temperature%10, 1);
-//	Txt_Print(" C");
-//	Txt_Chr('\n');
-//
-//	//Вывод напряжения на АКБ.
-//	Txt_Print("Bat_U=");
-//	Txt_BinToDec(DS2782.Voltage/100, 2);
-//	Txt_Chr('.');
-//	Txt_BinToDec(DS2782.Voltage%100, 2);
-//	Txt_Chr('V');
-//	Txt_Chr('\n');
-//
-//	//Вывод тока потребления от АКБ.
-//	Txt_Print("Bat_I=");
-//	if(DS2782.Current < 0)Txt_Chr('-');
-//	else                  Txt_Chr(' ');
-//
-//	Txt_Chr('\n');
-//	Txt_Print("******************\n");
-//	//--------------------------------
-//	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
-//	Txt_Buf()->bufIndex = 0;
-//}
+void Task_UartSend(void){
+
+	//--------------------------------
+	Txt_Chr('\f');
+
+	Txt_Print("******************\n");
+
+	Txt_Print("_THERMOMETER_(+BT)\n");
+
+	Txt_Print("Time: ");
+	Txt_BinToDec(Time.hour, 2);//часы
+	Txt_Chr(':');
+	Txt_BinToDec(Time.min, 2); //минуты
+	Txt_Chr(':');
+	Txt_BinToDec(Time.sec, 2); //секунды
+	Txt_Chr('\n');
+
+	//Вывод темперетуры DS18B20.
+	Temperature_TxtDisplay(&Sensor_1);
+	Temperature_TxtDisplay(&Sensor_2);
+	Temperature_TxtDisplay(&Sensor_3);
+	//Txt_Chr('\n');
+
+	//--------------------------------
+	//Вывод данных DS2782.
+	//Вывод адреса на шине I2C
+	Txt_Chr('\n');
+	Txt_Print("DS2782_I2C_ADDR:");
+	Txt_Print("0x");
+	Txt_u8ToHex(DS2782.I2C_Address);
+	Txt_Chr('\n');
+
+	//Вывод температуры.
+	Txt_Print("Bat_T=");
+	Txt_BinToDec(DS2782.Temperature/10, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(DS2782.Temperature%10, 1);
+	Txt_Print(" C");
+	Txt_Chr('\n');
+
+	//Вывод напряжения на АКБ.
+	Txt_Print("Bat_U=");
+	Txt_BinToDec(DS2782.Voltage/100, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(DS2782.Voltage%100, 2);
+	Txt_Chr('V');
+	Txt_Chr('\n');
+
+	//Вывод тока потребления от АКБ.
+	Txt_Print("Bat_I  =");
+	if(DS2782.Current < 0)
+	{
+		DS2782.Current = (DS2782.Current ^ 0xFFFF) + 1;//Уберем знак.
+		Txt_Chr('-');
+	}
+	else Txt_Chr(' ');
+	Txt_BinToDec(DS2782.Current, 4);
+	Txt_Print("mA");
+	Txt_Chr('\n');
+	Txt_Chr('\n');
+
+	//Количество нажатий на кнопку.
+	Txt_Print("ButtonPress=");
+	Txt_BinToDec(ButtonPressCount, 4);
+
+	Txt_Chr('\n');
+	Txt_Print("******************\n");
+	//--------------------------------
+	DMA1Ch4StartTx(Txt_Buf()->buf, Txt_Buf()->bufIndex);
+	Txt_Buf()->bufIndex = 0;
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -465,7 +489,7 @@ int main(void){
 	Gpio_Init();
 	SysTick_Init();
 	microDelay_Init();
-	//Uart1Init(USART1_BRR);
+	USART_Init(USART1, USART1_BRR);
 	//Adc_Init();
 
 	microDelay(100000);//Эта задержка нужна для стабилизации напряжения патания.
@@ -500,13 +524,13 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 15);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 20);
 	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
 
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	//RTOS_SetTask(Task_GPS, 			0, 500);
-	//RTOS_SetTask(Task_UartSend, 		0, 1000);
+	RTOS_SetTask(Task_UartSend, 		0, 1000);
 	//RTOS_SetTask(Task_AdcMeas, 		0, 250);
 	//***********************************************
 	__enable_irq();
