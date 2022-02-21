@@ -35,6 +35,8 @@ static uint8_t  I2CTxBuf[32] = {0};
 static uint8_t  I2CRxBuf[32] = {0};
 
 static uint32_t ButtonPressCount = 0;
+
+static int16_t	PIDcontrol = 0;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -353,6 +355,18 @@ void Task_Temperature_Display(void){
 	Lcd_Print("Button=");
 	Lcd_BinToDec((uint16_t)ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
 
+	//PID
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("PID_Out=");
+
+	if(PIDcontrol < 0)
+	{
+		PIDcontrol = (PIDcontrol ^ 0xFFFF) + 1;//Уберем знак.
+		Lcd_Chr('-');
+	}
+	else Lcd_Chr(' ');
+
+	Lcd_BinToDec((uint16_t)PIDcontrol, 4, LCD_CHAR_SIZE_NORM);
 
 //	//Вывод темперетуры DS18B20.
 //	Sensor_1.SENSOR_NUMBER    = 1;
@@ -481,6 +495,24 @@ void Task_UartSend(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+/*! \brief P, I and D parameter values
+ *
+ * The K_P, K_I and K_D values (P, I and D gains)
+ * need to be modified to adapt to the application at hand
+ */
+#define K_P     1.00
+#define K_I     0.00
+#define K_D     0.00
+
+PID_Data_t PID;
+//************************************************************
+void Task_PID(void){
+
+	PIDcontrol = PID_Controller(50, 59, &PID);
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 int main(void){
 
 	//-----------------------------
@@ -522,6 +554,10 @@ int main(void){
 	//Отладка I2C+DMA.
 	I2C_DMA_Init(I2C1, I2C_GPIO_NOREMAP);
 	//***********************************************
+	//Инициализация PID.
+	PID_Init(K_P * SCALING_FACTOR, K_I * SCALING_FACTOR, K_D * SCALING_FACTOR, &PID);
+
+	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
 	RTOS_SetTask(Task_LcdUpdate, 		  0, 20);
@@ -530,8 +566,9 @@ int main(void){
 
 	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
 	//RTOS_SetTask(Task_GPS, 			0, 500);
-	RTOS_SetTask(Task_UartSend, 		0, 1000);
-	//RTOS_SetTask(Task_AdcMeas, 		0, 250);
+
+	RTOS_SetTask(Task_UartSend, 0, 1000);
+	RTOS_SetTask(Task_PID,      0, 10);
 	//***********************************************
 	__enable_irq();
 	//**************************************************************
