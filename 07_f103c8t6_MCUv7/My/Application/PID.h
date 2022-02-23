@@ -16,7 +16,6 @@
 
 #define SCALING_FACTOR  128
 
-
 // Maximum value of variables
 #define MAX_INT         INT16_MAX
 #define MAX_LONG        INT32_MAX
@@ -28,6 +27,7 @@
  */
 typedef struct{
   int16_t lastProcessValue;	//! Last process value, used to find derivative of process value.
+  int16_t lastError;		//
   int32_t sumError;			//! Summation of errors, used for integrate calculations
   int16_t P_Factor;			//! The Proportional tuning constant, multiplied with SCALING_FACTOR
   int16_t I_Factor;			//! The Integral tuning constant, multiplied with SCALING_FACTOR

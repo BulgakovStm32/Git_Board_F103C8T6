@@ -500,15 +500,19 @@ void Task_UartSend(void){
  * The K_P, K_I and K_D values (P, I and D gains)
  * need to be modified to adapt to the application at hand
  */
-#define K_P     1.00
-#define K_I     0.00
+#define K_P     0.60
+#define K_I     0.40
 #define K_D     0.00
 
 PID_Data_t PID;
 //************************************************************
 void Task_PID(void){
 
-	PIDcontrol = PID_Controller(50, 59, &PID);
+	static int16_t outVal = 0;
+	//-----------------------------
+
+	PIDcontrol = PID_Controller(81, outVal, &PID);
+	outVal     = PIDcontrol;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -568,7 +572,7 @@ int main(void){
 	//RTOS_SetTask(Task_GPS, 			0, 500);
 
 	RTOS_SetTask(Task_UartSend, 0, 1000);
-	RTOS_SetTask(Task_PID,      0, 10);
+	RTOS_SetTask(Task_PID,      0, 500);
 	//***********************************************
 	__enable_irq();
 	//**************************************************************

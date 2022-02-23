@@ -46,42 +46,49 @@ void PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, PID_Data_t *
  */
 int16_t PID_Controller(int16_t setPoint, int16_t processValue, PID_Data_t *pid_st){
 
-	int16_t error, p_term, d_term;
-	int32_t i_term, ret, temp;
-	//-------------------
+	int16_t Kp = pid_st->P_Factor;
+	int16_t Ki = pid_st->I_Factor;
+	int16_t Kd = pid_st->D_Factor;
 
+	int16_t error, P, D;
+	int32_t I, ret, temp;
+	//-------------------
+	//Calculate error
 	error = setPoint - processValue;
 
 	//Calculate Pterm and limit error overflow
-		 if(error >  pid_st->maxError) p_term =  MAX_INT;
-	else if(error < -pid_st->maxError) p_term = -MAX_INT;
-	else 							   p_term = pid_st->P_Factor * error;
+		 if(error >  pid_st->maxError) P =  MAX_INT;
+	else if(error < -pid_st->maxError) P = -MAX_INT;
+	else 							   P = Kp * error;
 
 	//Calculate Iterm and limit integral runaway
-	temp = pid_st->sumError + error;
+	temp = pid_st->sumError + error;//Накопелние ошибки
 
 	if(temp > pid_st->maxSumError)
 	{
-		i_term = MAX_I_TERM;
+		I = MAX_I_TERM;
 		pid_st->sumError = pid_st->maxSumError;
 	}
 	else if(temp < -pid_st->maxSumError)
 	{
-		i_term = -MAX_I_TERM;
+		I = -MAX_I_TERM;
 		pid_st->sumError = -pid_st->maxSumError;
 	}
 	else
 	{
 		pid_st->sumError = temp;
-		i_term = pid_st->I_Factor * pid_st->sumError;
+		I = Ki * pid_st->sumError;
 	}
 
 	//Calculate Dterm
-	d_term = pid_st->D_Factor * (pid_st->lastProcessValue - processValue);
+//	D = pid_st->D_Factor * (pid_st->lastProcessValue - processValue);
+//	pid_st->lastProcessValue = processValue;
 
-	pid_st->lastProcessValue = processValue;
+	D = Kd * (error - pid_st->lastError);
+	pid_st->lastError = error;
 
-	ret = (p_term + i_term + d_term) / SCALING_FACTOR;
+	//Calculate PID
+	ret = (P + I + D) / SCALING_FACTOR;
 		 if(ret >  MAX_INT) ret =  MAX_INT;
 	else if(ret < -MAX_INT) ret = -MAX_INT;
 
