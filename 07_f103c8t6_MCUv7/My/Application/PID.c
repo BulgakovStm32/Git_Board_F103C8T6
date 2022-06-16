@@ -88,7 +88,7 @@ int16_t PID_Controller(int16_t setPoint, int16_t processValue, PID_Data_t *pid_s
 	pid_st->lastError = error;
 
 	//Calculate PID
-	ret = (P + I + D) / SCALING_FACTOR;
+	ret = (P + I + D) / SCALING_INT16_FACTOR;
 		 if(ret >  MAX_INT) ret =  MAX_INT;
 	else if(ret < -MAX_INT) ret = -MAX_INT;
 

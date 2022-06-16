@@ -13,8 +13,8 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-
-#define SCALING_FACTOR  128
+#define SCALING_INT16_FACTOR	128
+#define SCALING_INT32_FACTOR  	256
 
 // Maximum value of variables
 #define MAX_INT         INT16_MAX

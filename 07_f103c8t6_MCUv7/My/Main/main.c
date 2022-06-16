@@ -337,7 +337,7 @@ void Task_Temperature_Display(void){
 	Time_Display(1, 2);
 	//Вывод ошибок обvена по I2C.
 	Lcd_SetCursor(10, 1);
-	Lcd_Print("I2CErr=");
+	Lcd_Print("I2CNAC=");
 	Lcd_BinToDec(I2C_GetNacCount(STM32_SLAVE_I2C), 4, LCD_CHAR_SIZE_NORM);
 
 	//Енкодер.
@@ -397,13 +397,13 @@ void Task_LcdUpdate(void){
 	switch(encoder){
 		//--------------------
 		case 0:
-			//RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
-			RTOS_SetTask(Task_Temperature_Display, 5, 0);
+			RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
+			RTOS_SetTask(Task_Temperature_Display, 10, 0);
 		break;
 		//--------------------
 		case 1:
-			//RTOS_SetTask(Task_DS2782,	  	  5,  0);
-			RTOS_SetTask(Task_DS2782_Display, 5, 0);
+			RTOS_SetTask(Task_DS2782,	  	  5,  0);
+			RTOS_SetTask(Task_DS2782_Display, 10, 0);
 		break;
 		//--------------------
 		default:
@@ -414,8 +414,8 @@ void Task_LcdUpdate(void){
 		//--------------------
 	}
 
-	RTOS_SetTask(Task_STM32_Master_Read, 10, 0);
-	RTOS_SetTask(Task_DS2782,	  	     15, 0);
+	//RTOS_SetTask(Task_STM32_Master_Read, 10, 0);
+	//RTOS_SetTask(Task_DS2782,	  	     15, 0);
 	//Обновление изображения на экране.
 	//Очистка видеобуфера производится на каждой странице.
 	Lcd_Update(); //вывод сделан для SSD1306
@@ -559,7 +559,7 @@ int main(void){
 	I2C_DMA_Init(I2C1, I2C_GPIO_NOREMAP);
 	//***********************************************
 	//Инициализация PID.
-	PID_Init(K_P * SCALING_FACTOR, K_I * SCALING_FACTOR, K_D * SCALING_FACTOR, &PID);
+	PID_Init(K_P * SCALING_INT16_FACTOR, K_I * SCALING_INT16_FACTOR, K_D * SCALING_INT16_FACTOR, &PID);
 
 	//***********************************************
 	//Ини-я диспетчера.
