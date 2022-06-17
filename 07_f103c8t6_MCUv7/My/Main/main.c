@@ -428,7 +428,7 @@ void Task_UartSend(void){
 
 	Txt_Print("******************\n");
 
-	Txt_Print("_THERMOMETER_(+BT)\n");
+	Txt_Print("_MCUv7_(+BT)\n");
 
 	Txt_Print("Time: ");
 	Txt_BinToDec(Time.hour, 2);//часы
