@@ -280,9 +280,9 @@ void Task_GPS(void){
 //************************************************************
 void Task_STM32_Master_Write(void){
 
-	I2CTxBuf[0] = 1;
-	I2CTxBuf[1] = 2;
-	I2CTxBuf[2] = 3;
+	I2CTxBuf[0]++;
+	I2CTxBuf[1] = I2CTxBuf[1] + 1;
+	I2CTxBuf[2] = I2CTxBuf[2] + 1;
 
 //	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == I2C_OK)
 //	{
@@ -290,7 +290,7 @@ void Task_STM32_Master_Write(void){
 //	}
 
 	//Запись данных
-	if(I2C_DMA_Write(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, 0, I2CTxBuf, 3) != I2C_DMA_BUSY)
+	if(I2C_DMA_Write(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, 0xCA, I2CTxBuf, 3) != I2C_DMA_BUSY)
 	{
 		for(uint16_t i = 0; i < 3; i++) *(I2CTxBuf+i) = 0;//Очистка буфера.
 		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
