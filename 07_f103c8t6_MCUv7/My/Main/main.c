@@ -280,13 +280,20 @@ void Task_GPS(void){
 //************************************************************
 void Task_STM32_Master_Write(void){
 
-	I2CTxBuf[0]++;
-	I2CTxBuf[1] = I2CTxBuf[0] + 1;
-	I2CTxBuf[2] = I2CTxBuf[1] + 1;
+	I2CTxBuf[0] = 1;
+	I2CTxBuf[1] = 2;
+	I2CTxBuf[2] = 3;
 
-	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == I2C_OK)
+//	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == I2C_OK)
+//	{
+//		I2C_SendData(STM32_SLAVE_I2C, I2CTxBuf, 3);
+//	}
+
+	//Запись данных
+	if(I2C_DMA_Write(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, 0, I2CTxBuf, 3) != I2C_DMA_BUSY)
 	{
-		I2C_SendData(STM32_SLAVE_I2C, I2CTxBuf, 3);
+		for(uint16_t i = 0; i < 3; i++) *(I2CTxBuf+i) = 0;//Очистка буфера.
+		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
 	}
 }
 //************************************************************
@@ -398,7 +405,8 @@ void Task_LcdUpdate(void){
 		//--------------------
 		case 0:
 			RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
-			RTOS_SetTask(Task_Temperature_Display, 10, 0);
+			RTOS_SetTask(Task_STM32_Master_Write,  10, 0);
+			RTOS_SetTask(Task_Temperature_Display, 15, 0);
 		break;
 		//--------------------
 		case 1:
@@ -517,6 +525,7 @@ void Task_PID(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
 int main(void){
 
 	//-----------------------------
@@ -530,6 +539,11 @@ int main(void){
 
 	microDelay(100000);//Эта задержка нужна для стабилизации напряжения патания.
 					   //Без задержки LCD-дисплей не работает.
+	//***********************************************
+
+
+
+
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GPIO_PORT_A 	 = GPIOB;
@@ -564,7 +578,7 @@ int main(void){
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 20);
+	RTOS_SetTask(Task_LcdUpdate, 		  0, 25);
 	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
 	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
 
