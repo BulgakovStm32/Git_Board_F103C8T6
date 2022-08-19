@@ -17,13 +17,12 @@
 //*******************************************************************************************
 //*******************************************************************************************
 typedef struct{
-	uint8_t hour;
-	uint8_t min;
-	uint8_t sec;
+	uint32_t hour;
+	uint32_t min;
+	uint32_t sec;
 }Time_t;
 
-static Time_t   Time;
-static uint32_t mScounter = 0;
+static Time_t	Time;
 //---------------------------
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
@@ -35,7 +34,6 @@ static uint8_t  I2CTxBuf[32] = {0};
 static uint8_t  I2CRxBuf[32] = {0};
 
 static uint32_t ButtonPressCount = 0;
-
 static int16_t	PIDcontrol = 0;
 //*******************************************************************************************
 //*******************************************************************************************
@@ -117,32 +115,6 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM);//секунды
 }
 //*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-//Вывод значения встроенного АЦП.
-//#define VREF      2480UL 				  	//Опроное напряжение в мв. Измеряется внешним вольтметром как можно точнее.
-//#define VDD		  3254UL 				  	//Напряжение питания в мв. Измеряется внешним вольтметром как можно точнее.
-//#define ADC_RES	  4096UL 				    //Количество квантов АЦП. 2^12 = 4096.
-//#define ADC_QUANT ((VDD * 10000) / ADC_RES) //Вес кванта АЦП.
-//#define K_RESIST_DIVIDE 2
-//
-//#define ADC_CH_VREF  9    //канал АЦП, к которому подключен внешний ИОН.
-//#define ADC_CH_MEAS  8    //канал АЦП, которым измеряем напряжениа на АКБ.
-//
-//typedef struct{
-//	uint32_t Bat_V;
-//	uint32_t Vdd_V;
-//	uint32_t Vref_V;
-//}AdcMeas_t;
-//
-//AdcMeas_t	AdcMeas;
-////----------------------------------------------
-//void Task_AdcMeas(void){
-//
-//	AdcMeas.Bat_V  = ((Adc_GetMeas(ADC_CH_MEAS) * ADC_QUANT) / 10000) * K_RESIST_DIVIDE;//Измерение напряжения АКБ.
-//	AdcMeas.Vref_V = Adc_GetMeas(ADC_CH_VREF);	                   //Измерение напряжения внешнего ИОН.
-//	AdcMeas.Vdd_V  = (VREF * ADC_RES) / Adc_GetMeas(ADC_CH_VREF);  //Расчет напряжения питания через внешний ИОН.
-//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -231,44 +203,12 @@ void Task_DS2782_Display(void){
 	Lcd_BinToDec(currentTemp, 4, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("mA");
 	//----------------------------------------------
-
 	Lcd_SetCursor(1, 8);
 	Lcd_Print("Bat_Iacc=");
 	Lcd_BinToDec(DS2782.AccumulatedCurrent, 5, LCD_CHAR_SIZE_NORM);
 	Lcd_Print("uAh");
-
-	//----------------------------------------------
-	//Вывод значения встроенного АЦП.
-
-	//Измерение напряжения АКБ.
-//	Lcd_SetCursor(14, 1);
-//	Lcd_Print("BAT:");
-//	Lcd_BinToDec(AdcMeas.Bat_V, 4, LCD_CHAR_SIZE_NORM);
-//if(I2C_DMA_State() == I2C_DMA_READY)
-//	//Измерение напряжения внешнего ИОН.
-//	Lcd_SetCursor(1, 8);
-//	Lcd_Print("ADC=");
-//	Lcd_BinToDec(Adc_GetMeas(ADC_CH_VREF), 5, LCD_CHAR_SIZE_NORM);
-//
-//	//Расчет напряжения питания через внешний ИОН.
-//	Lcd_Print(" Vdd=");
-//	Lcd_BinToDec(AdcMeas.Vdd_V, 5, LCD_CHAR_SIZE_NORM);
 }
 //*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-//Работа с GPS L96-M33
-#define GPS_I2C				I2C1
-#define GPS_I2C_ADDR		(0x10 << 1)
-#define GPS_I2C_RX_BUF_SIZE	256
-
-static uint8_t GpsRxBuf[GPS_I2C_RX_BUF_SIZE] = {0,};
-
-//************************************************************
-void Task_GPS(void){
-
-	I2C_Read(GPS_I2C, GPS_I2C_ADDR, 0xAE, GpsRxBuf, 1 );
-}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -281,8 +221,8 @@ void Task_GPS(void){
 void Task_STM32_Master_Write(void){
 
 	I2CTxBuf[0]++;
-	I2CTxBuf[1] = I2CTxBuf[1] + 1;
-	I2CTxBuf[2] = I2CTxBuf[2] + 1;
+	I2CTxBuf[1] = I2CTxBuf[0] + 1;
+	I2CTxBuf[2] = I2CTxBuf[1] + 1;
 
 //	if(I2C_StartAndSendDeviceAddr(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR | I2C_MODE_WRITE) == I2C_OK)
 //	{
@@ -298,8 +238,6 @@ void Task_STM32_Master_Write(void){
 }
 //************************************************************
 void Task_STM32_Master_Read(void){
-
-//	LedPC13On();
 
 	//Складываем приняты данные.
 	Sensor_1.SENSOR_NUMBER    = 1;
@@ -320,8 +258,6 @@ void Task_STM32_Master_Read(void){
 		for(uint16_t i = 0; i < STM32_SLAVE_I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
 		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
 	}
-
-//	LedPC13Off();
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -339,13 +275,14 @@ void Task_Temperature_Display(void){
 
 	//Шапка
 	Lcd_SetCursor(1, 1);
-	Lcd_Print("_MCUv7_");
-	//Вывод времени.
-	Time_Display(1, 2);
+	Lcd_Print("Dbg_MCUv7");
 	//Вывод ошибок обvена по I2C.
-	Lcd_SetCursor(10, 1);
+	Lcd_SetCursor(11, 1);
 	Lcd_Print("I2CNAC=");
 	Lcd_BinToDec(I2C_GetNacCount(STM32_SLAVE_I2C), 4, LCD_CHAR_SIZE_NORM);
+	//Вывод времени.
+	Time_Display(1, 2);
+
 
 	//Енкодер.
 //	static uint16_t tempReg = 0;
@@ -356,24 +293,16 @@ void Task_Temperature_Display(void){
 //	Lcd_Print("Encoder=");
 //	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
 
-	//Кнопка энкодера.
-	IncrementOnEachPass(&ButtonPressCount, Encoder.BUTTON_STATE);
-	Lcd_SetCursor(1, 7);
-	Lcd_Print("Button=");
-	Lcd_BinToDec((uint16_t)ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
-
 	//PID
-	Lcd_SetCursor(1, 8);
-	Lcd_Print("PID_Out=");
-
-	if(PIDcontrol < 0)
-	{
-		PIDcontrol = (PIDcontrol ^ 0xFFFF) + 1;//Уберем знак.
-		Lcd_Chr('-');
-	}
-	else Lcd_Chr(' ');
-
-	Lcd_BinToDec((uint16_t)PIDcontrol, 4, LCD_CHAR_SIZE_NORM);
+//	Lcd_SetCursor(1, 8);
+//	Lcd_Print("PID_Out=");
+//	if(PIDcontrol < 0)
+//	{
+//		PIDcontrol = (PIDcontrol ^ 0xFFFF) + 1;//Уберем знак.
+//		Lcd_Chr('-');
+//	}
+//	else Lcd_Chr(' ');
+//	Lcd_BinToDec((uint16_t)PIDcontrol, 4, LCD_CHAR_SIZE_NORM);
 
 //	//Вывод темперетуры DS18B20.
 //	Sensor_1.SENSOR_NUMBER    = 1;
@@ -388,46 +317,17 @@ void Task_Temperature_Display(void){
 //	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
 //	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
 
-	Temperature_Display(&Sensor_1, 1, 3);
-	Temperature_Display(&Sensor_2, 1, 4);
-	Temperature_Display(&Sensor_3, 1, 5);
-}
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-void Task_LcdUpdate(void){
+	Temperature_Display(&Sensor_1, 1, 4);
+	Temperature_Display(&Sensor_2, 1, 5);
+	Temperature_Display(&Sensor_3, 1, 6);
 
-	Time_Calculation(mScounter);
-	//Выбор сраниц отображения Енкодером.
-	static uint16_t encoder = 0;
-	Encoder_IncDecParam(&Encoder, &encoder, 1, 0, 2);
-	switch(encoder){
-		//--------------------
-		case 0:
-			RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
-			RTOS_SetTask(Task_STM32_Master_Write,  10, 0);
-			RTOS_SetTask(Task_Temperature_Display, 15, 0);
-		break;
-		//--------------------
-		case 1:
-			RTOS_SetTask(Task_DS2782,	  	  5,  0);
-			RTOS_SetTask(Task_DS2782_Display, 10, 0);
-		break;
-		//--------------------
-		default:
-			Lcd_ClearVideoBuffer();
-			Lcd_SetCursor(1, 1);
-			Lcd_Print(" EMPTY PAGE ");
-		break;
-		//--------------------
-	}
-
-	//RTOS_SetTask(Task_STM32_Master_Read, 10, 0);
-	//RTOS_SetTask(Task_DS2782,	  	     15, 0);
-	//Обновление изображения на экране.
-	//Очистка видеобуфера производится на каждой странице.
-	Lcd_Update(); //вывод сделан для SSD1306
+	//Кнопка энкодера.
+	IncrementOnEachPass(&ButtonPressCount, Encoder.BUTTON_STATE);
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("Button=");
+	Lcd_BinToDec((uint16_t)ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
 }
+
 //************************************************************
 void Task_UartSend(void){
 
@@ -525,6 +425,137 @@ void Task_PID(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+#define MCUv7_I2C		I2C1
+#define MCUv7_I2C_ADDR	(0x05<<1)
+
+uint8_t mcuI2cRxBuf[32];
+uint8_t mcuI2cTxBuf[32];
+//************************************************************
+void Task_Request_MCUv7(void){
+
+	static uint32_t cyclCount = cmdGetTemperature;
+		   uint32_t txSize;
+		   uint32_t rxSize;
+	//-----------------------------
+	switch(cyclCount){
+		//------------------
+		case(0):
+//			mcuI2cTxBuf[0] = 0x00;
+//			mcuI2cTxBuf[1] = 0x01;
+//			mcuI2cTxBuf[2] = 0xCE;
+//			txSize = 3;
+//			rxSize = 16;
+//
+//			cyclCount++;
+//		break;
+//		//------------------
+//		case(1):
+//			mcuI2cTxBuf[0] = 0x01;
+//			mcuI2cTxBuf[1] = 0x01;
+//			mcuI2cTxBuf[2] = 0xCE;
+//			txSize = 3;
+//			rxSize = 16;
+//
+//			cyclCount++;
+//		break;
+//		//------------------
+//		case(2):
+//			mcuI2cTxBuf[0] = 0x02;
+//			mcuI2cTxBuf[1] = 0x01;
+//			mcuI2cTxBuf[2] = 0xCE;
+//			txSize = 3;
+//			rxSize = 16;
+//
+//			cyclCount++;
+//		break;
+		//------------------
+		case(cmdGetTemperature):
+			mcuI2cTxBuf[0] = cmdGetTemperature; //
+			mcuI2cTxBuf[1] = 0x02; 				//кол-во байтов в запросе
+			mcuI2cTxBuf[2] = 0x01; 				//sensor_number
+			txSize = 3;
+			rxSize = 6;
+
+			cyclCount++;
+		break;
+		//------------------
+		case(cmdGetTemperature+1):
+			mcuI2cTxBuf[0] = cmdGetTemperature; //
+			mcuI2cTxBuf[1] = 0x02; 				//кол-во байтов в запросе
+			mcuI2cTxBuf[2] = 0x02; 				//sensor_number
+			txSize = 3;
+			rxSize = 6;
+
+			cyclCount = cmdGetTemperature;
+		break;
+		//------------------
+		default:
+			cyclCount = 0;
+		break;
+		//------------------
+	}
+	//Перадача команды в MCUv7
+	I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_WRITE);
+	I2C_SendData(MCUv7_I2C, mcuI2cTxBuf, txSize);
+
+	//Чтение ответа от MCUv7
+	I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_READ);
+	I2C_ReadData(MCUv7_I2C, mcuI2cRxBuf, rxSize);
+
+	//Складываем приняты данные.
+	Sensor_1.SENSOR_NUMBER    = 1;
+	Sensor_1.TEMPERATURE_SIGN = mcuI2cRxBuf[0];
+	Sensor_1.TEMPERATURE  	  = (uint32_t)((mcuI2cRxBuf[1] << 8) | mcuI2cRxBuf[2]);
+
+	Sensor_2.SENSOR_NUMBER    = 2;
+	Sensor_2.TEMPERATURE_SIGN = mcuI2cRxBuf[3];
+	Sensor_2.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[4] << 8) | mcuI2cRxBuf[5]);
+
+	Sensor_3.SENSOR_NUMBER    = 3;
+	Sensor_3.TEMPERATURE_SIGN = mcuI2cRxBuf[6];
+	Sensor_3.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[7] << 8) | mcuI2cRxBuf[8]);
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void Task_LcdUpdate(void){
+
+	Time_Calculation(RTOS_GetTickCount());
+	//Выбор сраниц отображения Енкодером.
+	static uint16_t encoder = 0;
+	Encoder_IncDecParam(&Encoder, &encoder, 1, 0, 2);
+	switch(encoder){
+		//--------------------
+		case 0:
+			//RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
+			//RTOS_SetTask(Task_STM32_Master_Write,  10, 0);
+			RTOS_SetTask(Task_Request_MCUv7, 	   10, 0);
+			RTOS_SetTask(Task_Temperature_Display, 15, 0);
+		break;
+		//--------------------
+		case 1:
+			RTOS_SetTask(Task_DS2782,	  	  5,  0);
+			RTOS_SetTask(Task_DS2782_Display, 10, 0);
+		break;
+		//--------------------
+		default:
+			Lcd_ClearVideoBuffer();
+			Lcd_SetCursor(1, 1);
+			Lcd_Print(" EMPTY PAGE ");
+		break;
+		//--------------------
+	}
+
+	//RTOS_SetTask(Task_STM32_Master_Read, 10, 0);
+	//RTOS_SetTask(Task_DS2782,	  	     15, 0);
+	//Обновление изображения на экране.
+	//Очистка видеобуфера производится на каждой странице.
+	Lcd_Update(); //вывод сделан для SSD1306
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 //*******************************************************************************************
 int main(void){
 
@@ -540,10 +571,18 @@ int main(void){
 	microDelay(100000);//Эта задержка нужна для стабилизации напряжения патания.
 					   //Без задержки LCD-дисплей не работает.
 	//***********************************************
-
-
-
-
+	//Инициализация PID.
+	PID_Init(K_P * SCALING_INT16_FACTOR,
+			 K_I * SCALING_INT16_FACTOR,
+			 K_D * SCALING_INT16_FACTOR,
+			 &PID);
+	//***********************************************
+	//Ини-я DS2782.
+	DS2782_Init(DS2782_I2C, I2C_GPIO_NOREMAP);
+	//***********************************************
+	//Ини-я OLED SSD1306
+	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
+	//Lcd_ClearVideoBuffer();
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GPIO_PORT_A 	 = GPIOB;
@@ -554,16 +593,6 @@ int main(void){
 	Encoder.GPIO_PIN_BUTTON  = 1;
 	Encoder_Init(&Encoder);
 	//***********************************************
-	//Инициализация	ШИМ
-	//TIM3_InitForPWM();
-	//***********************************************
-	//Ини-я DS2782.
-	DS2782_Init(DS2782_I2C, I2C_GPIO_NOREMAP);
-	//***********************************************
-	//Ини-я OLED SSD1306
-	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
-	//Lcd_ClearVideoBuffer();
-	//***********************************************
 	//Отладка I2C по прерываниям.
 //	static uint8_t i2cBuf[3] = {1, 2, 3};
 //	I2C_IT_Init(I2C2, 0);
@@ -572,21 +601,10 @@ int main(void){
 	//Отладка I2C+DMA.
 	I2C_DMA_Init(I2C1, I2C_GPIO_NOREMAP);
 	//***********************************************
-	//Инициализация PID.
-	PID_Init(K_P * SCALING_INT16_FACTOR, K_I * SCALING_INT16_FACTOR, K_D * SCALING_INT16_FACTOR, &PID);
-
-	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 		  0, 25);
-	//RTOS_SetTask(Task_STM32_Master_Read,  0, 500);
-	//RTOS_SetTask(Task_STM32_Master_Write, 0, 500);
-
-	//RTOS_SetTask(Task_Temperature_Read, 0, 1000);
-	//RTOS_SetTask(Task_GPS, 			0, 500);
-
-	RTOS_SetTask(Task_UartSend, 0, 1000);
-	RTOS_SetTask(Task_PID,      0, 500);
+	RTOS_SetTask(Task_LcdUpdate, 	 0, 25);
+	//RTOS_SetTask(Task_Request_MCUv7, 100, 500);
 	//***********************************************
 	__enable_irq();
 	//**************************************************************
@@ -601,8 +619,6 @@ int main(void){
 //*******************************************************************************************
 //Прерывание каждую милисекунду.
 void SysTick_Handler(void){
-
-	mScounter++;
 
 	RTOS_TimerServiceLoop();
 	msDelay_Loop();
