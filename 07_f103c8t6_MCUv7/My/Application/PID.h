@@ -34,13 +34,13 @@ typedef struct{
   int16_t D_Factor;			//! The Derivative tuning constant, multiplied with SCALING_FACTOR
   int16_t maxError;			//! Maximum allowed error, avoid overflow
   int32_t maxSumError;		//! Maximum allowed sumerror, avoid overflow
-}PID_Data_t;
+}PID_t;
 
 //*******************************************************************************************
 //*******************************************************************************************
-void 	PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, PID_Data_t *pid);
-int16_t PID_Controller(int16_t setPoint, int16_t processValue, PID_Data_t *pid_st);
-void 	PID_Reset_Integrator(PID_Data_t *pid_st);
+void 	PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, PID_t *pid);
+int32_t PID_Controller(int16_t setPoint, int16_t processValue, PID_t *pid);
+void 	PID_ResetIntegrator(PID_t *pid);
 
 //*******************************************************************************************
 //*******************************************************************************************

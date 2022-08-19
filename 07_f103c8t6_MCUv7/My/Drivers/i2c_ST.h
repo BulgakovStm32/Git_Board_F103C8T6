@@ -13,27 +13,34 @@
 #include "main.h"
 
 //*******************************************************************************************
-#define APB1_CLK			36000000U//Частота шины APB1 в Гц
-#define I2C_RISE_TIME_100kHz	1000U    //Фронт сигнала в нС для 100кГц
-#define I2C_RISE_TIME_400kHz	300U     //Фронт сигнала в нС для 400кГц
-#define I2C_RISE_TIME_1000kHz	120U     //Фронт сигнала в нС для 1000кГц
+#define APB1_CLK		36000000U 				//Частота шины APB1 в Гц
+#define I2C_FREQ	    (APB1_CLK / 1000000U)	//Peripheral clock frequency (MHz)
 
-#define I2C_TRISE_100kHz    ???
-#define I2C_TRISE_400kHz    ???
-#define I2C_TRISE_1000kHz   ???
+//Sm mode or SMBus:
+//TPCLK1 = 27,7777 ns
+//CCR    = 1000nS/ (2 * TPCLK1)
+//TRISE  = (1000nS/TPCLK1)
+#define I2C_SM_CCR		180 //(10000U / (2 * TPCLK1))
+#define I2C_SM_TRISE	36  //(1000U  / TPCLK1)
+
+//Fm mode:
+//TPCLK1 = 27,7777 ns
+//CCR    = 2500nS/ (3 * TPCLK1)
+//TRISE  = (300nS/TPCLK1)
+#define I2C_FM_CCR		30 //(2500U / (3 * TPCLK1))
+#define I2C_FM_TRISE	12 //(300U  / TPCLK1)
+//--------------------------
+#define I2C_WAIT_TIMEOUT	5000U
+//--------------------------
+#define I2C_MODE_MASTER		1
+#define I2C_MODE_SLAVE		0
+
+#define I2C_MODE_READ  		1
+#define I2C_MODE_WRITE 		0
+#define I2C_ADDRESS(addr, mode) ((addr<<1) | mode)
 
 #define I2C_GPIO_NOREMAP	0
 #define I2C_GPIO_REMAP		1
-
-//#define I2C_CR2_VALUE   (APB1_CLK / 1000000)
-//#define I2C_CCR_VALUE	((APB1_CLK / I2C_BAUD_RATE) / 2)
-//#define I2C_TRISE_VALUE ((1 / (I2C_TRISE * (APB1_CLK / 1000000))) + 1)
-#define I2C_WAIT_TIMEOUT	5000U
-//--------------------------
-#define I2C_MODE_READ  			1
-#define I2C_MODE_WRITE 			0
-#define I2C_ADDRESS(addr, mode) ((addr<<1) | mode)
-
 //--------------------------
 typedef enum{
 	I2C_OK = 0,
@@ -73,12 +80,16 @@ void I2C_IT_ER_Handler(I2C_TypeDef *i2c);//Обработчик прерыван
 //*******************************************************************************************
 //*******************************************************************************************
 //Работа чере DMA.
-#define I2C1_TX_DMAChannel	DMA1_Channel6
-#define I2C1_RX_DMAChannel	DMA1_Channel7
+#define I2C1_TX_DMAChannel		DMA1_Channel6
+#define I2C1_RX_DMAChannel		DMA1_Channel7
 
-#define I2C2_TX_DMAChannel	DMA1_Channel4
-#define I2C2_RX_DMAChannel	DMA1_Channel5
+#define I2C2_TX_DMAChannel		DMA1_Channel4
+#define I2C2_RX_DMAChannel		DMA1_Channel5
 
+#define I2C_DMA_RX_BUF_LEN_MAX	32
+#define I2C_DMA_TX_BUF_LEN_MAX	32
+
+//--------------------------
 typedef enum{
 	I2C_DMA_READY = 0,	//I2C и DMA готовы к передаче данных.
 	I2C_DMA_NOT_INIT,	//I2C и DMA не инициализированны.
@@ -86,11 +97,66 @@ typedef enum{
 	I2C_DMA_BUSY,		//I2C и DMA заняты, идет передача/прием данных.
 	I2C_DMA_ERR			//Ошибка DMA.
 }I2C_DMA_State_t;
+//--------------------------
+//Структура контекста для работы с портом I2C через DMA.
+typedef struct{
+	I2C_TypeDef 	*i2c;			// используемый порт I2C.
+	uint32_t 		i2cMode;		// Master или Slave.
+	uint32_t 		i2cGpioRemap;	// Ремап выводов для I2C1, для I2C2 ремапа нет.
+	I2C_DMA_State_t i2cDmaState;	// состояние порта I2C  приработе через DMA.
+
+	uint32_t 	slaveAddr;			// В режиме Master - адрес Slave-устройства к которому идет обращение,
+									// в режиме Slave  - адрес устройста на шине.
+
+	uint32_t 	slaveRegAddr;		// В режиме Master - адрес регистра Slave-устройства куда хотим писать/читать данные.
+									// в режиме Slave  - ???
+
+	uint8_t 	TxBuf[I2C_DMA_TX_BUF_LEN_MAX];	// буфер передачи.
+	uint32_t 	txBufSize;						// размер буфера передачи
+	uint32_t	txBufIndex;						// индекс буфера передачи.
+
+	uint8_t 	RxBuf[I2C_DMA_RX_BUF_LEN_MAX];	// буфер приема.
+	uint32_t 	rxBufSize;						// размер буфера приема.
+	uint32_t	rxBufIndex;						// индекс буфера приема.
+
+	void(*i2cRxCallback)(void);	// фу-я, вызываемая по завершению чтения из Slave.
+	void(*i2cTxCallback)(void);	// фу-я, вызываемая по завершению записи в Slave.
+}I2C_DMA_t;
 //*******************************************************************************************
-void 			I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap);
+//*******************************************************************************************
+//void 			I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap);
 I2C_DMA_State_t I2C_DMA_State(void);
 I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t size);
-I2C_DMA_State_t I2C_DMA_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint32_t size);
+//I2C_DMA_State_t I2C_DMA_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint32_t size);
+
+
+//*******************************************************************************************
+//*******************************************************************************************
+//***********************Работа I2C через DMA с исполльзованием.*****************************
+void 			I2C_DMA_Init(I2C_DMA_t *i2cDma);
+I2C_DMA_State_t I2C_DMA_Read(I2C_DMA_t *i2cDma);
+
+
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* I2C_ST_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

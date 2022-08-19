@@ -45,7 +45,7 @@ typedef struct{
 //*******************************************************************************************
 void Encoder_Init(Encoder_t *encoder);
 void Encoder_ScanLoop(Encoder_t *encoder);
-void Encoder_IncDecParam(Encoder_t *encoder, uint16_t *parameter, uint32_t step, uint32_t min, uint32_t max);
+void Encoder_IncDecParam(Encoder_t *encoder, uint32_t *parameter, uint32_t step, uint32_t min, uint32_t max);
 //*******************************************************************************************
 //*******************************************************************************************
 #endif //_Encoder_H

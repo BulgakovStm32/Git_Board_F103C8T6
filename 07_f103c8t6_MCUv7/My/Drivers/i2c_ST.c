@@ -82,25 +82,22 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 	//------------------------------
 	//Инициализация I2C.
 	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
-
 	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
 	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
-
-	i2c->CR2  &= ~I2C_CR2_FREQ;   		  //
-	i2c->CR2  |= (36 << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
-
 	//Скорость работы.
-	i2c->CCR &= ~I2C_CCR_CCR;
-	//STANDART_Mode(100kHz).
-	//i2c->CCR  &= ~I2C_CCR_FS;//1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz)
-	//i2c->CCR   =  120;       //(36MHz/I2C_BAUD_RATE/2)
-	//i2c->TRISE =  37;        //(1mcs/(1/36MHz)+1)
-	//Fast_Mode(400kHz)
-	i2c->CCR  |= I2C_CCR_FS;//1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
-	i2c->CCR   = 30;        //(36MHz/I2C_BAUD_RATE/2)
-	i2c->TRISE = 12;        //(0.3mcs/(1/36MHz)+1)
-
-	i2c->CR1 |= I2C_CR1_PE; //Включение модуля I2C.
+	i2c->CR2  = 0;
+	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
+	i2c->CCR  = 0;
+	//FastMode(400kHz)
+	i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
+	i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
+	i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
+	//StandartMode(100kHz).
+//	i2c->CCR   &= ~I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
+//	i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
+//	i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
+	//Включение модуля I2C.
+	i2c->CR1 |= I2C_CR1_PE;
 }
 //**********************************************************
 I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
@@ -484,24 +481,28 @@ void I2C2_ER_IRQHandler(void){
 //I2C2_RX -> DMA1_Ch5
 
 static volatile I2C_DMA_State_t I2cDmaStateReg = I2C_DMA_NOT_INIT;
+
+
+static volatile I2C_DMA_t *i2c1_DMA_Define;
+static volatile I2C_DMA_t *i2c2_DMA_Define;
 //*******************************************************************************************
-void I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap){
-
-	I2C_Init(i2c, remap);			 //I2C Config.
-
-	//Инит-я прерывания.
-	i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
-				I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
-
-//	NVIC_SetPriority(I2C1_EV_IRQn, 15);//Приоритет прерывания.
-//	NVIC_EnableIRQ(I2C1_EV_IRQn);      //Разрешаем прерывание.
-
-	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
-	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
-
-	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
-	I2cDmaStateReg = I2C_DMA_READY;
-}
+//void I2C_DMA_Init(I2C_TypeDef *i2c, uint32_t remap){
+//
+//	I2C_Init(i2c, remap);			 //I2C Config.
+//
+//	//Инит-я прерывания.
+//	i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
+//				I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
+//
+////	NVIC_SetPriority(I2C1_EV_IRQn, 15);//Приоритет прерывания.
+////	NVIC_EnableIRQ(I2C1_EV_IRQn);      //Разрешаем прерывание.
+//
+//	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
+//	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
+//
+//	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
+//	I2cDmaStateReg = I2C_DMA_READY;
+//}
 //**********************************************************
 I2C_DMA_State_t I2C_DMA_State(void){
 
@@ -552,49 +553,49 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 	return I2C_DMA_BUSY;
 }
 //**********************************************************
-I2C_DMA_State_t I2C_DMA_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint32_t size){
-
-	DMA_Channel_TypeDef *dma;
-	//------------------------------
-	if(I2cDmaStateReg != I2C_DMA_READY) return I2C_DMA_BUSY;
-
-	__disable_irq();
-	//DMA1Channel config
-	if(i2c == I2C1) dma = DMA1_Channel7;//I2C1_RX -> DMA1_Ch7
-	else			dma = DMA1_Channel5;//I2C2_RX -> DMA1_Ch5
-
-	dma->CCR  &= ~DMA_CCR_EN;		  	 	//Channel disable
-	dma->CPAR  = (uint32_t)&(i2c->DR);	 	//Peripheral address.
-	dma->CMAR  = (uint32_t)pBuf;	  	 	//Memory address.
-	dma->CNDTR = size;				  	 	//Data size.
-	dma->CCR   = (3 << DMA_CCR_PL_Pos)   | 	//PL[1:0]: Channel priority level - 11: Very high.
-			     (0 << DMA_CCR_PSIZE_Pos)| 	//PSIZE[1:0]: Peripheral size - 00: 8-bits.
-				 (0 << DMA_CCR_MSIZE_Pos)| 	//MSIZE[1:0]: Memory size     - 00: 8-bits.
-				 DMA_CCR_MINC |			 	//MINC: Memory increment mode - Memory increment mode enabled.
-				 //DMA_CCR_DIR  |           //DIR:  Data transfer direction: 1 - Read from memory.
-				 //DMA_CCR_CIRC | 		    //CIRC: Circular mode
-				 //DMA_CCR_TEIE | 		    //TEIE: Transfer error interrupt enable
-				 //DMA_CCR_HTIE | 		    //HTIE: Half transfer interrupt enable
-				 DMA_CCR_TCIE;// | 		    //TCIE: Transfer complete interrupt enable
-				//DMA_CCR_EN;			    //EN: Channel enable
-	NVIC_SetPriority(DMA1_Channel7_IRQn, 0);//Set priority
-	NVIC_EnableIRQ(DMA1_Channel7_IRQn);     //Enable DMA1_Channel6_IRQn
-
-	i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
-				I2C_CR2_LAST;	//DMA Last Transfer.
-	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != I2C_OK)
-	{
-		__enable_irq();
-		return I2C_DMA_NAC;
-	}
-	i2c->CR1 |= I2C_CR1_ACK;//to be ready for another reception
-
-	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
-	I2cDmaStateReg = I2C_DMA_BUSY;
-	__enable_irq();
-	return I2C_DMA_BUSY;
-}
+//I2C_DMA_State_t I2C_DMA_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t *pBuf, uint32_t size){
+//
+//	DMA_Channel_TypeDef *dma;
+//	//------------------------------
+//	if(I2cDmaStateReg != I2C_DMA_READY) return I2C_DMA_BUSY;
+//
+//	__disable_irq();
+//	//DMA1Channel config
+//	if(i2c == I2C1) dma = DMA1_Channel7;//I2C1_RX -> DMA1_Ch7
+//	else			dma = DMA1_Channel5;//I2C2_RX -> DMA1_Ch5
+//
+//	dma->CCR  &= ~DMA_CCR_EN;		  	 	//Channel disable
+//	dma->CPAR  = (uint32_t)&(i2c->DR);	 	//Peripheral address.
+//	dma->CMAR  = (uint32_t)pBuf;	  	 	//Memory address.
+//	dma->CNDTR = size;				  	 	//Data size.
+//	dma->CCR   = (3 << DMA_CCR_PL_Pos)   | 	//PL[1:0]: Channel priority level - 11: Very high.
+//			     (0 << DMA_CCR_PSIZE_Pos)| 	//PSIZE[1:0]: Peripheral size - 00: 8-bits.
+//				 (0 << DMA_CCR_MSIZE_Pos)| 	//MSIZE[1:0]: Memory size     - 00: 8-bits.
+//				 DMA_CCR_MINC |			 	//MINC: Memory increment mode - Memory increment mode enabled.
+//				 //DMA_CCR_DIR  |           //DIR:  Data transfer direction: 1 - Read from memory.
+//				 //DMA_CCR_CIRC | 		    //CIRC: Circular mode
+//				 //DMA_CCR_TEIE | 		    //TEIE: Transfer error interrupt enable
+//				 //DMA_CCR_HTIE | 		    //HTIE: Half transfer interrupt enable
+//				 DMA_CCR_TCIE;// | 		    //TCIE: Transfer complete interrupt enable
+//				//DMA_CCR_EN;			    //EN: Channel enable
+//	NVIC_SetPriority(DMA1_Channel7_IRQn, 0);//Set priority
+//	NVIC_EnableIRQ(DMA1_Channel7_IRQn);     //Enable DMA1_Channel6_IRQn
+//
+//	i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
+//				I2C_CR2_LAST;	//DMA Last Transfer.
+//	//Формирование Start + AddrSlave|Write.
+//	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != I2C_OK)
+//	{
+//		__enable_irq();
+//		return I2C_DMA_NAC;
+//	}
+//	i2c->CR1 |= I2C_CR1_ACK;//to be ready for another reception
+//
+//	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
+//	I2cDmaStateReg = I2C_DMA_BUSY;
+//	__enable_irq();
+//	return I2C_DMA_BUSY;
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 //Прерываение от DMA1.
@@ -658,8 +659,12 @@ void DMA1_Channel7_IRQHandler(void){
 //					     I2C_CR1_ACK;
 //		}
 
+
 		I2C1->CR1 |= I2C_CR1_STOP | //Формируем Stop
 				     I2C_CR1_ACK;
+
+		i2c1_DMA_Define->i2cRxCallback();
+
 		I2cDmaStateReg = I2C_DMA_READY;
 	}
 	//-------------------------
@@ -681,6 +686,101 @@ void DMA1_Channel7_IRQHandler(void){
 
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//***********************Работа I2C через DMA с исполльзованием.*****************************
+//I2C1_TX -> DMA1_Ch6
+//I2C1_RX -> DMA1_Ch7
+
+//I2C2_TX -> DMA1_Ch4
+//I2C2_RX -> DMA1_Ch5
+
+
+/*
+ * Указатели на контекст шины I2C.
+ * Они нужны для работы обработчиков прерываний DMA.
+ */
+//static volatile I2C_DMA_t *i2c1_DMA_Define;
+//static volatile I2C_DMA_t *i2c2_DMA_Define;
+//*******************************************************************************************
+//*******************************************************************************************
+void I2C_DMA_Init(I2C_DMA_t *i2cDma){
+
+		 if(i2cDma->i2c == I2C1) i2c1_DMA_Define = i2cDma;
+	else if(i2cDma->i2c == I2C2) i2c2_DMA_Define = i2cDma;
+	else return;
+
+//	if(i2cDma->i2cMode == I2C_MODE_MASTER) I2C_Master_Init(i2cDma->i2c, i2cDma->i2cGpioRemap);
+//	else								   I2C_Slave_Init (i2cDma->i2c, i2cDma->i2cGpioRemap, i2cDma->slaveAddr);
+
+	I2C_Init(i2cDma->i2c, i2cDma->i2cGpioRemap); //I2C Config.
+	//Инит-я прерывания.
+	i2cDma->i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
+				   	    I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
+
+//	NVIC_SetPriority(I2C1_EV_IRQn, 15);//Приоритет прерывания.
+//	NVIC_EnableIRQ(I2C1_EV_IRQn);      //Разрешаем прерывание.
+
+	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
+	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
+
+	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
+	I2cDmaStateReg = I2C_DMA_READY;
+}
+//**********************************************************
+I2C_DMA_State_t I2C_DMA_Read(I2C_DMA_t *i2cDma){
+
+	DMA_Channel_TypeDef *dma;
+	//------------------------------
+	if(I2cDmaStateReg != I2C_DMA_READY) return I2C_DMA_BUSY;
+
+	__disable_irq();
+	//DMA1Channel config
+	if(i2cDma->i2c == I2C1) dma = DMA1_Channel7;//I2C1_RX -> DMA1_Ch7
+	else					dma = DMA1_Channel5;//I2C2_RX -> DMA1_Ch5
+
+	dma->CCR  &= ~DMA_CCR_EN;		  	 		//Channel disable
+	dma->CPAR  = (uint32_t)&(i2cDma->i2c->DR); 	//Peripheral address.
+	dma->CMAR  = (uint32_t)i2cDma->RxBuf;	  	//Memory address.
+	dma->CNDTR = i2cDma->rxBufSize;		  	 	//Data size.
+	dma->CCR   = (3 << DMA_CCR_PL_Pos)   | 	//PL[1:0]: Channel priority level - 11: Very high.
+			     (0 << DMA_CCR_PSIZE_Pos)| 	//PSIZE[1:0]: Peripheral size - 00: 8-bits.
+				 (0 << DMA_CCR_MSIZE_Pos)| 	//MSIZE[1:0]: Memory size     - 00: 8-bits.
+				 DMA_CCR_MINC |			 	//MINC: Memory increment mode - Memory increment mode enabled.
+				 //DMA_CCR_DIR  |           //DIR:  Data transfer direction: 1 - Read from memory.
+				 //DMA_CCR_CIRC | 		    //CIRC: Circular mode
+				 //DMA_CCR_TEIE | 		    //TEIE: Transfer error interrupt enable
+				 //DMA_CCR_HTIE | 		    //HTIE: Half transfer interrupt enable
+				 DMA_CCR_TCIE;// | 		    //TCIE: Transfer complete interrupt enable
+				//DMA_CCR_EN;			    //EN: Channel enable
+	NVIC_SetPriority(DMA1_Channel7_IRQn, 0);//Set priority
+	NVIC_EnableIRQ(DMA1_Channel7_IRQn);     //Enable DMA1_Channel6_IRQn
+
+	i2cDma->i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
+						I2C_CR2_LAST;	//DMA Last Transfer.
+	//Формирование Start + AddrSlave|Write.
+	if(I2C_StartAndSendDeviceAddr(i2cDma->i2c, i2cDma->slaveAddr|I2C_MODE_READ) != I2C_OK)
+	{
+		__enable_irq();
+		return I2C_DMA_NAC;
+	}
+	i2cDma->i2c->CR1 |= I2C_CR1_ACK;//to be ready for another reception
+
+	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
+	I2cDmaStateReg = I2C_DMA_BUSY;
+	__enable_irq();
+	return I2C_DMA_BUSY;
+}
+//**********************************************************
+
+
+//**********************************************************
+
+
+//*******************************************************************************************
+//*******************************************************************************************
+
+
 
 
 

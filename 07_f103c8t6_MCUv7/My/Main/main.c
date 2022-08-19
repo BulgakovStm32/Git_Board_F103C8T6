@@ -27,8 +27,12 @@ static Time_t	Time;
 DS18B20_t Sensor_1;
 DS18B20_t Sensor_2;
 DS18B20_t Sensor_3;
+
 DS2782_t  DS2782;
+
 Encoder_t Encoder;
+
+I2C_DMA_t I2cDma;
 
 static uint8_t  I2CTxBuf[32] = {0};
 static uint8_t  I2CRxBuf[32] = {0};
@@ -230,11 +234,11 @@ void Task_STM32_Master_Write(void){
 //	}
 
 	//Запись данных
-	if(I2C_DMA_Write(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, 0xCA, I2CTxBuf, 3) != I2C_DMA_BUSY)
-	{
-		for(uint16_t i = 0; i < 3; i++) *(I2CTxBuf+i) = 0;//Очистка буфера.
-		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
-	}
+//	if(I2C_DMA_Write(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, 0xCA, I2CTxBuf, 3) != I2C_DMA_BUSY)
+//	{
+//		for(uint16_t i = 0; i < 3; i++) *(I2CTxBuf+i) = 0;//Очистка буфера.
+//		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
+//	}
 }
 //************************************************************
 void Task_STM32_Master_Read(void){
@@ -253,11 +257,11 @@ void Task_STM32_Master_Read(void){
 	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
 
 	//Чтение данных
-	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, STM32_SLAVE_I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
-	{
-		for(uint16_t i = 0; i < STM32_SLAVE_I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
-		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
-	}
+//	if(I2C_DMA_Read(STM32_SLAVE_I2C, STM32_SLAVE_I2C_ADDR, I2CRxBuf, STM32_SLAVE_I2C_NUM_BYTE_READ) == I2C_DMA_NAC)
+//	{
+//		for(uint16_t i = 0; i < STM32_SLAVE_I2C_NUM_BYTE_READ; i++) *(I2CRxBuf+i) = 0;//Очистка буфера.
+//		I2C_DMA_Init(STM32_SLAVE_I2C, I2C_GPIO_NOREMAP);
+//	}
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -403,16 +407,14 @@ void Task_UartSend(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-/*! \brief P, I and D parameter values
- *
+/*!brief P, I and D parameter values
  * The K_P, K_I and K_D values (P, I and D gains)
  * need to be modified to adapt to the application at hand
  */
-#define K_P     0.60
-#define K_I     0.40
-#define K_D     0.00
-
-PID_Data_t PID;
+#define K_P 0.60
+#define K_I 0.40
+#define K_D	0.00
+PID_t 		PID;
 //************************************************************
 void Task_PID(void){
 
@@ -437,6 +439,9 @@ void Task_Request_MCUv7(void){
 		   uint32_t txSize;
 		   uint32_t rxSize;
 	//-----------------------------
+	//Индикация передачи
+	//LedPC13Toggel();
+
 	switch(cyclCount){
 		//------------------
 		case(0):
@@ -499,21 +504,51 @@ void Task_Request_MCUv7(void){
 	I2C_SendData(MCUv7_I2C, mcuI2cTxBuf, txSize);
 
 	//Чтение ответа от MCUv7
-	I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_READ);
-	I2C_ReadData(MCUv7_I2C, mcuI2cRxBuf, rxSize);
+//	I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_READ);
+//	I2C_ReadData(MCUv7_I2C, mcuI2cRxBuf, rxSize);
+//
+//	//Складываем принятые данные.
+//	Sensor_1.SENSOR_NUMBER    = 1;
+//	Sensor_1.TEMPERATURE_SIGN = mcuI2cRxBuf[0];
+//	Sensor_1.TEMPERATURE  	  = (uint32_t)((mcuI2cRxBuf[1] << 8) | mcuI2cRxBuf[2]);
+//
+//	Sensor_2.SENSOR_NUMBER    = 2;
+//	Sensor_2.TEMPERATURE_SIGN = mcuI2cRxBuf[3];
+//	Sensor_2.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[4] << 8) | mcuI2cRxBuf[5]);
+//
+//	Sensor_3.SENSOR_NUMBER    = 3;
+//	Sensor_3.TEMPERATURE_SIGN = mcuI2cRxBuf[6];
+//	Sensor_3.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[7] << 8) | mcuI2cRxBuf[8]);
 
-	//Складываем приняты данные.
+
+	//Чтение ответа от MCUv7 с помощью DMA.
+	I2cDma.slaveAddr = MCUv7_I2C_ADDR;
+	I2cDma.rxBufSize = rxSize;
+	if(I2C_DMA_Read(&I2cDma) == I2C_DMA_NAC)
+	{
+		for(uint32_t i = 0; i < rxSize; i++) *(I2cDma.RxBuf+i) = 0;//Очистка буфера.
+		I2C_DMA_Init(&I2cDma);
+	}
+}
+//************************************************************
+void I2cRxParsing(void){
+
+	uint8_t *rxBuf = I2cDma.RxBuf;
+
+	LedPC13Toggel();
+
+	//Складываем принятые данные.
 	Sensor_1.SENSOR_NUMBER    = 1;
-	Sensor_1.TEMPERATURE_SIGN = mcuI2cRxBuf[0];
-	Sensor_1.TEMPERATURE  	  = (uint32_t)((mcuI2cRxBuf[1] << 8) | mcuI2cRxBuf[2]);
+	Sensor_1.TEMPERATURE_SIGN = rxBuf[0];
+	Sensor_1.TEMPERATURE  	  =  (uint32_t)((rxBuf[1] << 8) | rxBuf[2]);
 
 	Sensor_2.SENSOR_NUMBER    = 2;
-	Sensor_2.TEMPERATURE_SIGN = mcuI2cRxBuf[3];
-	Sensor_2.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[4] << 8) | mcuI2cRxBuf[5]);
+	Sensor_2.TEMPERATURE_SIGN = rxBuf[3];
+	Sensor_2.TEMPERATURE  	  =  (uint32_t)((rxBuf[4] << 8) | rxBuf[5]);
 
 	Sensor_3.SENSOR_NUMBER    = 3;
-	Sensor_3.TEMPERATURE_SIGN = mcuI2cRxBuf[6];
-	Sensor_3.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[7] << 8) | mcuI2cRxBuf[8]);
+	Sensor_3.TEMPERATURE_SIGN = I2cDma.RxBuf[6];
+	Sensor_3.TEMPERATURE  	  =  (uint32_t)((rxBuf[7] << 8) | rxBuf[8]);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -522,16 +557,16 @@ void Task_Request_MCUv7(void){
 void Task_LcdUpdate(void){
 
 	Time_Calculation(RTOS_GetTickCount());
-	//Выбор сраниц отображения Енкодером.
-	static uint16_t encoder = 0;
+	//Выбор сраницы отображения Енкодером.
+	static uint32_t encoder = 0;
 	Encoder_IncDecParam(&Encoder, &encoder, 1, 0, 2);
 	switch(encoder){
 		//--------------------
 		case 0:
 			//RTOS_SetTask(Task_STM32_Master_Read,   5,  0);
 			//RTOS_SetTask(Task_STM32_Master_Write,  10, 0);
-			RTOS_SetTask(Task_Request_MCUv7, 	   10, 0);
-			RTOS_SetTask(Task_Temperature_Display, 15, 0);
+			RTOS_SetTask(Task_Request_MCUv7, 	   20, 0);
+			RTOS_SetTask(Task_Temperature_Display, 40, 0);
 		break;
 		//--------------------
 		case 1:
@@ -559,14 +594,13 @@ void Task_LcdUpdate(void){
 //*******************************************************************************************
 int main(void){
 
-	//-----------------------------
+	//***********************************************
 	//Drivers.
 	Sys_Init();
 	Gpio_Init();
 	SysTick_Init();
 	microDelay_Init();
 	USART_Init(USART1, USART1_BRR);
-	//Adc_Init();
 
 	microDelay(100000);//Эта задержка нужна для стабилизации напряжения патания.
 					   //Без задержки LCD-дисплей не работает.
@@ -582,7 +616,6 @@ int main(void){
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);
-	//Lcd_ClearVideoBuffer();
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GPIO_PORT_A 	 = GPIOB;
@@ -599,12 +632,16 @@ int main(void){
 //	I2C_IT_StartTx(I2C1, SSD1306_I2C_ADDR, 0x55, i2cBuf, 3);
 
 	//Отладка I2C+DMA.
-	I2C_DMA_Init(I2C1, I2C_GPIO_NOREMAP);
+	//I2C_DMA_Init(I2C1, I2C_GPIO_NOREMAP);
+
+	I2cDma.i2c 			 = I2C1;
+	I2cDma.i2cGpioRemap  = I2C_GPIO_NOREMAP;
+	I2cDma.i2cRxCallback = I2cRxParsing;
+	I2C_DMA_Init(&I2cDma);
 	//***********************************************
 	//Ини-я диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 	 0, 25);
-	//RTOS_SetTask(Task_Request_MCUv7, 100, 500);
+	RTOS_SetTask(Task_LcdUpdate, 0, 50);
 	//***********************************************
 	__enable_irq();
 	//**************************************************************

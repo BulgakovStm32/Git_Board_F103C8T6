@@ -110,7 +110,7 @@ void Encoder_ScanLoop(Encoder_t *encoder){
  *            max  - максимальное значение до которого будет увеличиваться значение переменной.
  * @Out_param:
  */
-void Encoder_IncDecParam(Encoder_t *encoder, uint16_t *parameter, uint32_t step, uint32_t min, uint32_t max){
+void Encoder_IncDecParam(Encoder_t *encoder, uint32_t *parameter, uint32_t step, uint32_t min, uint32_t max){
 
 	//--------------------
 	switch(encoder->ENCODER_STATE){

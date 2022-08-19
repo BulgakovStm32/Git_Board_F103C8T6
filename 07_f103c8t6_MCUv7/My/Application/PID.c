@@ -20,7 +20,7 @@
  *  \param d_factor  Derivate term.
  *  \param pid  	 Struct with PID status.
  */
-void PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, PID_Data_t *pid){
+void PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, PID_t *pid){
 
 	// Start values for PID controller
 	pid->sumError 		  = 0;
@@ -44,11 +44,11 @@ void PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, PID_Data_t *
  *  \param processValue  Measured value.
  *  \param pid_st  PID status struct.
  */
-int16_t PID_Controller(int16_t setPoint, int16_t processValue, PID_Data_t *pid_st){
+int32_t PID_Controller(int16_t setPoint, int16_t processValue, PID_t *pid){
 
-	int16_t Kp = pid_st->P_Factor;
-	int16_t Ki = pid_st->I_Factor;
-	int16_t Kd = pid_st->D_Factor;
+	int16_t Kp = pid->P_Factor;
+	int16_t Ki = pid->I_Factor;
+	int16_t Kd = pid->D_Factor;
 
 	int16_t error, P, D;
 	int32_t I, ret, temp;
@@ -57,35 +57,35 @@ int16_t PID_Controller(int16_t setPoint, int16_t processValue, PID_Data_t *pid_s
 	error = setPoint - processValue;
 
 	//Calculate Pterm and limit error overflow
-		 if(error >  pid_st->maxError) P =  MAX_INT;
-	else if(error < -pid_st->maxError) P = -MAX_INT;
-	else 							   P = Kp * error;
+		 if(error >  pid->maxError) P =  MAX_INT;
+	else if(error < -pid->maxError) P = -MAX_INT;
+	else 							P = Kp * error;
 
 	//Calculate Iterm and limit integral runaway
-	temp = pid_st->sumError + error;//Накопелние ошибки
+	temp = pid->sumError + error;//Накопелние ошибки
 
-	if(temp > pid_st->maxSumError)
+	if(temp > pid->maxSumError)
 	{
 		I = MAX_I_TERM;
-		pid_st->sumError = pid_st->maxSumError;
+		pid->sumError = pid->maxSumError;
 	}
-	else if(temp < -pid_st->maxSumError)
+	else if(temp < -pid->maxSumError)
 	{
 		I = -MAX_I_TERM;
-		pid_st->sumError = -pid_st->maxSumError;
+		pid->sumError = -pid->maxSumError;
 	}
 	else
 	{
-		pid_st->sumError = temp;
-		I = Ki * pid_st->sumError;
+		pid->sumError = temp;
+		I = Ki * pid->sumError;
 	}
 
 	//Calculate Dterm
 //	D = pid_st->D_Factor * (pid_st->lastProcessValue - processValue);
 //	pid_st->lastProcessValue = processValue;
 
-	D = Kd * (error - pid_st->lastError);
-	pid_st->lastError = error;
+	D = Kd * (error - pid->lastError);
+	pid->lastError = error;
 
 	//Calculate PID
 	ret = (P + I + D) / SCALING_INT16_FACTOR;
@@ -99,9 +99,9 @@ int16_t PID_Controller(int16_t setPoint, int16_t processValue, PID_Data_t *pid_s
  *
  *  Calling this function will reset the integrator in the PID regulator.
  */
-void PID_Reset_Integrator(PID_Data_t *pid_st){
+void PID_ResetIntegrator(PID_t *pid){
 
-	pid_st->sumError = 0;
+	pid->sumError = 0;
 }
 //*******************************************************************************************
 //*******************************************************************************************
