@@ -482,7 +482,6 @@ void I2C2_ER_IRQHandler(void){
 
 static volatile I2C_DMA_State_t I2cDmaStateReg = I2C_DMA_NOT_INIT;
 
-
 static volatile I2C_DMA_t *i2c1_DMA_Define;
 static volatile I2C_DMA_t *i2c2_DMA_Define;
 //*******************************************************************************************
@@ -544,9 +543,7 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 		__enable_irq();
 		return I2C_DMA_NAC;
 	}
-	//Передача адреса в который хотим записать.
-	i2c->DR = regAddr;
-
+	i2c->DR   = regAddr;   //Передача адреса в который хотим записать.
 	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
@@ -606,7 +603,7 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 //I2C2_RX -> DMA1_Ch5
 
 //**********************************************************
-static void DMA_ChDisableAndITFlagClear(DMA_Channel_TypeDef *dma,uint32_t flag){
+static void DMA_ChDisableAndITFlagClear(DMA_Channel_TypeDef *dma, uint32_t flag){
 
 	DMA1->IFCR |=  flag;      //сбросить флаг окончания обмена.
 	dma->CCR   &= ~DMA_CCR_EN;//отключение канала DMA.
@@ -651,15 +648,12 @@ void DMA1_Channel7_IRQHandler(void){
 	if(DMA1->ISR & DMA_ISR_TCIF7)
 	{
 		DMA_ChDisableAndITFlagClear(DMA1_Channel7, DMA_IFCR_CTCIF7);
-
 //		//Ожидаем окончания приема последних байтов.
 //		if(I2C_LongWait(I2C1, I2C_SR1_BTF) != 0)
 //		{
 //			I2C1->CR1 |= I2C_CR1_STOP | //Формируем Stop
 //					     I2C_CR1_ACK;
 //		}
-
-
 		I2C1->CR1 |= I2C_CR1_STOP | //Формируем Stop
 				     I2C_CR1_ACK;
 
@@ -724,7 +718,7 @@ void I2C_DMA_Init(I2C_DMA_t *i2cDma){
 	NVIC_SetPriority(I2C1_ER_IRQn, 15);//Приоритет прерывания.
 	NVIC_EnableIRQ(I2C1_ER_IRQn);      //Разрешаем прерывание.
 
-	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
+	RCC->AHBENR   |= RCC_AHBENR_DMA1EN;//Enable the peripheral clock DMA1
 	I2cDmaStateReg = I2C_DMA_READY;
 }
 //**********************************************************
@@ -765,8 +759,7 @@ I2C_DMA_State_t I2C_DMA_Read(I2C_DMA_t *i2cDma){
 		return I2C_DMA_NAC;
 	}
 	i2cDma->i2c->CR1 |= I2C_CR1_ACK;//to be ready for another reception
-
-	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
+	dma->CCR 		 |= DMA_CCR_EN; //DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
 	return I2C_DMA_BUSY;

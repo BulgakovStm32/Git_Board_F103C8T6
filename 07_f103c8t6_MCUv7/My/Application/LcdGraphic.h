@@ -51,7 +51,7 @@ uint8_t Lcd_PrintBold(char *txt);
 uint8_t Lcd_PrintBig (char *txt);
 void Lcd_Image       (const uint8_t *imageData);
 
-uint8_t Lcd_BinToDec(uint16_t var, uint8_t num, uint8_t charSize);
+uint8_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize);
 void    Lcd_u8ToHex (uint8_t hexChar);
 void    Lcd_u32ToHex(uint32_t varHex);
 //*******************************************************************************************

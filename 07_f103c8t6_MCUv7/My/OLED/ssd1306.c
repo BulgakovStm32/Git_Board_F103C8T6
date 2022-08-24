@@ -44,7 +44,7 @@ static SSD1306_t SSD1306;
  * @param  count: how many bytes will be written
  * @retval None
  */
-static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint16_t len){
+static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
 
 	//I2C_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
 	I2C_DMA_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
@@ -134,7 +134,7 @@ void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size){
 //	}
 
 	//-------------------------
-	//Передача видеобуфера за 8 раз по 128 байт. 128 байт передаются за 2,12мС.
+	//Передача видеобуфера за 8 раз по 128 байт. 128 байт передаются за 3.25мС.
 	static uint32_t count = 0;
 	uint32_t cmd = 0;
 
