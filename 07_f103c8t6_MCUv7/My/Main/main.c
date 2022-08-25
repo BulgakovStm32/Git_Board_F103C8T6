@@ -429,14 +429,27 @@ void Task_PID(void){
 #define MCUv7_I2C		I2C1
 #define MCUv7_I2C_ADDR	(0x05<<1)
 
-uint8_t mcuI2cRxBuf[32];
-uint8_t mcuI2cTxBuf[32];
+uint8_t  mcuI2cRxBuf[32];
+uint8_t  mcuI2cTxBuf[32];
+uint32_t rxSize;
+//************************************************************
+void Task_ReadResponseFromMCU(void){
+
+	//Чтение ответа на команду от MCUv7 с помощью DMA.
+	I2cDma.slaveAddr = MCUv7_I2C_ADDR;
+	I2cDma.rxBufSize = rxSize;
+	if(I2C_DMA_Read(&I2cDma) == I2C_DMA_NAC)//Если ошибка при чтении ответа
+	{
+		for(uint32_t i = 0; i < rxSize; i++) *(I2cDma.RxBuf+i) = 0;//Очистка буфера.
+		I2C_DMA_Init(&I2cDma);
+	}
+}
 //************************************************************
 void Task_RequestFromMCUv7(void){
 
 	static uint32_t cyclCount = cmdArduinoMicroTS;
 		   uint32_t txSize;
-		   uint32_t rxSize;
+//		   uint32_t rxSize;
 	//-----------------------------
 	//Индикация передачи
 	//LedPC13Toggel();
@@ -499,34 +512,18 @@ void Task_RequestFromMCUv7(void){
 		//------------------
 	}
 	//Перадача команды в MCUv7
-	I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_WRITE);
+	if(I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_WRITE) != I2C_OK) return;
 	I2C_SendData(MCUv7_I2C, mcuI2cTxBuf, txSize);
 
-	//Чтение ответа от MCUv7
-//	I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_READ);
-//	I2C_ReadData(MCUv7_I2C, mcuI2cRxBuf, rxSize);
-//	//Складываем принятые данные.
-//	Sensor_1.SENSOR_NUMBER    = 1;
-//	Sensor_1.TEMPERATURE_SIGN = mcuI2cRxBuf[0];
-//	Sensor_1.TEMPERATURE  	  = (uint32_t)((mcuI2cRxBuf[1] << 8) | mcuI2cRxBuf[2]);
-//
-//	Sensor_2.SENSOR_NUMBER    = 2;
-//	Sensor_2.TEMPERATURE_SIGN = mcuI2cRxBuf[3];
-//	Sensor_2.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[4] << 8) | mcuI2cRxBuf[5]);
-//
-//	Sensor_3.SENSOR_NUMBER    = 3;
-//	Sensor_3.TEMPERATURE_SIGN = mcuI2cRxBuf[6];
-//	Sensor_3.TEMPERATURE      = (uint32_t)((mcuI2cRxBuf[7] << 8) | mcuI2cRxBuf[8]);
-
-
-	//Чтение ответа от MCUv7 с помощью DMA.
-	I2cDma.slaveAddr = MCUv7_I2C_ADDR;
-	I2cDma.rxBufSize = rxSize;
-	if(I2C_DMA_Read(&I2cDma) == I2C_DMA_NAC)
-	{
-		for(uint32_t i = 0; i < rxSize; i++) *(I2cDma.RxBuf+i) = 0;//Очистка буфера.
-		I2C_DMA_Init(&I2cDma);
-	}
+	RTOS_SetTask(Task_ReadResponseFromMCU, 1, 0);
+//	//Чтение ответа на команду от MCUv7 с помощью DMA.
+//	I2cDma.slaveAddr = MCUv7_I2C_ADDR;
+//	I2cDma.rxBufSize = rxSize;
+//	if(I2C_DMA_Read(&I2cDma) == I2C_DMA_NAC)//Если ошибка при чтении ответа
+//	{
+//		for(uint32_t i = 0; i < rxSize; i++) *(I2cDma.RxBuf+i) = 0;//Очистка буфера.
+//		I2C_DMA_Init(&I2cDma);
+//	}
 }
 //************************************************************
 void I2cRxParsing(void){
@@ -616,7 +613,7 @@ int main(void){
 	MICRO_DELAY_Init();
 	USART_Init(USART1, USART1_BRR);
 
-	msDelay(100);//MICRO_DELAY(100000);//Эта задержка нужна для стабилизации напряжения патания.
+	MICRO_DELAY(100000);//Эта задержка нужна для стабилизации напряжения патания.
 					    //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Инициализация PID.
@@ -626,7 +623,7 @@ int main(void){
 			 &PID);
 	//***********************************************
 	//Ини-я DS2782.
-	DS2782_Init(DS2782_I2C, I2C_GPIO_NOREMAP);
+//	DS2782_Init(DS2782_I2C, I2C_GPIO_NOREMAP);
 	//***********************************************
 	//Ини-я OLED SSD1306
 	SSD1306_Init(SSD1306_I2C, SSD1306_128x64, I2C_GPIO_NOREMAP);

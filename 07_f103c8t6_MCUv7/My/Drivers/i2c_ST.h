@@ -30,7 +30,7 @@
 #define I2C_FM_CCR		30 //(2500U / (3 * TPCLK1))
 #define I2C_FM_TRISE	12 //(300U  / TPCLK1)
 //--------------------------
-#define I2C_WAIT_TIMEOUT	5000U
+#define I2C_WAIT_TIMEOUT	1000//100U
 //--------------------------
 #define I2C_MODE_MASTER		1
 #define I2C_MODE_SLAVE		0
@@ -45,13 +45,14 @@
 typedef enum{
 	I2C_OK = 0,
 	I2C_BUSY,		//Шина I2C занята (передача/прием данных)
+	I2C_NAC,
+	I2C_TIMEOUT,
 	I2C_ERR_START,	//Ошибка при фоормировании Старт-последовательности
 	I2C_ERR_ADDR,	//Ошибка адреса, Slave не отвечает.
 	I2C_ERR_TX_BYTE,//Вышел таймаут передачи байта.
 	I2C_ERR_RX_BYTE,//Вышел таймаут приема байта.
 	I2C_ERR_BTF		//Вышел таймаут Byte transfer finished
 }I2C_State_t;
-
 //--------------------------
 
 //*******************************************************************************************

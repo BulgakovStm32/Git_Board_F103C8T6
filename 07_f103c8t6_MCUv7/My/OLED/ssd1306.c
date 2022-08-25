@@ -58,9 +58,9 @@ static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
  * @param  data: data to be written
  * @retval None
  */
-static void ssd1306_I2C_WriteCMD(uint8_t cmd){
+static uint32_t ssd1306_I2C_WriteCMD(uint8_t cmd){
 
-	I2C_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, &cmd, 1);
+	return I2C_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, &cmd, 1);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -69,6 +69,8 @@ uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType, uint32_t i2cRemap){
 	/* Init I2C */
 	I2C_Init(i2c, i2cRemap);
 	/* Init LCD */
+	//pVideoBuffer = Lcd_pVideoBuffer();
+	//if(ssd1306_I2C_WriteCMD(0xAE) != I2C_OK) return 1; //display off
 	ssd1306_I2C_WriteCMD(0xAE); //display off
 	ssd1306_I2C_WriteCMD(0x20); //Set Memory Addressing Mode
 	ssd1306_I2C_WriteCMD(0x00); //00,Horizontal Addressing Mode;
@@ -117,8 +119,7 @@ uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType, uint32_t i2cRemap){
 	ssd1306_I2C_WriteCMD(0xAF); //--turn on SSD1306 panel
 	//-------------------------
 	pVideoBuffer = Lcd_pVideoBuffer();
-
-	return 1;
+	return 0;
 }
 //***********************************************************************
 void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size){

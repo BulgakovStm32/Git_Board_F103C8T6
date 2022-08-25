@@ -21,22 +21,23 @@ static uint32_t I2C_LongWait(I2C_TypeDef *i2c, uint32_t flag){
 	//---------------------
 	while(!(i2c->SR1 & flag))//Ждем отпускания флага.
 	{
-		//if(++wait_count >= I2C_WAIT_TIMEOUT) return 1;
-		if((i2c->SR1 & I2C_SR1_AF) ||		   //Если NAC или
-		   (++wait_count >= I2C_WAIT_TIMEOUT)) //вышел таймаут
-		{
-			i2c->SR1 &= ~(I2C_SR1_AF   |  //Сброс флагов ошибок.
-					      I2C_SR1_BERR |  //
-						  I2C_SR1_ARLO |
-						  I2C_SR1_OVR);
+		//Вышел таймаут ожидания ответа
+		if(++wait_count >= I2C_WAIT_TIMEOUT) return 1;
 
-			i2c->CR1 |= I2C_CR1_STOP|   //Формируем Stop
-					    I2C_CR1_ACK;    //to be ready for another reception
-
-//			(void)i2c->SR1;
-//			(void)i2c->SR2;
-			return 1;
-		}
+//		if(i2c->SR1 & I2C_SR1_AF)		   //NAC
+//		{
+//			i2c->SR1 &= ~(I2C_SR1_AF   |  //Сброс флагов ошибок.
+//					      I2C_SR1_BERR |  //
+//						  I2C_SR1_ARLO |
+//						  I2C_SR1_OVR);
+//
+//			i2c->CR1 |= I2C_CR1_STOP|   //Формируем Stop
+//					    I2C_CR1_ACK;    //to be ready for another reception
+//
+//			//(void)i2c->SR1;
+//			//(void)i2c->SR2;
+//			return 1;
+//		}
 	}
 	return 0;
 }
@@ -84,6 +85,7 @@ void I2C_Init(I2C_TypeDef *i2c, uint32_t remap){
 	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
 	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
 	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
+	i2c->SR1  = 0; 			   //Сброс флагов ошибок.
 	//Скорость работы.
 	i2c->CR2  = 0;
 	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
@@ -111,6 +113,10 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 	i2c->DR = deviceAddr;
 	if(I2C_LongWait(i2c, I2C_SR1_ADDR))//Ожидаем окончания передачи адреса
 	{
+		i2c->SR1 &= ~I2C_SR1_AF;   //Сброс флага AF.
+		i2c->CR1 |= I2C_CR1_STOP | //Формируем Stop
+					I2C_CR1_ACK;   //to be ready for another reception
+
 		if(i2c == I2C1) I2C1NacCount++;
 		else			I2C2NacCount++;
 		return I2C_ERR_ADDR;
@@ -353,10 +359,7 @@ void I2C_IT_EV_Handler(I2C_TypeDef *i2c){
 	{
 		(void)i2c->SR1; //сбрасываем бит TXE (чтением SR1 и SR2):
 		(void)i2c->SR2;
-
 		//Был передан адрес регистра чтения.
-
-
 
 		if(txCount < TxBufSize)
 		{
@@ -393,35 +396,50 @@ void I2C_IT_EV_Handler(I2C_TypeDef *i2c){
 	//------------------------------
 }
 //**********************************************************
+void _i2c_ClearErrFlagAndStop(I2C_TypeDef *i2c, uint32_t flag){
+
+	i2c->SR1 &= ~(flag); 	   //Сброс флага ошибки.
+	i2c->CR1 |= I2C_CR1_STOP | //Формируем Stop
+				I2C_CR1_ACK;   //to be ready for another reception
+}
+
 //Обработчик прерывания ошибок I2C
 void I2C_IT_ER_Handler(I2C_TypeDef *i2c){
 
-	LedPC13Toggel();
+//	LedPC13Toggel();
 	//------------------------------
 	//NACK - Acknowledge failure
 	if(i2c->SR1 & I2C_SR1_AF)
 	{
-		i2c->SR1 &= ~I2C_SR1_AF; //Сброс AF.
-		i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+//		i2c->SR1 &= ~I2C_SR1_AF; //Сброс AF.
+//
+//		//i2c->CR1 |= I2C_CR1_STOP;//Формируем Stop
+//		i2c->CR1 |= I2C_CR1_STOP|   //Формируем Stop
+//				    I2C_CR1_ACK;    //to be ready for another reception
+		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_AF);
 		return;
 	}
 	//------------------------------
 	//Bus error
 	if(i2c->SR1 & I2C_SR1_BERR)
 	{
-		i2c->SR1 &= ~I2C_SR1_BERR; //Сброс BERR.
+		//i2c->SR1 &= ~I2C_SR1_BERR; //Сброс BERR.
+		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_BERR);
+		I2C_Init(i2c, I2C_GPIO_NOREMAP);
 	}
 	//------------------------------
 	//Arbitration loss (Master)
 	if(i2c->SR1 & I2C_SR1_ARLO)
 	{
-		i2c->SR1 &= ~I2C_SR1_ARLO; //Сброс ARLO.
+		//i2c->SR1 &= ~I2C_SR1_ARLO; //Сброс ARLO.
+		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_ARLO);
 	}
 	//------------------------------
 	//Overrun/Underrun
 	if(i2c->SR1 & I2C_SR1_OVR)
 	{
-		i2c->SR1 &= ~I2C_SR1_OVR; //Сброс OVR.
+		//i2c->SR1 &= ~I2C_SR1_OVR; //Сброс OVR.
+		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_OVR);
 	}
 	//------------------------------
 	//PEC error
@@ -536,15 +554,16 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 	NVIC_SetPriority(DMA1_Channel6_IRQn, 0);//Set priority
 	NVIC_EnableIRQ(DMA1_Channel6_IRQn);     //Enable DMA1_Channel6_IRQn
 
-	i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
+	//i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK)
 	{
 		__enable_irq();
 		return I2C_DMA_NAC;
 	}
-	i2c->DR   = regAddr;   //Передача адреса в который хотим записать.
-	dma->CCR |= DMA_CCR_EN;//DMA Channel enable
+	i2c->DR   = regAddr;      //Передача адреса в который хотим записать.
+	i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
+	dma->CCR |= DMA_CCR_EN;   //DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
 	return I2C_DMA_BUSY;
@@ -672,7 +691,7 @@ void DMA1_Channel7_IRQHandler(void){
 	if(DMA1->ISR & DMA_ISR_TEIF7)
 	{
 		DMA_ChDisableAndITFlagClear(DMA1_Channel7, DMA_IFCR_CTEIF7);
-		I2cDmaStateReg = I2C_DMA_READY;
+		//I2cDmaStateReg = I2C_DMA_READY;
 	}
 	//-------------------------
 }
@@ -750,16 +769,18 @@ I2C_DMA_State_t I2C_DMA_Read(I2C_DMA_t *i2cDma){
 	NVIC_SetPriority(DMA1_Channel7_IRQn, 0);//Set priority
 	NVIC_EnableIRQ(DMA1_Channel7_IRQn);     //Enable DMA1_Channel6_IRQn
 
-	i2cDma->i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
-						I2C_CR2_LAST;	//DMA Last Transfer.
+//	i2cDma->i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
+//						I2C_CR2_LAST;	//DMA Last Transfer.
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2cDma->i2c, i2cDma->slaveAddr|I2C_MODE_READ) != I2C_OK)
 	{
 		__enable_irq();
 		return I2C_DMA_NAC;
 	}
-	i2cDma->i2c->CR1 |= I2C_CR1_ACK;//to be ready for another reception
-	dma->CCR 		 |= DMA_CCR_EN; //DMA Channel enable
+	i2cDma->i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
+						I2C_CR2_LAST;	//DMA Last Transfer.
+	i2cDma->i2c->CR1 |= I2C_CR1_ACK;	//to be ready for another reception
+	dma->CCR 		 |= DMA_CCR_EN; 	//DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
 	return I2C_DMA_BUSY;
