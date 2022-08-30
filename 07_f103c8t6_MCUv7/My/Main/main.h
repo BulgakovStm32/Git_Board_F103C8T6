@@ -43,6 +43,7 @@
 #include "MyString.h"
 #include "PID.h"
 #include "Time.h"
+#include "Crc.h"
 //-------------------------
 //Для работы с MCUv7
 #include "cmd.h"

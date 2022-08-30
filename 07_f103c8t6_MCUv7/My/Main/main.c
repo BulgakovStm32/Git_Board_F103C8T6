@@ -34,8 +34,9 @@ I2C_DMA_t I2cDma;
 static uint32_t ButtonPressCount = 0;
 static int16_t	PIDcontrol = 0;
 
-static uint32_t MCUv7_EncoderVal = 0;
-static uint32_t MCUv7_msVal		 = 0;
+static uint32_t MCUv7_EncoderVal    	= 0;
+static uint32_t MCUv7_SupplyVoltageVal 	= 0;
+static uint32_t MCUv7_msVal		    	= 0;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -285,6 +286,12 @@ void Task_Temperature_Display(void){
 //	Lcd_Print("MCUEn= ");
 //	Lcd_BinToDec(1234567890, 10, LCD_CHAR_SIZE_NORM);
 
+	//Напряжения питания MCU
+	Lcd_SetCursor(1, 3);
+	Lcd_Print("MCU_Vin= ");
+	Lcd_BinToDec(MCUv7_SupplyVoltageVal, 5, LCD_CHAR_SIZE_NORM);
+	Lcd_Print(" mV");
+
 
 	//Енкодер.
 //	static uint16_t tempReg = 0;
@@ -429,18 +436,18 @@ void Task_PID(void){
 #define MCUv7_I2C		I2C1
 #define MCUv7_I2C_ADDR	(0x05<<1)
 
-uint8_t  mcuI2cRxBuf[32];
-uint8_t  mcuI2cTxBuf[32];
-uint32_t rxSize;
+uint8_t  McuI2cRxBuf[32];
+uint8_t  McuI2cTxBuf[32];
+uint32_t McuResponseSize;
 //************************************************************
 void Task_ReadResponseFromMCU(void){
 
 	//Чтение ответа на команду от MCUv7 с помощью DMA.
 	I2cDma.slaveAddr = MCUv7_I2C_ADDR;
-	I2cDma.rxBufSize = rxSize;
+	I2cDma.rxBufSize = McuResponseSize;
 	if(I2C_DMA_Read(&I2cDma) == I2C_DMA_NAC)//Если ошибка при чтении ответа
 	{
-		for(uint32_t i = 0; i < rxSize; i++) *(I2cDma.RxBuf+i) = 0;//Очистка буфера.
+		for(uint32_t i = 0; i < McuResponseSize; i++) *(I2cDma.pRxBuf+i) = 0;//Очистка буфера.
 		I2C_DMA_Init(&I2cDma);
 	}
 }
@@ -448,8 +455,7 @@ void Task_ReadResponseFromMCU(void){
 void Task_RequestFromMCUv7(void){
 
 	static uint32_t cyclCount = cmdArduinoMicroTS;
-		   uint32_t txSize;
-//		   uint32_t rxSize;
+	MCU_Request_t   *request  = (MCU_Request_t *)McuI2cTxBuf;
 	//-----------------------------
 	//Индикация передачи
 	//LedPC13Toggel();
@@ -467,41 +473,43 @@ void Task_RequestFromMCUv7(void){
 //		break;
 		//------------------
 		case(cmdArduinoMicroTS):
-			mcuI2cTxBuf[0] = cmdArduinoMicroTS;
-			mcuI2cTxBuf[1] = 0x01;
-			mcuI2cTxBuf[2] = 0xCE;
-			txSize = 3;		//сколько байт передаем
-			rxSize = 6;		//сколько байт вычитываем(Count+Cmd+Data(uint32))
+			request->CmdCode = cmdArduinoMicroTS;	//
+			request->Count   = 1;					//кол-во байтов в запросе
+			McuResponseSize  = 7;					//сколько байт вычитываем(Count+Cmd+Data(uint32)+CRC)
 
 			cyclCount = cmdGetEncoderPosition;
 		break;
 		//------------------
 		case(cmdGetEncoderPosition):
-			mcuI2cTxBuf[0] = cmdGetEncoderPosition;
-			mcuI2cTxBuf[1] = 0x01;
-			mcuI2cTxBuf[2] = 0xCE;
-			txSize = 3;
-			rxSize = 15;
+			request->CmdCode 	= cmdGetEncoderPosition;//
+			request->Count   	= 1;					//кол-во байтов в запросе
+			McuResponseSize	 	= 17;					//сколько байт вычитываем(Count+Cmd+Data+CRC)
 
 			cyclCount= cmdGetTemperature;
 		break;
 		//------------------
 		case(cmdGetTemperature):
-			mcuI2cTxBuf[0] = cmdGetTemperature; //
-			mcuI2cTxBuf[1] = 0x02; 				//кол-во байтов в запросе
-			mcuI2cTxBuf[2] = 0x01; 				//sensor_number
-			txSize = 3;
-			rxSize = 6;
+			request->CmdCode 	= cmdGetTemperature;	//
+			request->Count   	= 2;					//кол-во байтов в запросе
+			request->Payload[0] = 1;				    //sensor_number
+			McuResponseSize	 	= 7;					//сколько байт вычитываем(Count+Cmd+Data+CRC)
 
 			cyclCount++;
 		break;
 		//------------------
 		case(cmdGetTemperature+1):
-			mcuI2cTxBuf[0] = cmdGetTemperature; //
-			mcuI2cTxBuf[1] = 0x02; 				//кол-во байтов в запросе
-			mcuI2cTxBuf[2] = 0x02; 				//sensor_number
-			txSize = 3;
-			rxSize = 6;
+			request->CmdCode 	= cmdGetTemperature;	//
+			request->Count   	= 2;					//кол-во байтов в запросе
+			request->Payload[0] = 2;				    //sensor_number
+			McuResponseSize	 	= 7;					//сколько байт вычитываем(Count+Cmd+Data+CRC)
+
+			cyclCount = cmdGetSupplyVoltage;
+		break;
+		//------------------
+		case(cmdGetSupplyVoltage):
+			request->CmdCode = cmdGetSupplyVoltage;	//
+			request->Count   = 1;					//
+			McuResponseSize	 = 7;					//сколько байт вычитываем(Count+Cmd+Data(uint32)+CRC)
 
 			cyclCount = cmdArduinoMicroTS;
 		break;
@@ -511,11 +519,16 @@ void Task_RequestFromMCUv7(void){
 		break;
 		//------------------
 	}
-	//Перадача команды в MCUv7
-	if(I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_WRITE) != I2C_OK) return;
-	I2C_SendData(MCUv7_I2C, mcuI2cTxBuf, txSize);
+	//Расчет CRC
+	request->Payload[request->Count-1] = CRC_Calculate((uint8_t*)request, request->Count+1);
 
+	//Перадача команды в MCUv7
+	if(I2C_StartAndSendDeviceAddr(MCUv7_I2C, MCUv7_I2C_ADDR|I2C_MODE_WRITE) != I2C_OK) return;//Если нет Ack то выходим.
+	I2C_SendData(MCUv7_I2C, (uint8_t*)request, request->Count+2);
+
+	//Чтение ответа от MCUv7 на команду через 1 мС.
 	RTOS_SetTask(Task_ReadResponseFromMCU, 1, 0);
+
 //	//Чтение ответа на команду от MCUv7 с помощью DMA.
 //	I2cDma.slaveAddr = MCUv7_I2C_ADDR;
 //	I2cDma.rxBufSize = rxSize;
@@ -528,34 +541,43 @@ void Task_RequestFromMCUv7(void){
 //************************************************************
 void I2cRxParsing(void){
 
-	MCU_Response_t *resp = (MCU_Response_t *)I2cDma.RxBuf;
+	MCU_Response_t *response = (MCU_Response_t *)I2cDma.pRxBuf;
 	//-----------------------------
-	LedPC13Toggel();//индикация приема ответа.
+	//Проверка CRC.
+	uint8_t crcCalc = CRC_Calculate((uint8_t*)response, response->Count+1);
+	uint8_t crcReq  = response->Payload[response->Count-1];
+	if(crcCalc != crcReq) return;//если CRC не совпадает то выходим.
 
-	switch(resp->CmdCode){
+	LedPC13Toggel();//индикация приема ответа.
+	//Разбор пришедшего пакета
+	switch(response->CmdCode){
 		//------------------
 		case(cmdArduinoMicroTS):
-			MCUv7_msVal	= *(uint32_t*)&resp->Payload[0];
+			MCUv7_msVal	= *(uint32_t*)&response->Payload[0];
 		break;
 		//------------------
 		case(cmdGetEncoderPosition):
-			MCUv7_EncoderVal = *(uint32_t *)&resp->Payload[2];
+			MCUv7_EncoderVal = *(uint32_t *)&response->Payload[2];
 		break;
 		//------------------
 		case(cmdGetTemperature):
 			//Складываем принятые данные.
-			if(resp->Payload[3] == 1)// Датчик 1
+			if(response->Payload[3] == 1)// Датчик 1
 			{
 				Sensor_1.SENSOR_NUMBER    = 1;
-				Sensor_1.TEMPERATURE_SIGN = resp->Payload[0];
-				Sensor_1.TEMPERATURE  	  = (uint32_t)((resp->Payload[1] << 8) | resp->Payload[2]);
+				Sensor_1.TEMPERATURE_SIGN = response->Payload[0];
+				Sensor_1.TEMPERATURE  	  = (uint32_t)((response->Payload[1] << 8) | response->Payload[2]);
 			}
-			else if(resp->Payload[3] == 2)// Датчик 2
+			else if(response->Payload[3] == 2)// Датчик 2
 			{
 				Sensor_2.SENSOR_NUMBER    = 2;
-				Sensor_2.TEMPERATURE_SIGN = resp->Payload[0];
-				Sensor_2.TEMPERATURE  	  = (uint32_t)((resp->Payload[1] << 8) | resp->Payload[2]);
+				Sensor_2.TEMPERATURE_SIGN = response->Payload[0];
+				Sensor_2.TEMPERATURE  	  = (uint32_t)((response->Payload[1] << 8) | response->Payload[2]);
 			}
+		break;
+		//------------------
+		case(cmdGetSupplyVoltage):
+			MCUv7_SupplyVoltageVal = *(uint32_t *)&response->Payload[0];
 		break;
 		//------------------
 		default:
@@ -609,7 +631,6 @@ int main(void){
 	//Drivers.
 	Sys_Init();
 	Gpio_Init();
-	SysTick_Init();
 	MICRO_DELAY_Init();
 	USART_Init(USART1, USART1_BRR);
 
@@ -656,6 +677,7 @@ int main(void){
 	RTOS_Init();
 	RTOS_SetTask(Task_LcdUpdate, 0, 25);
 	//***********************************************
+	SysTick_Init();
 	__enable_irq();
 	//**************************************************************
 	while(1)

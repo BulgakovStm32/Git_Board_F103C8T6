@@ -114,8 +114,8 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 	if(I2C_LongWait(i2c, I2C_SR1_ADDR))//Ожидаем окончания передачи адреса
 	{
 		i2c->SR1 &= ~I2C_SR1_AF;   //Сброс флага AF.
-		i2c->CR1 |= I2C_CR1_STOP | //Формируем Stop
-					I2C_CR1_ACK;   //to be ready for another reception
+//		i2c->CR1 |= I2C_CR1_STOP | //Формируем Stop
+//					I2C_CR1_ACK;   //to be ready for another reception
 
 		if(i2c == I2C1) I2C1NacCount++;
 		else			I2C2NacCount++;
@@ -554,7 +554,7 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 	NVIC_SetPriority(DMA1_Channel6_IRQn, 0);//Set priority
 	NVIC_EnableIRQ(DMA1_Channel6_IRQn);     //Enable DMA1_Channel6_IRQn
 
-	//i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
+	i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK)
 	{
@@ -562,7 +562,7 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 		return I2C_DMA_NAC;
 	}
 	i2c->DR   = regAddr;      //Передача адреса в который хотим записать.
-	i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
+	//i2c->CR2 |= I2C_CR2_DMAEN;//DMAEN(DMA requests enable)
 	dma->CCR |= DMA_CCR_EN;   //DMA Channel enable
 	I2cDmaStateReg = I2C_DMA_BUSY;
 	__enable_irq();
@@ -754,7 +754,7 @@ I2C_DMA_State_t I2C_DMA_Read(I2C_DMA_t *i2cDma){
 
 	dma->CCR  &= ~DMA_CCR_EN;		  	 		//Channel disable
 	dma->CPAR  = (uint32_t)&(i2cDma->i2c->DR); 	//Peripheral address.
-	dma->CMAR  = (uint32_t)i2cDma->RxBuf;	  	//Memory address.
+	dma->CMAR  = (uint32_t)i2cDma->pRxBuf;	  	//Memory address.
 	dma->CNDTR = i2cDma->rxBufSize;		  	 	//Data size.
 	dma->CCR   = (3 << DMA_CCR_PL_Pos)   | 	//PL[1:0]: Channel priority level - 11: Very high.
 			     (0 << DMA_CCR_PSIZE_Pos)| 	//PSIZE[1:0]: Peripheral size - 00: 8-bits.

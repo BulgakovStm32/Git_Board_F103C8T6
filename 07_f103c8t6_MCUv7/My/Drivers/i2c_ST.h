@@ -112,11 +112,11 @@ typedef struct{
 	uint32_t 	slaveRegAddr;		// В режиме Master - адрес регистра Slave-устройства куда хотим писать/читать данные.
 									// в режиме Slave  - ???
 
-	uint8_t 	TxBuf[I2C_DMA_TX_BUF_LEN_MAX];	// буфер передачи.
+	uint8_t 	pTxBuf[I2C_DMA_TX_BUF_LEN_MAX];	// буфер передачи.
 	uint32_t 	txBufSize;						// размер буфера передачи
 	uint32_t	txBufIndex;						// индекс буфера передачи.
 
-	uint8_t 	RxBuf[I2C_DMA_RX_BUF_LEN_MAX];	// буфер приема.
+	uint8_t 	pRxBuf[I2C_DMA_RX_BUF_LEN_MAX];	// буфер приема.
 	uint32_t 	rxBufSize;						// размер буфера приема.
 	uint32_t	rxBufIndex;						// индекс буфера приема.
 
@@ -136,7 +136,6 @@ I2C_DMA_State_t I2C_DMA_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regA
 //***********************Работа I2C через DMA с исполльзованием.*****************************
 void 			I2C_DMA_Init(I2C_DMA_t *i2cDma);
 I2C_DMA_State_t I2C_DMA_Read(I2C_DMA_t *i2cDma);
-
 
 //*******************************************************************************************
 //*******************************************************************************************
