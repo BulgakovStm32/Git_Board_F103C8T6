@@ -37,6 +37,7 @@ static int16_t	PIDcontrol = 0;
 static uint32_t MCUv7_EncoderVal    	= 0;
 static uint32_t MCUv7_SupplyVoltageVal 	= 0;
 static uint32_t MCUv7_msVal		    	= 0;
+static uint32_t MCUv7_Sense				= 0;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -281,17 +282,21 @@ void Task_Temperature_Display(void){
 	//Вывод времени.
 	Time_Display(1, 2);
 
-	//Значение энкодера MCUv7.
-//	Lcd_SetCursor(1, 3);
-//	Lcd_Print("MCUEn= ");
-//	Lcd_BinToDec(1234567890, 10, LCD_CHAR_SIZE_NORM);
-
 	//Напряжения питания MCU
 	Lcd_SetCursor(1, 3);
-	Lcd_Print("MCU_Vin= ");
+	Lcd_Print("MCU_Vin  = ");
 	Lcd_BinToDec(MCUv7_SupplyVoltageVal, 5, LCD_CHAR_SIZE_NORM);
 	Lcd_Print(" mV");
 
+	//Значение энкодера MCUv7.
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("MCU_Enc  = ");
+	Lcd_BinToDec(MCUv7_EncoderVal, 6, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 5);
+	Lcd_Print("MCU_Sense= ");
+	Lcd_u32ToHex(MCUv7_Sense);
+//	Lcd_BinToDec(MCUv7_EncoderVal, 6, LCD_CHAR_SIZE_NORM);
 
 	//Енкодер.
 //	static uint16_t tempReg = 0;
@@ -326,10 +331,9 @@ void Task_Temperature_Display(void){
 //	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
 //	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
 
-	Temperature_Display(&Sensor_1, 1, 4);
-	Temperature_Display(&Sensor_2, 1, 5);
-	Temperature_Display(&Sensor_3, 1, 6);
-
+	Temperature_Display(&Sensor_1, 1, 6);
+	Temperature_Display(&Sensor_2, 1, 7);
+//	Temperature_Display(&Sensor_3, 1, 6);
 	//Кнопка энкодера.
 	IncrementOnEachPass(&ButtonPressCount, Encoder.BUTTON_STATE);
 	Lcd_SetCursor(1, 8);
@@ -511,6 +515,14 @@ void Task_RequestFromMCUv7(void){
 			request->Count   = 1;					//
 			McuResponseSize	 = 7;					//сколько байт вычитываем(Count+Cmd+Data(uint32)+CRC)
 
+			cyclCount = cmdGetSenseState;
+		break;
+		//------------------
+		case(cmdGetSenseState):
+			request->CmdCode = cmdGetSenseState;	//
+			request->Count   = 1;					//
+			McuResponseSize	 = 7;					//сколько байт вычитываем(Count+Cmd+Data(uint32)+CRC)
+
 			cyclCount = cmdArduinoMicroTS;
 		break;
 		//------------------
@@ -578,6 +590,10 @@ void I2cRxParsing(void){
 		//------------------
 		case(cmdGetSupplyVoltage):
 			MCUv7_SupplyVoltageVal = *(uint32_t *)&response->Payload[0];
+		break;
+		//------------------
+		case(cmdGetSenseState):
+			MCUv7_Sense = *(uint32_t *)&response->Payload[0];
 		break;
 		//------------------
 		default:

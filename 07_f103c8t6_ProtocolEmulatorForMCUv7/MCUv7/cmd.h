@@ -81,6 +81,9 @@ typedef enum{
 
 	cmdGetSupplyVoltage				= 0x40, //Команда возвращает напряжение питания платы MCU, в мВ.
 
+	//Отладочные команды
+	cmdGetSenseState = 0x41,
+
     mcuCmdMapSize
 }MCU_Cmd_t;
 

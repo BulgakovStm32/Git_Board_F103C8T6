@@ -1,0 +1,8 @@
+Scheduler.c:165:6:IdleTask	0	static
+Scheduler.c:14:6:Scheduler_Init	8	static
+Scheduler.c:32:6:Scheduler_SetTask	8	static,ignoring_inline_asm
+Scheduler.c:57:6:Scheduler_SetTimerTask	12	static,ignoring_inline_asm
+Scheduler.c:89:6:Scheduler_Loop	8	static,ignoring_inline_asm
+Scheduler.c:133:6:Scheduler_TimerServiceLoop	16	static
+Scheduler.c:152:10:Scheduler_GetTickCount	0	static
+Scheduler.c:159:6:Scheduler_Start	0	static

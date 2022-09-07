@@ -1,0 +1,6 @@
+rtos.c:39:6:RTOS_Init	0	static
+rtos.c:52:6:RTOS_SetTask	20	static,ignoring_inline_asm
+rtos.c:90:6:RTOS_DeleteTask	16	static,ignoring_inline_asm
+rtos.c:111:6:RTOS_DispatchLoop	24	static,ignoring_inline_asm
+rtos.c:156:6:RTOS_TimerServiceLoop	8	static
+rtos.c:172:10:RTOS_GetTickCount	0	static
