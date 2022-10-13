@@ -76,7 +76,7 @@ typedef struct {
  *           - 0: LCD was not detected on I2C port
  *           - > 0: LCD initialized OK and ready to use
  */
-uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType, uint32_t i2cRemap);
+uint32_t SSD1306_Init(uint32_t lcdType);
 
 /**
  * @brief  Updates buffer from internal RAM to LCD

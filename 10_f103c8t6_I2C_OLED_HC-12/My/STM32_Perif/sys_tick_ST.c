@@ -12,7 +12,7 @@
 //*******************************************************************************************
 //*******************************************************************************************
 //Инициализация системного таймера SysTick.
-void SysTick_Init(void){
+void SYS_TICK_Init(void){
 
 	SysTick->LOAD = TimerTick;	//Загрузка значения.
 	SysTick->VAL  = TimerTick;	//Обнуление таймера. 
@@ -21,8 +21,14 @@ void SysTick_Init(void){
 	//NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
 
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | //Тактирование частотой процессора.
-					SysTick_CTRL_TICKINT_Msk   | //Рразрешение прерывания.
-					SysTick_CTRL_ENABLE_Msk;     //Резрешение таймеру считать.
+					SysTick_CTRL_TICKINT_Msk; //   | //Рразрешение прерывания.
+					//SysTick_CTRL_ENABLE_Msk;     //Резрешение таймеру считать.
+}
+//**********************************************************
+void SYS_TICK_Control(uint32_t state){
+
+	if(state) SysTick->CTRL |=  SysTick_CTRL_ENABLE_Msk; //Вкл. таймера.
+	else 	  SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk; //Откл. таймера.
 }
 //*******************************************************************************************
 //*******************************************************************************************

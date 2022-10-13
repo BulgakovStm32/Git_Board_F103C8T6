@@ -64,10 +64,11 @@ static uint32_t ssd1306_I2C_WriteCMD(uint8_t cmd){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-uint32_t SSD1306_Init(I2C_TypeDef *i2c, uint32_t lcdType, uint32_t i2cRemap){
+uint32_t SSD1306_Init(uint32_t lcdType){
 
 	/* Init I2C */
-	I2C_Master_Init(i2c, i2cRemap);
+	//I2C_Master_Init(i2c, i2cRemap, 400000);
+
 	/* Init LCD */
 	//pVideoBuffer = Lcd_pVideoBuffer();
 	//if(ssd1306_I2C_WriteCMD(0xAE) != I2C_OK) return 1; //display off

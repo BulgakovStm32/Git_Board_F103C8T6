@@ -58,6 +58,53 @@ static void _i2c_GPIO_Init(I2C_TypeDef *i2c, uint32_t remap){
 					  GPIO_CRH_CNF10    | GPIO_CRH_CNF11;
 	}
 }
+//**********************************************************
+static void _i2c_ClockEnable(I2C_TypeDef *i2c){
+
+	if(i2c == I2C1) RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+	else		    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+}
+//**********************************************************
+static void _i2c_ModeInit(I2C_TypeDef *i2c, uint32_t mode){
+
+	//Инициализация I2C.
+	i2c->CR1 &= ~I2C_CR1_PE;    //Откл. модуля I2C.
+	i2c->CR1 |=  I2C_CR1_SWRST; //Программный сброс модуля I2C
+	i2c->CR1 &= ~I2C_CR1_SWRST; //Это нужно для востановления работоспособноси после КЗ на линии.
+	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
+	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
+	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
+
+	if(mode == I2C_MODE_MASTER) i2c->SR2 |=  I2C_SR2_MSL;//режим Master.
+	else						i2c->SR2 &= ~I2C_SR2_MSL;//режим Slave
+}
+//**********************************************************
+static void _i2c_SetSlaveAddress(I2C_TypeDef *i2c, uint8_t slaveAddr){
+
+	i2c->OAR1 = slaveAddr << 1; //адрес устройства на шине.
+	i2c->CR1 |= I2C_CR1_ACK;	//разрешаем отправлять ACK/NACK после приема байта адреса.
+}
+//**********************************************************
+static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
+
+	i2c->CR2  = 0;
+	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
+	i2c->CCR  = 0;
+	//FastMode(400kHz)
+	if(speed >= 400000)
+	{
+		i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz).
+		i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
+		i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
+	}
+	//StandartMode(100kHz).
+	else
+	{
+		i2c->CCR   &= ~I2C_CCR_FS; //0 - режим STANDART(100kHz).
+		i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
+		i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
+	}
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -167,40 +214,15 @@ I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t le
 //*******************************************************************************************
 //*******************************************************************************************
 //**************************Функции для работы в режиме Master*******************************
-void I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap){
+void I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed){
 
-	_i2c_GPIO_Init(i2c, remap);
-	if(i2c == I2C1) RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
-	else		    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+	_i2c_GPIO_Init(i2c, remap);		    //Инициализация портов
+	_i2c_ClockEnable(i2c);			    //Вкл. тактирования модуля I2C
+	_i2c_ModeInit(i2c, I2C_MODE_MASTER);//Инициализация I2C в режиме Master.
+	_i2c_SetSpeed(i2c, speed);			//Скорость работы.
 
-	//Инициализация I2C.
-//	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
-//	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
-//	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
-
-	//Инициализация I2C в режиме Master.
-	i2c->CR1 &= ~I2C_CR1_PE;    //Откл. модуля I2C.
-	i2c->CR1 |=  I2C_CR1_SWRST; //Программный сброс модуля I2C
-	i2c->CR1 &= ~I2C_CR1_SWRST; //Это нужно для востановления работоспособноси после КЗ на линии.
-//	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
-	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
-	i2c->SR2 |=  I2C_SR2_MSL;   //режим Master.
-	i2c->SR1  =  0; 			//Сброс флагов ошибок.
-
-	//Скорость работы.
-	i2c->CR2  = 0;
-	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
-	i2c->CCR  = 0;
-	//FastMode(400kHz)
-	i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
-	i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
-	i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
-	//StandartMode(100kHz).
-//	i2c->CCR   &= ~I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
-//	i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-//	i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
 	//Включение модуля I2C.
-	i2c->CR1 |= I2C_CR1_PE;
+//	i2c->CR1 |= I2C_CR1_PE;
 }
 //**********************************************************
 uint32_t I2C_Master_GetNacCount(I2C_TypeDef *i2c){
@@ -268,45 +290,55 @@ I2C_State_t I2C_Master_Read(I2C_TypeDef *i2c, uint32_t deviceAddr, uint32_t regA
 //*******************************************************************************************
 void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32_t speed){
 
-	//Инициализация портов.
-	_i2c_GPIO_Init(i2c, remap);
-	//Включение тактирования.
-	if(i2c == I2C1) RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
-	else		    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
-	//Инициализация I2C в режиме Slave.
-	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
-	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
-	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
-	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
-	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
-	i2c->SR2 &= ~I2C_SR2_MSL;   //режим Slave.
-	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
+	_i2c_GPIO_Init(i2c, remap);		    		  //Инициализация портов
+	_i2c_ClockEnable(i2c);			    		  //Вкл. тактирования модуля I2C
+	_i2c_ModeInit(i2c, I2C_MODE_SLAVE); 		  //I2C в режиме Slave.
+	_i2c_SetSlaveAddress(i2c, (uint8_t)slaveAddr);//адрес устройства на шине.
+	_i2c_SetSpeed(i2c, speed);					  //Скорость работы.
 
-	i2c->OAR1 = slaveAddr << 1; //адрес устройства на шине.
-	i2c->CR1 |= I2C_CR1_ACK;	//разрешаем отправлять ACK/NACK после приема байта адреса.
-	//Скорость работы.
-	i2c->CR2  = 0;
-	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
-	i2c->CCR  = 0;
 
-	//FastMode(400kHz)
-	if(speed >= 400000)
-	{
-		i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz).
-		i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
-		i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
-	}
-	//StandartMode(100kHz).
-	else
-	{
-		i2c->CCR   &= ~I2C_CCR_FS; //0 - режим STANDART(100kHz).
-		i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-		i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
-	}
-	//StandartMode(100kHz).
-//	i2c->CCR   &= ~I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
-//	i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-//	i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
+
+//	//Инициализация портов.
+//	_i2c_GPIO_Init(i2c, remap);
+//	//Включение тактирования.
+//	if(i2c == I2C1) RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+//	else		    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+//	//Инициализация I2C в режиме Slave.
+//	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
+//	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
+//	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
+//	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
+//	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
+//	i2c->SR2 &= ~I2C_SR2_MSL;   //режим Slave.
+//	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
+//
+//	i2c->OAR1 = slaveAddr << 1; //адрес устройства на шине.
+//	i2c->CR1 |= I2C_CR1_ACK;	//разрешаем отправлять ACK/NACK после приема байта адреса.
+//
+//	//Скорость работы.
+//	i2c->CR2  = 0;
+//	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
+//	i2c->CCR  = 0;
+//
+//	//FastMode(400kHz)
+//	if(speed >= 400000)
+//	{
+//		i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz).
+//		i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
+//		i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
+//	}
+//	//StandartMode(100kHz).
+//	else
+//	{
+//		i2c->CCR   &= ~I2C_CCR_FS; //0 - режим STANDART(100kHz).
+//		i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
+//		i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
+//	}
+//	//StandartMode(100kHz).
+////	i2c->CCR   &= ~I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
+////	i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
+////	i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
+
 	//Включение модуля I2C.
 //	i2c->CR1 |= I2C_CR1_PE;
 }
@@ -331,7 +363,9 @@ void I2C_IT_Init(I2C_IT_t *i2cIt){
 	else if(i2cIt->i2c == I2C2)  i2c2_IT_Define = i2cIt;
 	else return;
 	//Инициализация I2C
-	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_Master_Init(i2cIt->i2c, i2cIt->gpioRemap);
+	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_Master_Init(i2cIt->i2c,
+														  i2cIt->gpioRemap,
+														  i2cIt->i2cSpeed);
 	else								  I2C_Slave_Init (i2cIt->i2c,
 														  i2cIt->gpioRemap,
 														  i2cIt->slaveAddr,

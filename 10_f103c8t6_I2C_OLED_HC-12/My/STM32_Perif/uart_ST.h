@@ -28,17 +28,23 @@ typedef struct{
 }UxHandlers_t;
 //*******************************************************************************************
 //*******************************************************************************************
-//Аппатартный уровень.
-void 		  Uart1Init  (uint16_t usartBrr);
-void 		  Uart1ManagingRx(uint8_t rxState);
-void 		  Uart1StarTx(uint8_t *TxBuf, uint8_t size);
-void          Uart1DmaStarTx(uint8_t *TxBuf, uint32_t size);
-UxHandlers_t* Uart1Handler(void);
+void USARTx_Init(USART_TypeDef *usart, uint32_t baudRate); //инициализация usart`a
+
+void USARTx_IT_Handler(USART_TypeDef *usart);//Обработчик прерываний USART.
 
 //********************************************************
+//Кольцевой приемный буфер
+void 	RING_BUFF_Init(void);
+void 	RING_BUFF_FlushRxBuf(void); 		//очистить приемный буфер
+uint8_t RING_BUFF_GetRxCount(void); 		//взять число символов в приемном буфере
+char 	RING_BUFF_GetChar(void); 			//прочитать символ из приемного буфера
+void 	RING_BUFF_PutCharToRxBuff(char sym);//помещает символ в приемный буфер
+void	RING_BUFF_CopyRxBuff(char *buff);   //копировать принятые данные в сторонний буфер.
+
+//********************************************************
+//Работа с DMA.
 void USART_DMA_Init(USART_TypeDef *usart, uint32_t baudRate);
 
-//Работа с DMA.
 void DMAxChxInitForTx(DMA_Channel_TypeDef *dma, uint32_t *perifAddr);
 void DMAxChxStartTx(DMA_Channel_TypeDef *dma, uint8_t *buf, uint32_t size);
 //*******************************************************************************************

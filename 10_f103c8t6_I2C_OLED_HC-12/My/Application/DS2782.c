@@ -14,7 +14,7 @@
 //*******************************************************************************************
 void DS2782_Init(I2C_TypeDef *i2c){
 
-	I2C_Master_Init(i2c, I2C_GPIO_NOREMAP); //Init(i2c, 0);
+//	I2C_Master_Init(i2c, I2C_GPIO_NOREMAP, 400000); //Init(i2c, 0);
 }
 //************************************************************
 uint16_t DS2782_ReadADC(DS2782_Registers_t addrReg, uint8_t len){

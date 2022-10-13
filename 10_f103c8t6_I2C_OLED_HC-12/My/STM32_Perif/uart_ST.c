@@ -8,16 +8,16 @@
 //*******************************************************************************************
 //*******************************************************************************************
 //Рабочие регистры.
-typedef struct{
-	//--------------------
-	volatile uint16_t CounterByte;//Счетчик переданных байт. 
-	volatile uint8_t  BufSize;    //Количество передаваемых байт.
-	volatile uint8_t *BufPtr;     //Указатель на передающий буфер.
-	//--------------------
-}UxWorkReg_t;
+//typedef struct{
+//	//--------------------
+//	volatile uint16_t CounterByte;//Счетчик переданных байт.
+//	volatile uint8_t  BufSize;    //Количество передаваемых байт.
+//	volatile uint8_t *BufPtr;     //Указатель на передающий буфер.
+//	//--------------------
+//}UxWorkReg_t;
 //----------------------------------------
-static UxWorkReg_t	U1WorkReg;
-static UxHandlers_t	U1Handlers;
+//static UxWorkReg_t	U1WorkReg;
+//static UxHandlers_t	U1Handlers;
 //*******************************************************************************************
 //*******************************************************************************************
 //Инициализация портов.
@@ -49,153 +49,57 @@ static void _usart_GpioInit(USART_TypeDef *usart){
 	}
 }
 //**********************************************************
+static void _usart_ClockEnable(USART_TypeDef *usart){
 
+	//Включение тактирования USART.
+		 if(usart == USART1) RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+	else if(usart == USART2) RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+	else if(usart == USART3) RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+}
+//**********************************************************
+static void _usart_SetBaudRate(USART_TypeDef *usart, uint32_t baudRate){
 
+	//установка скорости работы.
+	if(usart == USART1) usart->BRR = (uint32_t)((APB2CLK + baudRate / 2) / baudRate);//Set baudrate
+	else 				usart->BRR = (uint32_t)((APB1CLK + baudRate / 2) / baudRate);//Set baudrate
+}
+//**********************************************************
+//сброс флагов ошибки
+static void _usart_ClearErrFlag(USART_TypeDef *usart){
 
-
+	(void)usart->SR;//Такая последовательность сбрасывает флаги ошибки
+	(void)usart->DR;//
+}
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void USARTx_Init(USART_TypeDef *usart, uint32_t baudRate){
 
+	_usart_GpioInit(usart);				//Инициализация портов.
+	_usart_ClockEnable(usart);			//вкл. тактирования модуля USART.
+	_usart_SetBaudRate(usart, baudRate);//установка скорости работы.
 
+	usart->CR2 &= ~USART_CR2_STOP;  //1 стоп-бит.
+	usart->CR1 &= ~USART_CR1_M; 	//8 бит данных.
+	usart->CR1 |= USART_CR1_RE    | //Включение RX USART1.
+				  USART_CR1_TE    | //Включение TX USART1.
+				  //USART_CR1_IDLEIE | //IDLE Interrupt Enable
+				  USART_CR1_RXNEIE | //RXNE Interrupt Enable(RXNE-Read data register not empty)
+				  //USART_CR1_TCIE   | //Transmission Complete Interrupt Enable
+				  //USART_CR1_TXEIE  | //TXE interrupt enable(TXE-Transmit data register empty)
+				  USART_CR1_UE;     //Включение USART1.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void Uart1Init(uint16_t usartBrr){
-  
- 	//Инициализация портов. PA9(U1TX), PA10(U1RX).
-	GPIOA->CRH &= ~(GPIO_CRH_CNF9 | GPIO_CRH_CNF10);	
-	GPIOA->CRH |= GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9;//PA9(U1TX)  - выход, альтернативный режим push-pull.																							 //PA9(U1TX) - тактирование 50МГц.
-	GPIOA->CRH |= GPIO_CRH_CNF10_0;				   //PA10(U1RX) - Floating input.
-  //--------------------
-  //Инициализация USART1.
-  RCC->APB2ENR |= RCC_APB2ENR_USART1EN;//Включение тактирование USART1.
-	
-  USART1->BRR  = usartBrr;  	   //Set baudrate
-  USART1->CR1 &= ~USART_CR1_M; 	   //8 бит данных.
-  USART1->CR2 &= ~USART_CR2_STOP;  //1 стоп-бит.
-  USART1->CR1 =  USART_CR1_RE    | //Включение RX USART1.	
-                 USART_CR1_TE    | //Включение TX USART1.
-                 USART_CR1_RXNEIE| //Включение прерывания от приемника USART1.		
-                 USART_CR1_UE;     //Включение USART1.
-  USART1->CR3 |= USART_CR3_DMAT;   //Подключение TX USART1 к DMA.          
-  NVIC_SetPriority(USART1_IRQn, 15);//Приоритет прерывания USART1.
-  NVIC_EnableIRQ(USART1_IRQn);      //Разрешаем прерывание от приемника USART1.
-  //--------------------
-  //Инициализация DMA. TX USART1 работает с DMA1 Ch4.
-  RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Включить тактирование DMA1
-  DMAxChxInitForTx(DMA1_Channel4, (uint32_t*)&USART1->DR);
+	//Приоритет прерывания.
+	NVIC_SetPriority(USART2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 2, 0));
+	//Разрешаем прерывание.
+	NVIC_EnableIRQ(USART2_IRQn);
 }
 //**********************************************************
-//Включение/отключение приемника USART1. 
-void Uart1ManagingRx(uint8_t rxState){
 
-	if(rxState)USART1->CR1 |=  USART_CR1_RE;
-	else 	   USART1->CR1 &= ~USART_CR1_RE;
-}
-//**********************************************************
-//Запуск передачи буфера по прерыванию.
-void Uart1StarTx(uint8_t *TxBuf, uint8_t size){
 
-	U1WorkReg.CounterByte = 0;	  //Cброс счетчика байт.
-	U1WorkReg.BufSize	  = size; //Количество байт на передачу.
-	U1WorkReg.BufPtr	  = TxBuf;//Указатель на передающий буфер.
-	//----------------
-	USART1->CR1 &= ~USART_CR1_RE; //Отлючение RX USART1.
-	USART1->DR   = *TxBuf;        //Передача первого байта.
-	USART1->CR1 |= USART_CR1_TE  |//Включение TX USART1.
-                   USART_CR1_TCIE;//Включение прерывания от TX USART1.
-}
-//**********************************************************
-void Uart1DmaStarTx(uint8_t *TxBuf, uint32_t size){
 
-	//DMA1Ch4StartTx(TxBuf, size);
-	DMAxChxStartTx(DMA1_Channel7, TxBuf, size);
-}
-//**********************************************************
-//Указатели обработчиков событий
-UxHandlers_t* Uart1Handler(void){
-	
-	return &U1Handlers;
-}
-//**********************************************************
-//сброс флагов ошибки 
-static void Usart1ClrErrFlag(void){
 
-	USART1->SR;//Такая последовательность сбрасывает флаги ошибки 
-	USART1->DR;//
-}
-//**********************************************************
-//Прерывание от USART1.
-void USART1_Handler(void){
-
-	//--------------------
-	/*!< Read Data Register Not Empty */
-	if(USART1->SR & USART_SR_RXNE)
-		{
-		  //проверяем нет ли ошибок при приеме байта.
-		  if((USART1->SR & (USART_SR_NE | USART_SR_FE | USART_SR_PE | USART_SR_ORE)) == 0)
-			{
-			  //Принимаем запрос от МВ.
-			  //U1Handlers.ReceiveByte(USART1->DR);
-			}
-		  //--------------------
-		  //Если байт битый, то пропускаем его и
-		  //очищаем приемный буфер для запуска приема нового пакета.
-		  else
-			{
-			  Usart1ClrErrFlag();
-			  //U1Handlers.ReceiveByteBroken();
-			}
-		  //--------------------
-		}
-	//--------------------
-	/*!< Overrun error */
-	if(USART1->SR & USART_SR_ORE)
-		{
-			Usart1ClrErrFlag();
-			//U1Handlers.ReceiveByteBroken();
-		}
-	//--------------------
-	/*!< Transmission Complete */
-	if(USART1->SR & USART_SR_TC)
-		{
-		//      if(++U1WorkReg.CounterByte == U1WorkReg.BufSize)
-		//        {
-		//           //Запуск приема нового пакета.
-		//					 RS485Direction(Rx);
-		//           USART1->CR1 &= ~USART_CR1_TE;//Отлючение прерывания TX.
-		//					 //USART1->CR1 &= ~USART_CR1_TCIE;//Отлючение прерывания по окончании передачи.
-		//           USART1->CR1 |=  USART_CR1_RE;//Включение RX.
-		//        }
-		//      //Передача очередного байта.
-		//      else USART1->DR = *(U1WorkReg.BufPtr + U1WorkReg.CounterByte);
-			//---------
-			//Работа с ДМА1 канал 4.
-			//U1Handlers.BufTransferComplete();//Обработка окнчания предачи буфера.
-			USART1->CR1 &= ~USART_CR1_TCIE;  //Отлючение прерывания по окончанию передачи		
-			//---------
-		}
-	//--------------------
-	/*!< Transmit Data Register Empty */
-	if(USART1->SR & USART_SR_TXE)
-		{
-		  //USART1->SR &= ~USART_SR_TXE; //Сброс флага прерывания.
-		  //---------
-		}
-	//--------------------
-}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -210,15 +114,17 @@ void USARTx_IT_Handler(USART_TypeDef *usart){
 		//проверяем нет ли ошибок при приеме байта.
 		if((usart->SR & (USART_SR_NE | USART_SR_FE | USART_SR_PE | USART_SR_ORE)) == 0)
 		{
-			//Принимаем запрос от МВ.
+			//Складываем приемнятый байт в буфер
 			//U1Handlers.ReceiveByte(USART1->DR);
+			RING_BUFF_PutCharToRxBuff(usart->DR);//помещает символ в приемный буфер
 		}
 		//--------------------
 		//Если байт битый, то пропускаем его и
 		//очищаем приемный буфер для запуска приема нового пакета.
 		else
 		{
-			Usart1ClrErrFlag();
+			_usart_ClearErrFlag(usart);
+			RING_BUFF_FlushRxBuf();//очистить приемный буфер
 			//U1Handlers.ReceiveByteBroken();
 		}
 		//--------------------
@@ -227,7 +133,8 @@ void USARTx_IT_Handler(USART_TypeDef *usart){
 	/*!< Overrun error -------------------------------------------------------*/
 	if(usart->SR & USART_SR_ORE)
 	{
-		Usart1ClrErrFlag();
+		_usart_ClearErrFlag(usart);
+		RING_BUFF_FlushRxBuf();//очистить приемный буфер
 		//U1Handlers.ReceiveByteBroken();
 	}
 	/*------------------------------------------------------------------------*/
@@ -262,40 +169,98 @@ void USARTx_IT_Handler(USART_TypeDef *usart){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+// Кольцевой буфер приема
+#define SIZE_BUF_RX 32	//задаем размер кольцевых буферов
+
+static volatile char 	 rxBuf[SIZE_BUF_RX];
+static volatile uint32_t rxBufTail = 0;
+static volatile uint32_t rxBufHead = 0;
+static volatile uint32_t rxCount   = 0;
+
+//**********************************************************
+void RING_BUFF_Init(void){
+
+	rxBufTail = 0;
+	rxBufHead = 0;
+	rxCount   = 0;
+}
+//**********************************************************
+//"очищает" приемный буфер
+void RING_BUFF_FlushRxBuf(void){
+
+	rxBufTail = 0;
+	rxBufHead = 0;
+	rxCount   = 0;
+}
+//**********************************************************
+//возвращает колличество символов находящихся в приемном буфере
+uint8_t RING_BUFF_GetRxCount(void){
+
+  return rxCount;
+}
+//**********************************************************
+//чтение буфера
+char RING_BUFF_GetChar(void){
+
+	char sym;
+	//--------------------
+	if(rxCount > 0)//если приемный буфер не пустой
+	{
+		sym = rxBuf[rxBufHead];		//прочитать из него символ
+		rxCount--;                  //уменьшить счетчик символов
+		rxBufHead++;                //инкрементировать индекс головы буфера
+		//if(rxBufHead == SIZE_BUF_RX) rxBufHead = 0;
+		rxBufHead &= (SIZE_BUF_RX - 1);
+		return sym;                 //вернуть прочитанный символ
+	}
+	return 0;
+}
+//**********************************************************
+//прерывание по завершению приема
+//ISR(USART_RXC_vect){
+//
+//    char data = UDR;
+//
+//    if (rxCount < SIZE_BUF_RX)//если в буфере еще есть место
+//	{
+//		usartRxBuf[rxBufTail] = data;//считать символ из UDR в буфер
+//		rxBufTail++;                 //увеличить индекс хвоста приемного буфера
+//		if (rxBufTail == SIZE_BUF_RX) rxBufTail = 0;
+//		rxCount++;                   //увеличить счетчик принятых символов
+//    }
+//}
+
+//помещает символ в приемный буфер
+void RING_BUFF_PutCharToRxBuff(char sym){
+
+    if(rxCount < SIZE_BUF_RX)//если в буфере еще есть место
+	{
+    	rxBuf[rxBufTail] = sym;//кладем символ в буфер
+		rxBufTail++;           //увеличить индекс хвоста приемного буфера
+		//if(rxBufTail == SIZE_BUF_RX) rxBufTail = 0;
+		rxBufTail &= (SIZE_BUF_RX - 1);
+		rxCount++;                   //увеличить счетчик принятых символов
+    }
+}
+//**********************************************************
+//копировать принятые данные в сторонний буфер.
+void RING_BUFF_CopyRxBuff(char *buff){
+
+	while(RING_BUFF_GetRxCount())
+	{
+		*buff = RING_BUFF_GetChar();
+		buff++;
+	}
+}
+
+
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 void USART_DMA_Init(USART_TypeDef *usart, uint32_t baudRate){
 
-
-	//Инициализация портов.
-	_usart_GpioInit(usart);
-
-	//Включение тактирования USART и установка скорости работы.
-	if(usart == USART1)
-	{
-		RCC->APB2ENR |= RCC_APB2ENR_USART1EN;			   //Включение тактирование USART1.
-		usart->BRR    = (uint32_t)((APB2CLK + baudRate / 2) / baudRate);//Set baudrate
-	}
-	else if(usart == USART2)
-	{
-		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;			   //Включение тактирование USART2.
-		usart->BRR    = (uint32_t)((APB1CLK + baudRate / 2) / baudRate);//Set baudrate
-	}
-	else if(usart == USART3)
-	{
-		RCC->APB1ENR |= RCC_APB1ENR_USART3EN;			   //Включение тактирование USART3.
-		usart->BRR    = (uint32_t)((APB1CLK + baudRate / 2) / baudRate);//Set baudrate
-	}
-	else return;
-	//--------------------
-	//Инициализация USARTx.
-	usart->CR1 &= ~USART_CR1_M; 	//8 бит данных.
-	usart->CR2 &= ~USART_CR2_STOP;  //1 стоп-бит.
-	usart->CR1 |= USART_CR1_RE    | //Включение RX USART1.
-				  USART_CR1_TE    | //Включение TX USART1.
-				  //USART_CR1_RXNEIE| //Включение прерывания от приемника USART1.
-				  USART_CR1_UE;     //Включение USART1.
-
-//	NVIC_SetPriority(USART1_IRQn, 15);//Приоритет прерывания USART1.
-//	NVIC_EnableIRQ(USART1_IRQn);      //Разрешаем прерывание от приемника USART1.
+	USARTx_Init(usart, baudRate); //инициализация usart`a
 	//--------------------
 	//Инициализация DMA.
 	RCC->AHBENR |= RCC_AHBENR_DMA1EN;//Включить тактирование DMA1
@@ -385,9 +350,6 @@ void DMA1_Channel4_Handler(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-
-
-
 //*******************************************************************************************
 //*******************************************************************************************
 

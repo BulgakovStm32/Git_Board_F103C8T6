@@ -108,12 +108,11 @@ void GPIO_Init(void){
 //	RCC->CFGR |= RCC_CFGR_MCO_HSE;      //Подключение к выводу PA8 частоту HSE.
 //	RCC->CFGR |= RCC_CFGR_MCO_PLL;   //Подключение к выводу PA8 частоту PLL/2.
 //	//--------------------
-	//PC13 - Led.
+	// LED_PC13 - PC13
 	GPIO_InitForOutputPushPull(GPIOC, 13);
-//  GPIOC->CRH &= ~GPIO_CRH_CNF13;//выход, режим - push-pull.
-//  GPIOC->CRH |= GPIO_CRH_MODE13;//тактирование 50МГц.
-//  //--------------------
 
+	// HC12_SET - PA4
+	GPIO_InitForOutputOpenDrain(HC12_SET_GPIO_PORT, HC12_SET_GPIO_PIN);
 }
 //**********************************************************
 void GPIO_CheckLoop(void){
