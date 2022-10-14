@@ -90,14 +90,26 @@ void USARTx_Init(USART_TypeDef *usart, uint32_t baudRate){
 				  //USART_CR1_TXEIE  | //TXE interrupt enable(TXE-Transmit data register empty)
 				  USART_CR1_UE;     //Включение USART1.
 
+	RING_BUFF_FlushRxBuf();//Сброс колцевого буфера.
+
 	//Приоритет прерывания.
 	NVIC_SetPriority(USART2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 2, 0));
 	//Разрешаем прерывание.
 	NVIC_EnableIRQ(USART2_IRQn);
 }
 //**********************************************************
+void USARTx_SendBuff(USART_TypeDef *usart, uint8_t *buff, uint32_t size){
 
-
+	size++;
+	while(size)
+	{
+		while((usart->SR & USART_SR_TXE) == 0){}
+		usart->DR = *buff;
+		buff++;
+		size--;
+	}
+}
+//**********************************************************
 
 
 //*******************************************************************************************
@@ -116,7 +128,7 @@ void USARTx_IT_Handler(USART_TypeDef *usart){
 		{
 			//Складываем приемнятый байт в буфер
 			//U1Handlers.ReceiveByte(USART1->DR);
-			RING_BUFF_PutCharToRxBuff(usart->DR);//помещает символ в приемный буфер
+			RING_BUFF_PutByteToRxBuff(usart->DR);//помещает символ в приемный буфер
 		}
 		//--------------------
 		//Если байт битый, то пропускаем его и
@@ -172,46 +184,46 @@ void USARTx_IT_Handler(USART_TypeDef *usart){
 // Кольцевой буфер приема
 #define SIZE_BUF_RX 32	//задаем размер кольцевых буферов
 
-static volatile char 	 rxBuf[SIZE_BUF_RX];
-static volatile uint32_t rxBufTail = 0;
-static volatile uint32_t rxBufHead = 0;
-static volatile uint32_t rxCount   = 0;
+static volatile uint8_t	 ringRxBuf[SIZE_BUF_RX];
+static volatile uint32_t ringRxBufTail = 0;
+static volatile uint32_t ringRxBufHead = 0;
+static volatile uint32_t ringRxCount   = 0;
 
 //**********************************************************
 void RING_BUFF_Init(void){
 
-	rxBufTail = 0;
-	rxBufHead = 0;
-	rxCount   = 0;
+	ringRxBufTail = 0;
+	ringRxBufHead = 0;
+	ringRxCount   = 0;
 }
 //**********************************************************
 //"очищает" приемный буфер
 void RING_BUFF_FlushRxBuf(void){
 
-	rxBufTail = 0;
-	rxBufHead = 0;
-	rxCount   = 0;
+	ringRxBufTail = 0;
+	ringRxBufHead = 0;
+	ringRxCount   = 0;
 }
 //**********************************************************
 //возвращает колличество символов находящихся в приемном буфере
 uint8_t RING_BUFF_GetRxCount(void){
 
-  return rxCount;
+  return ringRxCount;
 }
 //**********************************************************
 //чтение буфера
-char RING_BUFF_GetChar(void){
+uint8_t RING_BUFF_GetByte(void){
 
-	char sym;
+	uint8_t sym;
 	//--------------------
-	if(rxCount > 0)//если приемный буфер не пустой
+	if(ringRxCount > 0)//если приемный буфер не пустой
 	{
-		sym = rxBuf[rxBufHead];		//прочитать из него символ
-		rxCount--;                  //уменьшить счетчик символов
-		rxBufHead++;                //инкрементировать индекс головы буфера
+		sym = ringRxBuf[ringRxBufHead];		//прочитать из него символ
+		ringRxCount--;                  	//уменьшить счетчик символов
+		ringRxBufHead++;                	//инкрементировать индекс головы буфера
 		//if(rxBufHead == SIZE_BUF_RX) rxBufHead = 0;
-		rxBufHead &= (SIZE_BUF_RX - 1);
-		return sym;                 //вернуть прочитанный символ
+		ringRxBufHead &= (SIZE_BUF_RX - 1);	//проверка на преполнение
+		return sym;                 		//вернуть прочитанный символ
 	}
 	return 0;
 }
@@ -231,15 +243,15 @@ char RING_BUFF_GetChar(void){
 //}
 
 //помещает символ в приемный буфер
-void RING_BUFF_PutCharToRxBuff(char sym){
+void RING_BUFF_PutByteToRxBuff(uint8_t sym){
 
-    if(rxCount < SIZE_BUF_RX)//если в буфере еще есть место
+    if(ringRxCount < SIZE_BUF_RX)//если в буфере еще есть место
 	{
-    	rxBuf[rxBufTail] = sym;//кладем символ в буфер
-		rxBufTail++;           //увеличить индекс хвоста приемного буфера
+    	ringRxBuf[ringRxBufTail] = sym;//кладем символ в буфер
+    	ringRxBufTail++;           	   //увеличить индекс хвоста приемного буфера
 		//if(rxBufTail == SIZE_BUF_RX) rxBufTail = 0;
-		rxBufTail &= (SIZE_BUF_RX - 1);
-		rxCount++;                   //увеличить счетчик принятых символов
+    	ringRxBufTail &= (SIZE_BUF_RX - 1);//Проверка на переполнение
+    	ringRxCount++;                     //увеличить счетчик принятых символов
     }
 }
 //**********************************************************
@@ -248,12 +260,10 @@ void RING_BUFF_CopyRxBuff(char *buff){
 
 	while(RING_BUFF_GetRxCount())
 	{
-		*buff = RING_BUFF_GetChar();
+		*buff = RING_BUFF_GetByte();
 		buff++;
 	}
 }
-
-
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -307,10 +317,16 @@ void DMAxChxInitForTx(DMA_Channel_TypeDef *dma, uint32_t *perifAddr){
 	//DMA1_Channel4->CCR &= ~DMA_CCR4_PINC; //неиспользовать инкремент указателя
 	//Настроить работу с памятью
 	//DMA1_Channel4->CCR &= ~DMA_CCR4_MSIZE;//размерность данных 8 бит
-	dma->CCR |= DMA_CCR_MINC;    //использовать инкремент указателя
+	dma->CCR |= DMA_CCR_MINC;  //использовать инкремент указателя
 
-//	DMA1_Channel4->CCR |= DMA_CCR_TCIE;  //Разрешить прерывание по завершении обмена
-//	NVIC_EnableIRQ (DMA1_Channel4_IRQn); //Разрешить прерывания от DMA канал №4
+	//прерывания.
+//	dma->CCR |= DMA_CCR_TCIE;  //Разрешить прерывание по завершении обмена
+//		 if(dma == DMA1_Channel2) NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+//	else if(dma == DMA1_Channel3) NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+//	else if(dma == DMA1_Channel4) NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+//	else if(dma == DMA1_Channel5) NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+//	else if(dma == DMA1_Channel6) NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+//	else if(dma == DMA1_Channel7) NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 }
 //**********************************************************
 //Старт обмена в канале "память-DMA-USART1"                                                                   
@@ -321,19 +337,55 @@ void DMAxChxStartTx(DMA_Channel_TypeDef *dma, uint8_t *buf, uint32_t size){
 	dma->CNDTR = size;         //загрузить количество данных для обмена
 	dma->CCR  |= DMA_CCR_EN;   //разрешить работу канала
 }
+//*******************************************************************************************
+//*******************************************************************************************
+//обработчик прерывания DMA.
+void DMA1_Chx_IT_Handler(DMA_Channel_TypeDef *dma){
+
+
+	//-------------------------
+	//Если обмен завершен
+	if(DMA1->ISR & DMA_ISR_TCIF4)
+	{
+		DMA1->IFCR |= DMA_IFCR_CTCIF4;    //сбросить флаг окончания обмена.
+		DMA1_Channel4->CCR &= ~DMA_CCR_EN;//запретить работу канала.
+
+
+		//Это нужно что бы дождаться завершения передачи последнего байта.
+		//USART1->CR1 |= USART_CR1_TCIE;	  //Включение прерывания по окончанию передачи USART1.
+	}
+	//-------------------------
+	//Если передана половина буфера
+	if(DMA1->ISR & DMA_ISR_HTIF4)
+	{
+
+	}
+	//-------------------------
+	//Если произошла ошибка при обмене
+	if(DMA1->ISR & DMA_ISR_TEIF4)
+	{
+
+	}
+	//-------------------------
+}
 //**********************************************************
+
+
+
+
+
 //Прерываение от DMA1_Ch4.
 void DMA1_Channel4_Handler(void){
   
 	//-------------------------
 	//Если обмен завершен
 	if(DMA1->ISR & DMA_ISR_TCIF4)
-		{
-			DMA1->IFCR |= DMA_IFCR_CTCIF4;    //сбросить флаг окончания обмена.
-			DMA1_Channel4->CCR &= ~DMA_CCR_EN;//запретить работу канала.
-			//Это нужно что бы дождаться завершения передачи последнего байта.
-			USART1->CR1 |= USART_CR1_TCIE;	  //Включение прерывания по окончанию передачи USART1.
-		}
+	{
+		DMA1->IFCR |= DMA_IFCR_CTCIF4;    //сбросить флаг окончания обмена.
+		DMA1_Channel4->CCR &= ~DMA_CCR_EN;//запретить работу канала.
+		//Это нужно что бы дождаться завершения передачи последнего байта.
+		USART1->CR1 |= USART_CR1_TCIE;	  //Включение прерывания по окончанию передачи USART1.
+	}
 //  //-------------------------
 //  //Если передана половина буфера
 //  if(DMA1->ISR & DMA_ISR_HTIF4)

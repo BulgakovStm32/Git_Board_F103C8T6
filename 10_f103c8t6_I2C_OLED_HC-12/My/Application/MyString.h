@@ -39,6 +39,8 @@ uint8_t   Txt_BinToDec(uint32_t var, uint32_t num);
 void      Txt_u8ToHex(uint8_t var);
 void      Txt_u32ToHex(uint32_t var);
 
+void Txt_BuilStr(char *head, uint32_t num, char *tail, char *buffDestination);
+
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* DS18B20_H_ */

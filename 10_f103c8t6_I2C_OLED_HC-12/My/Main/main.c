@@ -32,6 +32,7 @@ I2C_IT_t I2cDma;
 //static uint8_t  I2CRxBuf[32] = {0};
 
 static uint32_t ButtonPressCount = 0;
+static uint32_t hc12_BaudRate    = 123;
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -120,6 +121,8 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 //************************************************************
 void Task_Temperature_Display(void){
 
+	static char xtxBuf[32] = {0};
+	//-------------------
 	Lcd_ClearVideoBuffer();
 
 	//Шапка
@@ -132,19 +135,24 @@ void Task_Temperature_Display(void){
 	//Вывод времени.
 	Time_Display(1, 2);
 
-	//Напряжения питания MCU
+	//Скорсть обмена с модулем HС-12
 	Lcd_SetCursor(1, 3);
-	Lcd_Print("MCU_Vin  = ");
-//	Lcd_BinToDec(MCUv7_SupplyVoltageVal, 5, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" mV");
+	Lcd_Print("BaudRate = ");
+	Lcd_BinToDec(hc12_BaudRate, 6, LCD_CHAR_SIZE_NORM);
+
+	//Вывод принятой строки
+	RING_BUFF_CopyRxBuff(xtxBuf);//копирование принятых данных
+	Lcd_SetCursor(1, 4);
+	Lcd_Print(xtxBuf);
+
 
 	//Значение энкодера MCUv7.
-	Lcd_SetCursor(1, 4);
-	Lcd_Print("MCU_Enc  = ");
+//	Lcd_SetCursor(1, 4);
+//	Lcd_Print("MCU_Enc  = ");
 //	Lcd_BinToDec(MCUv7_EncoderVal, 6, LCD_CHAR_SIZE_NORM);
 
-	Lcd_SetCursor(1, 5);
-	Lcd_Print("MCU_Sense= ");
+//	Lcd_SetCursor(1, 5);
+//	Lcd_Print("MCU_Sense= ");
 //	Lcd_u32ToHex(MCUv7_Sense);
 //	Lcd_BinToDec(MCUv7_EncoderVal, 6, LCD_CHAR_SIZE_NORM);
 
@@ -181,8 +189,8 @@ void Task_Temperature_Display(void){
 //	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
 //	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
 
-	Temperature_Display(&Sensor_1, 1, 6);
-	Temperature_Display(&Sensor_2, 1, 7);
+//	Temperature_Display(&Sensor_1, 1, 6);
+//	Temperature_Display(&Sensor_2, 1, 7);
 //	Temperature_Display(&Sensor_3, 1, 6);
 	//Кнопка энкодера.
 	IncrementOnEachPass(&ButtonPressCount, Encoder.BUTTON_STATE);
@@ -257,7 +265,7 @@ void Task_HC12(void){
 	Txt_BinToDec(ButtonPressCount, 4);
 
 	Txt_Chr('\n');
-	Txt_Print("******************\n");
+	Txt_Print("******************123456\n");
 	//--------------------------------
 	//USART2_TX -> DMA1_Channel7
 	DMAxChxStartTx(DMA1_Channel7, Txt_Buf()->buf, Txt_Buf()->bufIndex);
@@ -316,8 +324,10 @@ int main(void){
 					  //Без задержки LCD-дисплей не работает.
 	__enable_irq();
 	//***********************************************
-	//Инициализация OLED SSD1306 (I2C1).
-	SSD1306_Init(SSD1306_128x64);
+	SSD1306_Init(SSD1306_128x64);      //Инициализация OLED SSD1306 (I2C1).
+	HC12_Init(HC12_BAUD_RATE_57600);   //Инициализация HC-12 (USART2).
+	hc12_BaudRate = HC12_GetBaudRate();
+
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GPIO_PORT_A 	 = GPIOB;
@@ -328,92 +338,7 @@ int main(void){
 	Encoder.GPIO_PIN_BUTTON  = 1;
 	Encoder_Init(&Encoder);
 	//***********************************************
-	//Инициализация HC-12 для работы на скорости 115200
-	char str[32] = {0};
-
-	//Определение скорости обмена
-	//скорость передачи: 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 Бит/сек
-	uint32_t HC12_BaudRate[] = {1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200};
-	uint32_t count = 0;
-	do{
-		if(count > 7) break;
-		USART_DMA_Init(USART2, HC12_BaudRate[count++]);
-		//Переход в командный режим
-		HC12_SET_Low();
-		DELAY_milliS(50);//паузу не менее 40 мс.
-		//Проверка связи с модулем.
-		Txt_Print("AT\r");
-		DMAxChxStartTx(DMA1_Channel7, Txt_Buf()->buf, Txt_Buf()->bufIndex);
-		Txt_Buf()->bufIndex = 0;
-		DELAY_milliS(50); //подождем завершения передачи буфера.
-		//копирование принятой строки
-		RING_BUFF_CopyRxBuff(str);
-	}
-	while(!PARS_EqualStr(str, "OK\r\n"));
-
-	//Установка нужно скорости работы. Скорость 115200
-	Txt_Print("AT+B115200\r");//Команда установки скорости
-	DMAxChxStartTx(DMA1_Channel7, Txt_Buf()->buf, Txt_Buf()->bufIndex);
-	Txt_Buf()->bufIndex = 0;
-	DELAY_milliS(50); //подождем завершения передачи буфера.
-	//копирование принятой строки
-	RING_BUFF_CopyRxBuff(str);
-
-	USART_DMA_Init(USART2, 115200);
-	//Проверяем ответ от модуля
-	if(PARS_EqualStr(str, "OK+B115200\r\n"))
-	{
-		//Переход в режиме передачи данных.
-		HC12_SET_High();
-		DELAY_milliS(100); //паузу не менее 80 мс, необходимую для применения новых настроек и переключения режимов.
-	}
-
-
-//	USART_DMA_Init(USART2, 115200);
-//	//Переход в командный режим
-//	HC12_SET_Low();
-//	DELAY_milliS(50);
-//
-//	//  В командном режиме модуль HC-12 поддерживает стандартные AT команды,
-//	//любая команда начинается с символов AT, в конце команды должен присутствовать
-//	//символ возврата каретки <CR> (шестнадцатеричное значение 0x0D, в языках программирования “\r”).
-//	//  Ответное сообщение модуля отличается от стандарта AT команд, ответ непосредственно начинается с
-//	//сообщения и заканчивается символами <CR> и <LF>, в то время в стандарте, ответное сообщение
-//	//начинается и заканчивается символами <CR><LF>, где <LF> – символ перевода строки, шестнадцатеричное
-//	//значение 0x0A, в языках программирования “\n”.
-//
-//	//Проверка связи с модулем.
-//	Txt_Print("AT\r");
-//	DMAxChxStartTx(DMA1_Channel7, Txt_Buf()->buf, Txt_Buf()->bufIndex);
-//	Txt_Buf()->bufIndex = 0;
-//	DELAY_milliS(50); //подождем завершения передачи буфера.
-//
-//	//Смотрим ответ. Должен быть ответ "OK\r\n"
-//	RING_BUFF_CopyRxBuff(str);//копирование принятой строки
-//
-//	if(PARS_EqualStr(str, "OK\r\n"))
-//	{
-//		LED_PC13_On();
-//
-//		//Установим скорость 115200
-//		Txt_Print("AT+B115200\r");
-//		DMAxChxStartTx(DMA1_Channel7, Txt_Buf()->buf, Txt_Buf()->bufIndex);
-//		Txt_Buf()->bufIndex = 0;
-//		DELAY_milliS(50); //подождем завершения передачи буфера.
-//
-//		RING_BUFF_CopyRxBuff(str);//копирование принятой строки
-//
-//		USART_DMA_Init(USART2, 115200);
-//		//Проверяем ответ от модуля
-//		if(PARS_EqualStr(str, "OK+B115200\r\n"))
-//		{
-//			//Переход в режиме передачи данных.
-//			HC12_SET_High();
-//			DELAY_milliS(100); //паузу не менее 80 мс, необходимую для применения новых настроек и переключения режимов.
-//		}
-//	}
-	//***********************************************
-	//Ини-я диспетчера.
+	//Инициализация диспетчера.
 	RTOS_Init();
 	RTOS_SetTask(Task_LcdUpdate, 0, 25);
 	RTOS_SetTask(Task_HC12,      0, 1000);

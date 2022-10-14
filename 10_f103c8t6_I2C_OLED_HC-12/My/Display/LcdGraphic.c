@@ -371,35 +371,47 @@ void Lcd_Image(const uint8_t *imageData){
     }
 }
 //*****************************************************************************
-uint8_t Lcd_BinToDec(uint16_t var, uint8_t num, uint8_t charSize){
+uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize){
 
-	uint8_t DecArray[5];
 	uint8_t	temp;
+	uint8_t decArray[10];
 	//--------------------
-	if((var <= 0xFFFF) && (num <= 5))
-		{
-		  DecArray[4] = (uint8_t)(var / 10000);
-		  var %= 10000;
+	//Преобразование числа в строку.
+	decArray[9] = (uint8_t)(var/1000000000);
+	var %= 1000000000;
 
-		  DecArray[3] = (uint8_t)(var / 1000);
-		  var %= 1000;
+	decArray[8] = (uint8_t)(var/100000000);
+	var %= 100000000;
 
-		  DecArray[2] = (uint8_t)(var / 100);
-		  var %= 100;
+	decArray[7] = (uint8_t)(var/10000000);
+	var %= 10000000;
 
-		  DecArray[1] = (uint8_t)(var / 10);
-		  DecArray[0] = (uint8_t)(var % 10);
-		  //--------------------
-		  //Вывод на дисплей
-		  for(uint8_t i=0; i < num; i++)
-			{
-			  temp = 0x30 + DecArray[(num - 1) - i];
+	decArray[6] = (uint8_t)(var/1000000);
+	var %= 1000000;
 
-				   if(charSize == LCD_CHAR_SIZE_BIG) Lcd_ChrBig(temp);
-			  else if(charSize == LCD_CHAR_SIZE_BOLD)Lcd_ChrBold(temp);
-			  else					     			 Lcd_Chr(temp);
-			}
-		}
+	decArray[5] = (uint8_t)(var/100000);
+	var %= 100000;
+
+	decArray[4] = (uint8_t)(var/10000);
+	var %= 10000;
+
+	decArray[3] = (uint8_t)(var/1000);
+	var %= 1000;
+
+	decArray[2] = (uint8_t)(var/100);
+	var %= 100;
+
+	decArray[1] = (uint8_t)(var/10);
+	decArray[0] = (uint8_t)(var%10);
+	//--------------------
+	//Вывод на дисплей
+	for(uint32_t i = 0; i < num; i++)
+	{
+		temp = 0x30 + decArray[(num - 1) - i];
+			 if(charSize == LCD_CHAR_SIZE_BIG) Lcd_ChrBig(temp);
+		else if(charSize == LCD_CHAR_SIZE_BOLD)Lcd_ChrBold(temp);
+		else					     		   Lcd_Chr(temp);
+	}
 	return num+1;
 }
 //*****************************************************************************

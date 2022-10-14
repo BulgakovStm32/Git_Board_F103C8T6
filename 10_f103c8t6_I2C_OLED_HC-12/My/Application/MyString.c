@@ -100,7 +100,59 @@ void Txt_u32ToHex(uint32_t var){
 	Txt_u8ToHex((uint8_t)( var & 0x000000FF));
 }
 //**********************************************************
+void Txt_BuilStr(char *head, uint32_t num, char *tail, char *buffDestination){
 
+	uint32_t i = 0;
+	uint8_t  decArray[10];
+	//--------------------
+	//Складываем заголовок в буфер.
+	while(*head) buffDestination[i++] = *head++;
+
+	//Преобразование числа в строку.
+	decArray[9] = (uint8_t)(num/1000000000);
+	num %= 1000000000;
+
+	decArray[8] = (uint8_t)(num/100000000);
+	num %= 100000000;
+
+	decArray[7] = (uint8_t)(num/10000000);
+	num %= 10000000;
+
+	decArray[6] = (uint8_t)(num/1000000);
+	num %= 1000000;
+
+	decArray[5] = (uint8_t)(num/100000);
+	num %= 100000;
+
+	decArray[4] = (uint8_t)(num/10000);
+	num %= 10000;
+
+	decArray[3] = (uint8_t)(num/1000);
+	num %= 1000;
+
+	decArray[2] = (uint8_t)(num/100);
+	num %= 100;
+
+	decArray[1] = (uint8_t)(num/10);
+	decArray[0] = (uint8_t)(num%10);
+	//--------------------
+
+	uint32_t digitCount = 9;
+	//Находим первое ненулевое число слева.
+	while(decArray[digitCount] == 0)
+	{
+		if(digitCount == 0) return;
+		digitCount--;
+	}
+	//Складываем значещие символы в буфер
+	while(digitCount)
+	{
+		buffDestination[i++] = decArray[digitCount--]+'0';
+	}
+	buffDestination[i++] = decArray[0]+'0';
+	//Складываем заврешающую последовательность в буфер.
+	while(*tail) buffDestination[i++] = *tail++;
+}
 //**********************************************************
 
 //*******************************************************************************************
