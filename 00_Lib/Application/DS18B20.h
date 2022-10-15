@@ -8,28 +8,25 @@
 #define DS18B20_H_
 //*******************************************************************************************
 //*******************************************************************************************
+
 #include "main.h"
 
-//#include "core_cm3.h"
-
 //*******************************************************************************************
+#define DS18B20_READY			0
+#define DS18B20_BUSY			1
+
 #define DS18B20_SIGN_POSITIVE	0
 #define DS18B20_SIGN_NEGATIVE   1
 
-//#define DELAY_T_CONVERT      760000
-#define DELAY_RESET_PULSE    500
-//#define DELAY_PROTECTION     5
+#define DELAY_WRITE_1        	5
+#define DELAY_WRITE_1_PAUSE  	60
 
-#define DELAY_WRITE_1        5
-#define DELAY_WRITE_1_PAUSE  60
+#define DELAY_WRITE_0        	65
+#define DELAY_WRITE_0_PAUSE  	5
 
-#define DELAY_WRITE_0        65
-#define DELAY_WRITE_0_PAUSE  5
-
-#define DELAY_READ_SLOT      1
-#define DELAY_BUS_RELAX      15
-#define DELAY_READ_PAUSE     55//45
-
+#define DELAY_READ_SLOT      	2 //1
+#define DELAY_BUS_RELAX      	15
+#define DELAY_READ_PAUSE     	55//45
 //**********************************
 typedef enum {
 	SEARCH_ROM 		 = 0xFF,//определить адреса 1-Wire устройств, подключенных к шине.
@@ -56,26 +53,45 @@ typedef enum {
   DS18B20_Resolution_12_bit = 0x7F
 }DS18B20_Resolution_Enum;
 //**********************************
+#pragma pack(push, 1)//размер выравнивания в 1 байт
+typedef union{
+	struct{
+		uint8_t Temperature_LSB;
+		uint8_t Temperature_MSB;
+		uint8_t Th_Reg;
+		uint8_t Tl_Reg;
+		uint8_t Config_Reg;
+		uint8_t Reserv_1;
+		uint8_t Reserv_2;
+		uint8_t Reserv_3;
+		uint8_t Crc;
+	}Str;
+	uint8_t Blk[9];
+}DS18B20_ScratchPad_t;
+#pragma pack(pop)//вернули предыдущую настройку.
+//**********************************
 typedef struct{
 	GPIO_TypeDef		   *GPIO_PORT;
 	uint32_t	  			GPIO_PIN;
-	uint32_t				SENSOR_NUMBER;
-	DS18B20_Resolution_Enum RESOLUTION;
-	uint32_t				TEMPERATURE_SIGN;
-	uint32_t				TEMPERATURE;
+	uint32_t				SensorNumber;	 //SENSOR_NUMBER;
+	DS18B20_Resolution_Enum Resolution;  	 //RESOLUTION;
+	DS18B20_ScratchPad_t	ScratchPad;		 //
+	uint32_t				TemperatureSign; //TEMPERATURE_SIGN;
+	uint32_t				Temperature;     //TEMPERATURE;
 }DS18B20_t;
 //*******************************************************************************************
 //*******************************************************************************************
-//void 	 TemperatureSens_Init(void);
-void 	 TemperatureSens_GpioInit(DS18B20_t *sensor);
-void 	 TemperatureSens_SetResolution(DS18B20_t *sensor);
-void 	 TemperatureSens_StartConvertTemperature(DS18B20_t *sensor);
-void     TemperatureSens_ReadTemperature(DS18B20_t *sensor);
-uint32_t TemperatureSens_Sign(DS18B20_t *sensor);
-uint32_t TemperatureSens_Temperature(DS18B20_t *sensor);
-
-
+void TEMPERATURE_SENSE_Init(void);
+void TEMPERATURE_SENSE1_ReadTemperature(void);
+void TEMPERATURE_SENSE2_ReadTemperature(void);
+DS18B20_t* TEMPERATURE_SENSE_GetSens(uint32_t numSensor);
+void TEMPERATURE_SENSE_BuildPack(uint32_t numSensor, uint8_t *buf);
 
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* DS18B20_H_ */
+
+
+
+
+

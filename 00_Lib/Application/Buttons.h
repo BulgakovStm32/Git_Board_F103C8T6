@@ -1,12 +1,12 @@
 /*
- * Delay.h
+ * Buttons.h
  *
- *  Created on: 20 дек. 2020 г.
- *      Author: Zver
+ *  Created on: 17 авг. 2022 г.
+ *      Author: belyaev
  */
 
-#ifndef DELAY_H_
-#define DELAY_H_
+#ifndef BUTTONS_H
+#define BUTTONS_H
 //*******************************************************************************************
 //*******************************************************************************************
 
@@ -14,27 +14,25 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-#define SYS_CORE_CLOCK     72000000U
-#define TACTS_FOR_MICROSEC (SYS_CORE_CLOCK/1000000U)
-#define MAX_DELAY_SEC		58	//макс. задержка 58 сек.
-								//Через 59 сек. происходит переполнение DWT->CTRL.
-#define MAX_DELAY_uS		(MAX_DELAY_SEC * 1000 * 1000)
+typedef enum{
+	BUTTON_RELEASE = 0, //отпускание кнопки
+	BUTTON_PRESS,		//нажатие на кнопку
+	BUTTON_CLICK,		//клик по кнопке
+	BUTTON_LONG_PRESS,	//удержание дольше timeout - длительное нажатие
+	BUTTON_HOLD,		//удержание кнопки
+}ButtonState_t;
+//**********************************
+typedef struct{
+	GPIO_TypeDef 	*GPIO_PORT;
+	uint32_t	 	 GPIO_PIN;
+	ButtonState_t	 State;
+}Button_t;
+
 //*******************************************************************************************
 //*******************************************************************************************
-void msDelay_Loop(void);
-void msDelay(volatile uint32_t del);
-
-void 	 DELAY_Init(void);
-uint32_t DELAY_microSecCount(void);
-void 	 DELAY_microS(uint32_t microSec);
-void	 DELAY_milliS(uint32_t milliSec);
+void 		  BUTTON_Init(Button_t *btn);
+ButtonState_t BUTTON_GetState(Button_t *btn);
+void 		  BUTTON_CheckLoop(Button_t *btn);
 //*******************************************************************************************
 //*******************************************************************************************
-#endif /* DELAY_H_ */
-
-
-
-
-
-
-
+#endif /* MY_APPLICATION_BUTTONS_H_ */
