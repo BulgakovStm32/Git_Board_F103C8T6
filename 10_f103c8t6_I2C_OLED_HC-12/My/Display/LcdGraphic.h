@@ -40,11 +40,11 @@ void Lcd_Circle (uint8_t x, uint8_t y, uint8_t radius, uint8_t mode);
 void Lcd_Bar    (int x1, int y1, int x2, int y2, uint8_t persent);
 
 void Lcd_GotoXYFont  (uint8_t x, uint8_t y);
-void Lcd_Chr         (uint16_t ch);
+void Lcd_Chr         (char ch);
 void Lcd_SetCursor   (uint8_t x, uint8_t y);
-void Lcd_ChrBold     (int ch);
+void Lcd_ChrBold     (char ch);
 void Lcd_StringBold  (uint8_t x, uint8_t y);
-void Lcd_ChrBig      (int ch);
+void Lcd_ChrBig      (char ch);
 void Lcd_StringBig   (uint8_t x, uint8_t y);
 uint8_t Lcd_Print    (char *txt);
 uint8_t Lcd_PrintBold(char *txt);
@@ -54,6 +54,8 @@ void Lcd_Image       (const uint8_t *imageData);
 uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize);
 void    Lcd_u8ToHex (uint8_t hexChar);
 void    Lcd_u32ToHex(uint32_t varHex);
+void 	Lcd_PrintStringAndNumber(uint8_t cursor_x, uint8_t cursor_y, char *str, uint32_t number, uint32_t numDigit);
+
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /*_LcdGraphic_H*/

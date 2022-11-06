@@ -100,7 +100,7 @@ void Txt_u32ToHex(uint32_t var){
 	Txt_u8ToHex((uint8_t)( var & 0x000000FF));
 }
 //**********************************************************
-void Txt_BuilStr(char *head, uint32_t num, char *tail, char *buffDestination){
+void Txt_BuildStr(char *head, uint32_t num, char *tail, char *buffDestination){
 
 	uint32_t i = 0;
 	uint8_t  decArray[10];

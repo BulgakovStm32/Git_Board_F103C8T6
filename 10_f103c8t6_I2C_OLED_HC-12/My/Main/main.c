@@ -28,24 +28,34 @@ Encoder_t Encoder;
 
 I2C_IT_t I2cDma;
 
-//static uint8_t  I2CTxBuf[32] = {0};
-//static uint8_t  I2CRxBuf[32] = {0};
 
 static uint32_t ButtonPressCount = 0;
 static uint32_t hc12_BaudRate    = 123;
 
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-void IncrementOnEachPass(uint32_t *var, uint16_t event){
+static uint32_t redaction = 0;
 
-		   uint16_t riseReg  = 0;
-	static uint16_t oldState = 0;
+//Работа с Si5351
+static uint32_t calibr	 = SI5351_XTAL_FREQ_DEFAULT;
+static uint32_t freq 	 = SI5351_MIN_FREQ;
+static uint32_t stepFreq = 100;
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void IncrementOnEachPass(uint32_t *var, uint32_t event, uint32_t step, uint32_t max){
+
+		   uint32_t riseReg  = 0;
+	static uint32_t oldState = 0;
 	//-------------------
 	riseReg  = (oldState ^ event) & event;
 	oldState = event;
-	if(riseReg) (*var)++;
+//	if(riseReg) (*var)++;
+	if(riseReg)
+	{
+		if(step == 0) step = 1;
+		if((*var) < max) (*var)+= step;//Проверка на  максимум.
+		else             (*var) = 0;   //Закольцовывание редактирования параметра.
+	}
 }
 //************************************************************
 uint32_t Led_Blink(uint32_t millis, uint32_t period, uint32_t switch_on_time){
@@ -99,7 +109,7 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 
 	//Вывод времени.
 	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_Print("Time: ");
+//	Lcd_Print("Time: ");
 	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
 	Lcd_Chr(':');
 	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM);//минуты
@@ -112,16 +122,16 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-//void Task_Temperature_Read(void){
-//
+void Task_Temperature_Read(void){
+
 //	TemperatureSens_ReadTemperature(&Sensor_1);
 //	TemperatureSens_ReadTemperature(&Sensor_2);
 //	TemperatureSens_ReadTemperature(&Sensor_3);
-//}
+}
 //************************************************************
 void Task_Temperature_Display(void){
 
-	static char xtxBuf[32] = {0};
+//	static char xtxBuf[32] = {0};
 	//-------------------
 	Lcd_ClearVideoBuffer();
 
@@ -141,9 +151,9 @@ void Task_Temperature_Display(void){
 	Lcd_BinToDec(hc12_BaudRate, 6, LCD_CHAR_SIZE_NORM);
 
 	//Вывод принятой строки
-	RING_BUFF_CopyRxBuff(xtxBuf);//копирование принятых данных
-	Lcd_SetCursor(1, 4);
-	Lcd_Print(xtxBuf);
+//	RING_BUFF_CopyRxBuff(xtxBuf);//копирование принятых данных
+//	Lcd_SetCursor(1, 4);
+//	Lcd_Print(xtxBuf);
 
 
 	//Значение энкодера MCUv7.
@@ -193,12 +203,15 @@ void Task_Temperature_Display(void){
 //	Temperature_Display(&Sensor_2, 1, 7);
 //	Temperature_Display(&Sensor_3, 1, 6);
 	//Кнопка энкодера.
-	IncrementOnEachPass(&ButtonPressCount, Encoder.BUTTON_STATE);
+	IncrementOnEachPass(&ButtonPressCount, ENCODER_GetButton(&Encoder), 1, 100);
 	Lcd_SetCursor(1, 8);
 	Lcd_Print("Button=");
-	Lcd_BinToDec((uint16_t)ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
+	Lcd_BinToDec(ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
 }
-//************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 void Task_HC12(void){
 
 	//--------------------------------
@@ -275,24 +288,102 @@ void Task_HC12(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-void Task_LcdUpdate(void){
+void Task_SI5351(void){
 
-	LED_PC13_Toggel();
+	static uint32_t oldFreq   = 0;
+	static uint32_t oldCalibr = 0;
+	//-------------------
+	//Если производится редактирование то выбор частоты запрешен
+	if(!redaction) return;
+
+	//Установка шага установки частоты.
+		 if(redaction == 2) ENCODER_IncDecParam(&Encoder, &stepFreq, 100, 100 , 100000);
+	//Установка частоты энкодером
+	else if(redaction == 4) ENCODER_IncDecParam(&Encoder, &freq, stepFreq, SI5351_MIN_FREQ , SI5351_MAX_FREQ);
+	//Калибровка Si5351
+	else if(redaction == 6) ENCODER_IncDecParam(&Encoder, &calibr, 10, 24000000 , 26000000);
+
+	si5351_SetXtalFreq(calibr);
+
+	//Один раз передаем параметры в Si5351
+	if(freq != oldFreq || calibr != oldCalibr) si5351_SetF0(freq);
+	oldFreq   = freq;
+	oldCalibr = calibr;
+}
+//************************************************************
+void Task_SI5351_Display(void){
+
+		   uint32_t temp 	 = 0;
+//	static uint32_t strIndex = 0;
+	//-------------------
+	Lcd_ClearVideoBuffer();
+	//Шапка
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("_Si5351_");
+	//Вывод времени.
+	Time_Display(14, 1);
+	//-------------------
+	//По нажатию на кнопку энкодера переход к выбору редактируемого параметра.
+	IncrementOnEachPass(&redaction, ENCODER_GetButton(&Encoder), 2, 6);
+	//Ходим по пунктам страницы по нажатию на кнопку энкодера.
+	//if(redaction) Lcd_PrintStringAndNumber(20, (1 + redaction), "<=", 0, 0);
+	if(redaction)
+	{
+		//Мигающий символ "<=" справа от редактируемой строки
+		Lcd_SetCursor(20, (1 + redaction));
+		if(Blink(INTERVAL_250_mS)) Lcd_Print("<=");
+		else					   Lcd_Print("  ");
+	}
+	//-------------------
+	//Отображение шага установки частоты.
+	Lcd_PrintStringAndNumber(1, 3, "Step = ", stepFreq, 6);
+	Lcd_Print(" Hz");
+
+	//Отображение установленной частота
+	Lcd_SetCursor(1, 5);
+	Lcd_PrintBold("F");
+
+	Lcd_BinToDec(freq/1000000, 3, LCD_CHAR_SIZE_BIG);
+	Lcd_ChrBold('.');
+
+	temp = freq % 1000000;
+
+	Lcd_BinToDec(temp/1000 , 3, LCD_CHAR_SIZE_BIG);
+	Lcd_ChrBold('.');
+
+	temp = freq % 1000;
+
+	Lcd_BinToDec(temp, 3, LCD_CHAR_SIZE_BIG);
+	Lcd_Print(" Hz");
+
+	//Отображение значение калибровки
+	Lcd_PrintStringAndNumber(1, 7, "Calibr: ", calibr, 8);
+	Lcd_Print(" Hz");
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void Task_LcdPageSelection(void){
+
+	static uint32_t pageIndex = 0;
+	//-----------------------------
+	if(Blink(INTERVAL_100_mS))LED_PC13_On();
+	else 					  LED_PC13_Off();
 
 	TIME_Calculation(&Time, RTOS_GetTickCount());
-	//Выбор сраницы отображения Енкодером.
-	static uint32_t encoder = 0;
-//	Encoder_IncDecParam(&Encoder, &encoder, 1, 0, 2);
-	switch(encoder){
+	//Если на какой-то странице производится редактирование то выбор страницы запрешен
+	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 2);//Выбор сраницы
+	switch(pageIndex){
 		//--------------------
 		case 0:
-
-			RTOS_SetTask(Task_Temperature_Display, 10, 0);
+			RTOS_SetTask(Task_SI5351,         0, 0);
+			RTOS_SetTask(Task_SI5351_Display, 0, 0);
 		break;
 		//--------------------
 		case 1:
-			//RTOS_SetTask(Task_DS2782,	  	  5,  0);
-			//RTOS_SetTask(Task_DS2782_Display, 10, 0);
+			RTOS_SetTask(Task_Temperature_Read,    0, 0);
+			RTOS_SetTask(Task_Temperature_Display, 0, 0);
 		break;
 		//--------------------
 		default:
@@ -320,31 +411,33 @@ int main(void){
 	DELAY_Init();
 	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
 
-	DELAY_milliS(500);//Эта задержка нужна для стабилизации напряжения патания.
+	DELAY_milliS(250);//Эта задержка нужна для стабилизации напряжения патания.
 					  //Без задержки LCD-дисплей не работает.
-	__enable_irq();
+	//__enable_irq();
 	//***********************************************
 	SSD1306_Init(SSD1306_128x64);      //Инициализация OLED SSD1306 (I2C1).
+	si5351_Init();					   //Инициализация Si5351 (I2C1).
+
 	HC12_Init(HC12_BAUD_RATE_57600);   //Инициализация HC-12 (USART2).
 	hc12_BaudRate = HC12_GetBaudRate();
-
 	//***********************************************
 	//Инициализация Энкодера.
-	Encoder.GPIO_PORT_A 	 = GPIOB;
-	Encoder.GPIO_PIN_A   	 = 10;
-	Encoder.GPIO_PORT_B 	 = GPIOB;
-	Encoder.GPIO_PIN_B  	 = 11;
-	Encoder.GPIO_PORT_BUTTON = GPIOB;
-	Encoder.GPIO_PIN_BUTTON  = 1;
-	Encoder_Init(&Encoder);
+	Encoder.GpioPort_A 	 	= GPIOB;
+	Encoder.GpioPin_A       = 10;
+	Encoder.GpioPort_B 	 	= GPIOB;
+	Encoder.GpioPin_B  	 	= 11;
+	Encoder.GpioPort_BUTTON = GPIOB;
+	Encoder.GpioPin_BUTTON  = 1;
+	ENCODER_Init(&Encoder);
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdUpdate, 0, 25);
-	RTOS_SetTask(Task_HC12,      0, 1000);
+//	RTOS_SetTask(Lcd_Update, 			0, 5); //Обновление изображения на экране каждые 10мс
+	RTOS_SetTask(Task_LcdPageSelection, 0, 10);
+//	RTOS_SetTask(Task_HC12,      		0, 1000);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
-	//__enable_irq();
+	__enable_irq();
 	//**************************************************************
 	while(1)
 	{
@@ -361,7 +454,7 @@ void SysTick_IT_Handler(void){
 	RTOS_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
-//	Encoder_ScanLoop(&Encoder);
+	ENCODER_ScanLoop(&Encoder);
 }
 //*******************************************************************************************
 //******************************************************************************************

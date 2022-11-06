@@ -23,12 +23,24 @@
 #define MAX_TASKS      10              // Количество задач
 
 //********************************************************
+//Cтатус задачи
+typedef enum{
+	STOP = 0,
+	RUN,
+
+	NoInit, 	//резерв
+	Active, 	//резерв
+	Suspend, 	//резерв
+	Wait, 		//резерв
+	Semaphore,	//резерв
+}StateTask_enum;
+//********************************************************
 // Структура задачи
 typedef struct{
-   void(*pFunc)(void);	// указатель на функцию
-   uint32_t Delay;		// задержка перед первым запуском задачи
-   uint32_t Period;		// период запуска задачи
-   uint32_t Run;		// флаг готовности задачи к запуску
+	void(*pFunc)(void);		// указатель на функцию
+	uint32_t 	   delay;	// задержка перед первым запуском задачи
+	uint32_t 	   period;	// период запуска задачи
+	StateTask_enum state;	// флаг готовности задачи к запуску
 }Task_t;
 //*******************************************************************************************
 //*******************************************************************************************
@@ -36,8 +48,8 @@ typedef struct{
 void 	 RTOS_Init(void);
 void     RTOS_SetTask(void(*taskFunc)(void), uint32_t taskDelay, uint32_t taskPeriod);
 void     RTOS_DeleteTask(void(*taskFunc)(void));
-void     RTOS_DispatchLoop(void);
-void     RTOS_TimerServiceLoop(void);
+void 	 RTOS_DispatchLoop(void);
+void 	 RTOS_TimerServiceLoop(void);
 uint32_t RTOS_GetTickCount(void);
 //*******************************************************************************************
 //*******************************************************************************************

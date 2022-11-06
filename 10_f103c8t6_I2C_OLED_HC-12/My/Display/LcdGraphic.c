@@ -204,7 +204,7 @@ void Lcd_GotoXYFont(uint8_t x, uint8_t y){
 }
 //*****************************************************************************
 //Displays a character at current cursor location and increment cursor location
-void Lcd_Chr(uint16_t ch){
+void Lcd_Chr(char ch){
   
 	unsigned char i;
 	//--------------------
@@ -239,7 +239,7 @@ void Lcd_SetCursor(uint8_t x, uint8_t y){
 }
 //*****************************************************************************
 //Displays a bold character at current cursor location and increment cursor location
-void Lcd_ChrBold(int ch){
+void Lcd_ChrBold(char ch){
   
   unsigned char i;
   unsigned char a = 0, b = 0, c = 0;
@@ -282,7 +282,7 @@ void Lcd_StringBold (unsigned char x, unsigned char y){
 }
 //*****************************************************************************	
 //Displays a character at current cursor location and increment cursor location
-void Lcd_ChrBig (int ch){
+void Lcd_ChrBig (char ch){
   
   unsigned char i;
   unsigned char a = 0, b = 0, c = 0;
@@ -437,6 +437,13 @@ void Lcd_u32ToHex(uint32_t var){
 	Lcd_u8ToHex((uint8_t)((var & 0x00FF0000) >> 16));
 	Lcd_u8ToHex((uint8_t)((var & 0x0000FF00) >> 8));
 	Lcd_u8ToHex((uint8_t)( var & 0x000000FF));
+}
+//*****************************************************************************
+void Lcd_PrintStringAndNumber(uint8_t cursor_x, uint8_t cursor_y, char *str, uint32_t number, uint32_t numDigit){
+
+	Lcd_SetCursor(cursor_x, cursor_y);
+	if(*str != '\0')  Lcd_Print(str);
+	if(numDigit != 0) Lcd_BinToDec(number, numDigit, LCD_CHAR_SIZE_NORM);
 }
 //*********************************************************************************************
 //*********************************************************************************************

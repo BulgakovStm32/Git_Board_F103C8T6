@@ -33,7 +33,7 @@
 #define I2C_FM_TRISE		12 //(300U  / TPCLK1)
 
 //Таймаут ожидания сброса флага
-#define I2C_WAIT_TIMEOUT	50000U
+#define I2C_WAIT_TIMEOUT	5000//50000U
 //--------------------------
 #define I2C_MODE_READ  		1
 #define I2C_MODE_WRITE 		0
@@ -57,7 +57,7 @@ typedef enum{
 //*******************************************************************************************
 //*******************************************************************************************
 //Общие функции.
-I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint32_t deviceAddr);
+I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr);
 I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte);
 I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 void		I2C_Stop(I2C_TypeDef *i2c);
@@ -68,8 +68,8 @@ I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t le
 //Функции для работы в режиме Master
 void 		I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed);
 uint32_t 	I2C_Master_GetNacCount(I2C_TypeDef *i2c);
-I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint32_t deviceAddr, uint32_t regAddr, uint8_t *pBuf, uint32_t len);
-I2C_State_t I2C_Master_Read (I2C_TypeDef *i2c, uint32_t deviceAddr, uint32_t regAddr, uint8_t *pBuf, uint32_t len);
+I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
+I2C_State_t I2C_Master_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
 
 //************************************
 //Функции для работы в режиме Slave

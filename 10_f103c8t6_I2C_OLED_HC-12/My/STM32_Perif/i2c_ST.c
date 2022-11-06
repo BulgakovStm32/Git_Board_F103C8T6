@@ -109,7 +109,7 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //*******************************************************************************************
 //*******************************************************************************************
 //**************************Общие функции для работы с I2C***********************************
-I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint32_t deviceAddr){
+I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
@@ -222,7 +222,7 @@ void I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed){
 	_i2c_SetSpeed(i2c, speed);			//Скорость работы.
 
 	//Включение модуля I2C.
-//	i2c->CR1 |= I2C_CR1_PE;
+	i2c->CR1 |= I2C_CR1_PE;
 }
 //**********************************************************
 uint32_t I2C_Master_GetNacCount(I2C_TypeDef *i2c){
@@ -241,7 +241,7 @@ uint32_t I2C_Master_GetNacCount(I2C_TypeDef *i2c){
  *
  *  Выход: статус передачи I2C_State_t.
  */
-I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint32_t deviceAddr, uint32_t regAddr, uint8_t *pBuf, uint32_t len){
+I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len){
 
 	//Формирование Start + AddrSlave|Write.
 	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK) return I2C_ERR_ADDR;
@@ -264,7 +264,7 @@ I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint32_t deviceAddr, uint32_t reg
  *
  *  Выход: статус передачи I2C_State_t.
  */
-I2C_State_t I2C_Master_Read(I2C_TypeDef *i2c, uint32_t deviceAddr, uint32_t regAddr, uint8_t *pBuf, uint32_t len){
+I2C_State_t I2C_Master_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len){
 
 	//if(I2C_DMA_State() != I2C_DMA_READY) return I2C_BUSY;
 

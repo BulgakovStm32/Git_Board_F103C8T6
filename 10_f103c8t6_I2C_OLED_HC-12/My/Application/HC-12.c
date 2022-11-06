@@ -78,10 +78,10 @@ uint32_t HC12_Init(HC12_BaudRate_Enum baudRate){
 		return FALSE;
 	}
 	//Установка скорости обмена модуля HC-12.
-	Txt_BuilStr("AT+B", baudRate, "\r", str1);//Сборка строки-команды типа "AT+B115200\r"
+	Txt_BuildStr("AT+B", baudRate, "\r", str1);//Сборка строки-команды типа "AT+B115200\r"
 	_hc12_SendStringToUsart(str1);
 	_hc12_CopyRxBuffFromUsart(str1);
-	Txt_BuilStr("OK+B", baudRate, "\r\n", str2);//Сборка строки-ответа типа "OK+B115200\r\n"
+	Txt_BuildStr("OK+B", baudRate, "\r\n", str2);//Сборка строки-ответа типа "OK+B115200\r\n"
 	//Проверяем ответ от модуля
 	if(PARS_EqualStr(str1, str2))
 	{

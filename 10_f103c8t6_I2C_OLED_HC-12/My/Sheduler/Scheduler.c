@@ -88,8 +88,8 @@ void Scheduler_SetTimerTask(TaskPTR_t task, uint16_t newTime){
 //вызывается в основном цикле main().
 void Scheduler_Loop(void){
 
-  uint32_t  index = 0;
-  TaskPTR_t goToTask = IdleTask;
+	uint32_t  index = 0;
+	TaskPTR_t goToTask = IdleTask;
 	//--------------------
 	// Как видишь, тут есть указатель Idle - ведущий на процедуру простоя ядра.
 	// На нее можно повесить что нибудь совсем фоновое, например отладочные примочки =)
@@ -103,28 +103,28 @@ void Scheduler_Loop(void){
 	goToTask = TaskQueue[0];
 	//Проверка значения на корректность.
 	if(((uint32_t)goToTask & 0xFFFF0000) != 0x08000000)
-		{
-			TaskQueue[0] = IdleTask;//Помещаем 
-			__enable_irq();         //Глобальное разрешение прерываний.		
-			(IdleTask)();			 
-		}
+	{
+		TaskQueue[0] = IdleTask;//Помещаем
+		__enable_irq();         //Глобальное разрешение прерываний.
+		(IdleTask)();
+	}
 	//Если там пусто то переходим на обработку пустого цикла
 	else if(goToTask == IdleTask)
-		{
-		   __enable_irq();//Глобальное разрешение прерываний.
-		  (IdleTask)();	  //пустой цикл
-		}
+	{
+	   __enable_irq();//Глобальное разрешение прерываний.
+	  (IdleTask)();	  //пустой цикл
+	}
 	//В противном случае сдвигаем всю очередь
 	else
+	{
+		for(index = 0; index < TASK_QUEUE_SIZE+1; index++)
 		{
-		  for(index = 0; index < TASK_QUEUE_SIZE+1; index++)
-			{
-			  TaskQueue[index] = TaskQueue[index+1];
-			}
-		  TaskQueue[TASK_QUEUE_SIZE] = IdleTask;//В последнюю запись пихаем затычку Idle
-		  __enable_irq();	                    //Глобальное разрешение рерываний.
-		  (goToTask)();		                    //Переходим к задаче
+			TaskQueue[index] = TaskQueue[index+1];
 		}
+		TaskQueue[TASK_QUEUE_SIZE] = IdleTask;//В последнюю запись пихаем затычку Idle
+		__enable_irq();	                    //Глобальное разрешение рерываний.
+		(goToTask)();		                    //Переходим к задаче
+	}
 }
 //*************************************************************************
 //Прерывание таймера
