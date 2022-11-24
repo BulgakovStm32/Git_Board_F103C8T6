@@ -19,8 +19,8 @@
 //Её адрес можно вычислить как [начальный адрес] + [номер страницы - 1] * [размер страницы].
 //Выберем 16 страницу: 0x0800 0000 + 15 * 0x0000 0400 = 0x0800 3C00
 
-#define FLASH_SIZE			128
-#define FLASH_PAGE_SIZE		1024
+#define FLASH_SIZE 			64 //128 //Размер FLASH в кБ.
+#define FLASH_PAGE_SIZE		1024 //Размер страницы FLASH в кБ.
 
 #define FLASH_PAGE_127 (FLASH_BASE + (FLASH_PAGE_SIZE * (FLASH_SIZE - 1)))
 #define FLASH_PAGE_126 (FLASH_BASE + (FLASH_PAGE_SIZE * (FLASH_SIZE	- 2)))

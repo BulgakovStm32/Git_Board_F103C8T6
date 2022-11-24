@@ -23,6 +23,7 @@
 #include "dma_ST.h"
 #include "adc_ST.h"
 #include "uart_ST.h"
+#include "flash_ST.h"
 //-------------------------
 //Планировщик
 //#include "Scheduler.h"
@@ -47,6 +48,7 @@
 #include "StringParser.h"
 #include "HC-12.h"
 #include "si5351.h"
+#include "Config.h"
 //*******************************************************************************************
 //*******************************************************************************************
 #define FLAG_SET	1

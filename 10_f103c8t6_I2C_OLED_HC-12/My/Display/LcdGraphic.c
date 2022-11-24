@@ -415,6 +415,70 @@ uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize){
 	return num+1;
 }
 //*****************************************************************************
+//uint32_t Lcd_BinToDecWithoutZeros(uint32_t var, uint32_t num, uint32_t charSize){
+//
+//	uint8_t	temp;
+//	uint8_t decArray[10];
+//	//--------------------
+//	//Преобразование числа в строку.
+//	decArray[9] = (uint8_t)(var/1000000000);
+//	var %= 1000000000;
+//
+//	decArray[8] = (uint8_t)(var/100000000);
+//	var %= 100000000;
+//
+//	decArray[7] = (uint8_t)(var/10000000);
+//	var %= 10000000;
+//
+//	decArray[6] = (uint8_t)(var/1000000);
+//	var %= 1000000;
+//
+//	decArray[5] = (uint8_t)(var/100000);
+//	var %= 100000;
+//
+//	decArray[4] = (uint8_t)(var/10000);
+//	var %= 10000;
+//
+//	decArray[3] = (uint8_t)(var/1000);
+//	var %= 1000;
+//
+//	decArray[2] = (uint8_t)(var/100);
+//	var %= 100;
+//
+//	decArray[1] = (uint8_t)(var/10);
+//	decArray[0] = (uint8_t)(var%10);
+//	//--------------------
+//
+////	uint32_t digitCount = 9;
+////	//Находим первое ненулевое число слева.
+////	while(decArray[digitCount] == 0)
+////	{
+////		if(digitCount == 0) return;
+////		digitCount--;
+////	}
+////	//Складываем значещие символы в буфер
+////	while(digitCount)
+////	{
+////		buffDestination[i++] = decArray[digitCount--]+'0';
+////	}
+////	buffDestination[i++] = decArray[0]+'0';
+////	//Складываем заврешающую последовательность в буфер.
+////	while(*tail) buffDestination[i++] = *tail++;
+//
+//
+//
+//
+//	//Вывод на дисплей
+//	for(uint32_t i = 0; i < num; i++)
+//	{
+//		temp = 0x30 + decArray[(num - 1) - i];
+//			 if(charSize == LCD_CHAR_SIZE_BIG) Lcd_ChrBig(temp);
+//		else if(charSize == LCD_CHAR_SIZE_BOLD)Lcd_ChrBold(temp);
+//		else					     		   Lcd_Chr(temp);
+//	}
+//	return num+1;
+//}
+//*****************************************************************************
 void Lcd_u8ToHex(uint8_t var){
 
 	uint8_t ch;

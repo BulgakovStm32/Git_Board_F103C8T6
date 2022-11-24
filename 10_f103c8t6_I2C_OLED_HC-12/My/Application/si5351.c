@@ -60,7 +60,7 @@ static void    si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, e
  * Call this to initialize I2C communications and get the
  * Si5351 ready for use.
  */
-void si5351_Init(void){
+void Si5351_Init(void){
 
 	//Disable all outputs
     si5351_write(SI5351_OUTPUT_ENABLE_CTRL, 0xFF);
@@ -98,7 +98,7 @@ void si5351_Init(void){
  * clk - Clock output
  *   (use the si5351_clock enum)
  */
-void si5351_SetFreq(uint32_t freq, enum si5351_clock clk){
+void Si5351_SetFreq(uint32_t freq, enum si5351_clock clk){
 
 	set_multisynth_alt(freq, clk);
 }
@@ -111,7 +111,7 @@ void si5351_SetFreq(uint32_t freq, enum si5351_clock clk){
  *   (use the si5351_clock enum)
  * enable - Set to 1 to enable, 0 to disable
  */
-void si5351_ClockEnable(enum si5351_clock clk, uint8_t enable){
+void Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable){
 
 	uint8_t reg_val = 0;
 	//-------------------
@@ -126,39 +126,39 @@ void si5351_ClockEnable(enum si5351_clock clk, uint8_t enable){
     si5351_write(SI5351_OUTPUT_ENABLE_CTRL, reg_val);
 }
 //************************************************************
-void si5351_SetXtalFreq(uint32_t freq){
+void Si5351_SetXtalFreq(uint32_t freq){
 
 	si5351xtalFreq = freq;
 }
 //************************************************************
-uint32_t si5351_GetXtalFreq(void){
+uint32_t Si5351_GetXtalFreq(void){
 
 	return si5351xtalFreq;
 }
 //************************************************************
-void si5351_SetF0(uint32_t fhz){
+void Si5351_SetF0(uint32_t fhz){
 
-	si5351_SetFreq(fhz, SI5351_CLK0);
-	si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_ENABLE);
+	Si5351_SetFreq(fhz, SI5351_CLK0);
+	Si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_ENABLE);
 }
 //************************************************************
-void si5351_SetLO(uint32_t fhz){
+void Si5351_SetLO(uint32_t fhz){
 
-	si5351_SetFreq(fhz, SI5351_CLK1);
-	si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_ENABLE);
+	Si5351_SetFreq(fhz, SI5351_CLK1);
+	Si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_ENABLE);
 }
 //************************************************************
-void si5351_SetF2(uint32_t fhz){
+void Si5351_SetF2(uint32_t fhz){
 
-	si5351_SetFreq(fhz, SI5351_CLK2);
-	si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_ENABLE);
+	Si5351_SetFreq(fhz, SI5351_CLK2);
+	Si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_ENABLE);
 }
 //************************************************************
-void si5351_AllOff(void){
+void Si5351_AllOff(void){
 
-	si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_DISABLE);
-	si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_DISABLE);
-	si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_DISABLE);
+	Si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_DISABLE);
+	Si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_DISABLE);
+	Si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_DISABLE);
     si5351_write(SI5351_CLK0_CTRL, SI5351_CLK_POWERDOWN);
     si5351_write(SI5351_CLK1_CTRL, SI5351_CLK_POWERDOWN);
     si5351_write(SI5351_CLK2_CTRL, SI5351_CLK_POWERDOWN);

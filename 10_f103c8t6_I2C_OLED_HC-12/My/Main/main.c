@@ -36,8 +36,8 @@ static uint32_t redaction = 0;
 
 //Работа с Si5351
 static uint32_t calibr	 = SI5351_XTAL_FREQ_DEFAULT;
-static uint32_t freq 	 = SI5351_MIN_FREQ;
-static uint32_t stepFreq = 100;
+static uint32_t freq 	 = 3650 * 1000; //SI5351_MIN_FREQ;
+static uint32_t stepFreq = 1000;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -297,18 +297,20 @@ void Task_SI5351(void){
 	if(!redaction) return;
 
 	//Установка шага установки частоты.
-		 if(redaction == 2) ENCODER_IncDecParam(&Encoder, &stepFreq, 100, 100 , 100000);
+		 if(redaction == 2) ENCODER_IncDecParam(&Encoder, &freq, stepFreq, SI5351_MIN_FREQ , SI5351_MAX_FREQ);
 	//Установка частоты энкодером
-	else if(redaction == 4) ENCODER_IncDecParam(&Encoder, &freq, stepFreq, SI5351_MIN_FREQ , SI5351_MAX_FREQ);
+	else if(redaction == 4) ENCODER_IncDecParam(&Encoder, &stepFreq, 100, 100 , 100000);
 	//Калибровка Si5351
 	else if(redaction == 6) ENCODER_IncDecParam(&Encoder, &calibr, 10, 24000000 , 26000000);
 
-	si5351_SetXtalFreq(calibr);
+	Si5351_SetXtalFreq(calibr);
 
 	//Один раз передаем параметры в Si5351
-	if(freq != oldFreq || calibr != oldCalibr) si5351_SetF0(freq);
+	if(freq != oldFreq || calibr != oldCalibr) Si5351_SetF0(freq);
 	oldFreq   = freq;
 	oldCalibr = calibr;
+
+//	Config_Save()->xtalFreq = 125 * 1000;
 }
 //************************************************************
 void Task_SI5351_Display(void){
@@ -325,6 +327,7 @@ void Task_SI5351_Display(void){
 	//-------------------
 	//По нажатию на кнопку энкодера переход к выбору редактируемого параметра.
 	IncrementOnEachPass(&redaction, ENCODER_GetButton(&Encoder), 2, 6);
+
 	//Ходим по пунктам страницы по нажатию на кнопку энкодера.
 	//if(redaction) Lcd_PrintStringAndNumber(20, (1 + redaction), "<=", 0, 0);
 	if(redaction)
@@ -335,26 +338,26 @@ void Task_SI5351_Display(void){
 		else					   Lcd_Print("  ");
 	}
 	//-------------------
-	//Отображение шага установки частоты.
-	Lcd_PrintStringAndNumber(1, 3, "Step = ", stepFreq, 6);
-	Lcd_Print(" Hz");
-
 	//Отображение установленной частота
-	Lcd_SetCursor(1, 5);
-	Lcd_PrintBold("F");
+	Lcd_SetCursor(1, 3);
 
-	Lcd_BinToDec(freq/1000000, 3, LCD_CHAR_SIZE_BIG);
+	//Единицы МГц - два разряда.
+	Lcd_BinToDec(freq/1000000, 2, LCD_CHAR_SIZE_BOLD);
 	Lcd_ChrBold('.');
 
+	//кГц - три разряда.
 	temp = freq % 1000000;
+	Lcd_BinToDec(temp/1000 , 3, LCD_CHAR_SIZE_BOLD);
+	Lcd_Chr(' ');
 
-	Lcd_BinToDec(temp/1000 , 3, LCD_CHAR_SIZE_BIG);
-	Lcd_ChrBold('.');
-
+	//Гц - три разряда.
 	temp = freq % 1000;
-
-	Lcd_BinToDec(temp, 3, LCD_CHAR_SIZE_BIG);
+	Lcd_BinToDec(temp, 3, LCD_CHAR_SIZE_NORM);
 	Lcd_Print(" Hz");
+
+	//Отображение шага установки частоты.
+	Lcd_PrintStringAndNumber(1, 6, "Step  : ", stepFreq, 6);
+	Lcd_Print("   Hz");
 
 	//Отображение значение калибровки
 	Lcd_PrintStringAndNumber(1, 7, "Calibr: ", calibr, 8);
@@ -415,8 +418,9 @@ int main(void){
 					  //Без задержки LCD-дисплей не работает.
 	//__enable_irq();
 	//***********************************************
+	Config_Init();					   //Чтение настроек
 	SSD1306_Init(SSD1306_128x64);      //Инициализация OLED SSD1306 (I2C1).
-	si5351_Init();					   //Инициализация Si5351 (I2C1).
+	Si5351_Init();					   //Инициализация Si5351 (I2C1).
 
 	HC12_Init(HC12_BAUD_RATE_57600);   //Инициализация HC-12 (USART2).
 	hc12_BaudRate = HC12_GetBaudRate();
@@ -435,6 +439,7 @@ int main(void){
 //	RTOS_SetTask(Lcd_Update, 			0, 5); //Обновление изображения на экране каждые 10мс
 	RTOS_SetTask(Task_LcdPageSelection, 0, 10);
 //	RTOS_SetTask(Task_HC12,      		0, 1000);
+//	RTOS_SetTask(Config_SaveLoop, 	    0, 1000);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();

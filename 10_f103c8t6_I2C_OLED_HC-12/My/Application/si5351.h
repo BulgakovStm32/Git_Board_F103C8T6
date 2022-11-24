@@ -271,16 +271,16 @@ extern "C" {
 /* Suggested public function prototypes */
 //*******************************************************************************************
 //*******************************************************************************************
-void si5351_Init(void);
-void si5351_SetFreq(uint32_t freq, enum si5351_clock clk);
-void si5351_ClockEnable(enum si5351_clock clk, uint8_t enable);
-void si5351_SetXtalFreq(uint32_t freq);
-uint32_t si5351_GetXtalFreq(void);
+void Si5351_Init(void);
+void Si5351_SetFreq(uint32_t freq, enum si5351_clock clk);
+void Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable);
+void Si5351_SetXtalFreq(uint32_t freq);
+uint32_t Si5351_GetXtalFreq(void);
 
-void si5351_SetF0(uint32_t fhz);
-void si5351_SetLO(uint32_t fhz);
-void si5351_SetF2(uint32_t fhz);
-void si5351_AllOff(void);
+void Si5351_SetF0(uint32_t fhz);
+void Si5351_SetLO(uint32_t fhz);
+void Si5351_SetF2(uint32_t fhz);
+void Si5351_AllOff(void);
 
 #ifdef __cplusplus
 }
