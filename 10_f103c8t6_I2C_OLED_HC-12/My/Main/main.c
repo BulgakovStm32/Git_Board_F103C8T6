@@ -362,6 +362,88 @@ void Task_SI5351_Display(void){
 	//Отображение значение калибровки
 	Lcd_PrintStringAndNumber(1, 7, "Calibr: ", calibr, 8);
 	Lcd_Print(" Hz");
+
+	//----------------------------------------------
+	//Горизонтальная шкала
+
+	//num подряд идущих двойных вертикальных высоких палочек с шагом step
+	uint8_t	num    = 5;				  //Необходимое кол-во вертикальных высоких палочек на шкале.
+	uint8_t step_x = 100 / (num - 1); //Шаг между палочками
+	uint8_t n_x    = 2;				  //Начальная координата по Х первой палочки.
+
+	for(uint8_t i = 0; i < num; i++)
+	{
+		Lcd_Line(n_x, 1, n_x, 5, PIXEL_ON); //Вертикальная палочка высотой 5 пикселей.
+		//Lcd_Line(1*n_x+1, 1, 1*n_x+1, 5, PIXEL_ON);
+		n_x += step_x;
+	}
+
+	//Циферки над высокими черточками
+//	Lcd_SetCursor(1, 7);
+//	Lcd_Print("0   25  50  75  100");
+
+	//lowNum подряд идущих двойных вертикальных низких палочек
+	uint8_t lowNum    = (uint8_t)50;//Кол-во палочек, макс 127
+	uint8_t lowStep_x = 1;				 //Шаг между палочками
+	uint8_t lowN_x    = 2;				 //Начальная координата по Х первой палочки.
+
+	lowNum /= lowStep_x;//равномерное распределение шагов на всю шкалу.
+
+	for(uint8_t i = 0; i < lowNum; i++)
+	{
+		Lcd_Line(lowN_x ,1 ,lowN_x ,3 ,PIXEL_ON);//Вертикальная палочка высотой 3 пикселя.
+		lowN_x += lowStep_x;
+	}
+	//----------------------------------------------
+}
+//************************************************************
+void Task_AnalogMeter(void){
+
+	//-------------------
+	Lcd_ClearVideoBuffer();
+	//Шапка
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("AnalogMeter");
+	//Вывод времени.
+	Time_Display(14, 1);
+	//-------------------
+	static uint32_t encod = 0;
+
+	ENCODER_IncDecParam(&Encoder, &encod, 1, 0 , 179);
+
+	uint8_t radius = 50;
+	uint8_t angle  = encod;//Time.sec * 3; //175.0; //угол на который нужно повернуть стрелку
+
+	float rad = (angle * M_PI) / 180.0;
+	float x   = cosf(rad) * radius;
+	float y   = sinf(rad) * radius;
+
+	//-------------------
+	//Полуокружность
+//	Lcd_Circle(63, 63, 42, PIXEL_ON);
+	//-------------------
+	//Стрелка
+	uint8_t x1 = 0;
+
+	if(angle <= 90) x1 = 63 + (uint8_t)x;
+	else			x1 = 63 - (uint8_t)(-1 * x);
+
+	Lcd_Line  (63, 0, x1, (uint8_t)y, PIXEL_ON);
+	Lcd_Circle(63, 63, 2, PIXEL_ON);
+	//-------------------
+	//риски-метки шкалы
+	for(float i = 0; i < M_PI; i += M_PI / 6)
+	{
+		//Lcd_Line(0 - 127 * cos(i), 127 - 127 * sin(i), 0 - 115 * cos(i), 127 - 115 * sin(i), PIXEL_ON); // риски-метки шкалы
+		Lcd_Line(64 + radius * cos(i),
+				 0  + radius * sin(i),
+
+				 64 + (radius-10) * cos(i),
+				 0  + (radius-10) * sin(i),
+
+				 PIXEL_ON); // риски-метки шкалы
+	}
+	//-------------------
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -376,12 +458,13 @@ void Task_LcdPageSelection(void){
 
 	TIME_Calculation(&Time, RTOS_GetTickCount());
 	//Если на какой-то странице производится редактирование то выбор страницы запрешен
-	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 2);//Выбор сраницы
+//	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 2);//Выбор сраницы
 	switch(pageIndex){
 		//--------------------
 		case 0:
 			RTOS_SetTask(Task_SI5351,         0, 0);
-			RTOS_SetTask(Task_SI5351_Display, 0, 0);
+			//RTOS_SetTask(Task_SI5351_Display, 0, 0);
+			RTOS_SetTask(Task_AnalogMeter, 0, 0);
 		break;
 		//--------------------
 		case 1:

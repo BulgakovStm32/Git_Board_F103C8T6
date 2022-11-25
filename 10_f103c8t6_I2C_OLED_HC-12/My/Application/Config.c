@@ -5,14 +5,14 @@
 
 //********************************************************************************************
 //********************************************************************************************
+static DataForFLASH_t dataForFLASH;    //Конфигурация блока.
+static uint32_t 	  changeConfig = 0;//используется для отслеживания изменений в конфигурации.
 
-static DataForFLASH_t DataForFLASHStr;//Конфигурация блока.
-static uint32_t 	  configSize = 0;
-
 //********************************************************************************************
 //********************************************************************************************
 //********************************************************************************************
 //********************************************************************************************
+//пишем данные в FLASH память.
 void _config_SaveToFlash(uint32_t pageAddr, uint32_t size){
 
 	uint32_t index = 0;
@@ -21,11 +21,24 @@ void _config_SaveToFlash(uint32_t pageAddr, uint32_t size){
 	STM32_Flash_ErasePage(CONFIG_FLASH_PAGE);
 	while(index < size)
 	{
-		STM32_Flash_WriteWord(DataForFLASHStr.data32[index], pageAddr);
+		STM32_Flash_WriteWord(dataForFLASH.data32[index], pageAddr);
 		index    += 1;
-		pageAddr += 4;
+		pageAddr += 4;//шагаем по 4 байта
 	}
 	STM32_Flash_Lock();
+}
+//**********************************************************
+//чтение данных из FLASH памяти.
+void _config_ReadFromFlash(uint32_t pageAddr, uint32_t size){
+
+	uint32_t index = 0;
+	//--------------------
+	while(index < size)
+	{
+		dataForFLASH.data32[index] = STM32_Flash_ReadWord(pageAddr);
+		index    += 1;
+		pageAddr += 4;//шагаем по 4 байта
+	}
 }
 //********************************************************************************************
 //********************************************************************************************
@@ -34,101 +47,60 @@ void _config_SaveToFlash(uint32_t pageAddr, uint32_t size){
 //Конфигурация блока.
 Config_t* Config(void){
 
-	return &DataForFLASHStr.config;
+	return &dataForFLASH.config;
 }
-//*****************************************************************************
+//**********************************************************
 //сохранение конфигурации.
 Config_t* Config_Save(void){
 
-	DataForFLASHStr.sector.ChangeConfig += 1;//Признак изменения конфигурации. Это нужно для запись конфигурации после ее изменения.
-	return &DataForFLASHStr.config;
+	changeConfig += 1;//Признак изменения конфигурации.
+					  //Это нужно для запись конфигурации после ее изменения.
+
+	return &dataForFLASH.config;
 }
-//*****************************************************************************
+//**********************************************************
 void Config_Init(void){
 	
-	uint32_t pageAddr = CONFIG_FLASH_PAGE;
-	uint32_t index = 0;
-	//uint32_t size  = 0;
-	//uint32_t error = 0;
-	//--------------------
-	//размер вычитываемых данных.
-	configSize = sizeof(DataForFLASHStr.config) / 4;
-	if(sizeof(DataForFLASHStr.config) % 4) configSize += 1;
 	//чтение данных из FLASH памяти.
-	while(index < configSize)
-	{
-		DataForFLASHStr.data32[index] = STM32_Flash_ReadWord(pageAddr);
-		index    += 1;
-		pageAddr += 4;
-	}
-	//--------------------
+	_config_ReadFromFlash(CONFIG_FLASH_PAGE, CONFIG_SIZE_U32);
+
 	//если проверочный ключ не совпадает, значит первый запуск блока и записываем заводские настройки.
-	if(DataForFLASHStr.config.checkKey != CONFIG_CHECK_KEY_DEFINE)
+	if(dataForFLASH.config.checkKey != CONFIG_CHECK_KEY_DEFINE)
 	{
 		//Запись заводских установок во флеш.
-		DataForFLASHStr.config.checkKey = CONFIG_CHECK_KEY_DEFINE;
+		dataForFLASH.config.checkKey = CONFIG_CHECK_KEY_DEFINE;
 
-		strcpy(DataForFLASHStr.config.name, "Si5351_002");
+		strcpy(dataForFLASH.config.name, "0123456789ABCDEF");
 
-		DataForFLASHStr.config.xtalFreq = 25000 * 1000;
+		dataForFLASH.config.xtalFreq = 25000 * 1000;
 
-		strcpy(DataForFLASHStr.config.SW, "SW01");
-		strcpy(DataForFLASHStr.config.HW, "HW01");
+		strcpy(dataForFLASH.config.SW, "SW01");
+		strcpy(dataForFLASH.config.HW, "HW01");
 
-		DataForFLASHStr.config.Address = 1;
-		DataForFLASHStr.config.Group   = 1;
-
-//		DataForFLASHStr.config.PowerCheckOn = POWER_ALL_CHECK_ON;
-//		DataForFLASHStr.config.SpDeviation  = SP_LINE_DEVIATION_DEFAULT;
-//		DataForFLASHStr.config.SpCheck      = SP_LINE_ALL_OFF;
-//
-//		for(index = 0; index < FIRE_LINES_NUMBER; index++)
-//		{
-//			DataForFLASHStr.config.FireLineConfig[index].Type    = DEFAULT_FIRE_LINES_INPUT_TYPE;
-//			DataForFLASHStr.config.FireLineConfig[index].Timeout = DEFAULT_FIRE_LINES_INPUT_TIMEOUT;
-//		}
+		dataForFLASH.config.Address      = 1;
+		dataForFLASH.config.Group        = 2;
+		dataForFLASH.config.PowerCheckOn = 3;
+		dataForFLASH.config.SpDeviation  = 4;
+		dataForFLASH.config.SpCheck      = 5;
 		//--------------------
 		//пишем данные в память.
-		//pageAddr = CONFIG_FLASH_PAGE;
-		//index    = 0;
-		DataForFLASHStr.sector.Nwrite = 1;
-		_config_SaveToFlash(CONFIG_FLASH_PAGE, configSize);
-
-//		STM32_Flash_Unlock();
-//		STM32_Flash_ErasePage(CONFIG_FLASH_PAGE);
-//		while(index < size)
-//		{
-//			STM32_Flash_WriteWord(DataForFLASHStr.data32[index], pageAddr);
-//			index    += 1;
-//			pageAddr += 4;
-//		}
-//		STM32_Flash_Lock();
-		//--------------------
+		dataForFLASH.sector.numWrite = 1;
+		dataForFLASH.sector.checkSum = 0xAABBCCDD;
+		_config_SaveToFlash(CONFIG_FLASH_PAGE, CONFIG_SIZE_U32);
 	}
 }
-//*****************************************************************************
+//**********************************************************
 //Запись конфигурации после ее изменения.
 void Config_SaveLoop(void){
 	
 	//если были редактирования конфигурации, то запишем конфигурацию во FLASH.
-	if(DataForFLASHStr.sector.ChangeConfig != 0)
+	if(changeConfig != 0)
 	{
-		DataForFLASHStr.sector.ChangeConfig = 0;
-		DataForFLASHStr.sector.Nwrite      += 1;
+		changeConfig = 0;
+		dataForFLASH.sector.numWrite += 1;
 		//пишем данные в память.
 		//__disable_irq();
-		_config_SaveToFlash(CONFIG_FLASH_PAGE, configSize);
-
-//		STM32_Flash_Unlock();
-//		STM32_Flash_ErasePage(CONFIG_FLASH_PAGE);
-//		while(index < size)
-//		{
-//			STM32_Flash_WriteWord(DataForFLASHStr.data32[index], pageAddr);
-//			index    += 1;
-//			pageAddr += 4;
-//		}
-//		STM32_Flash_Lock();
-		//--------------------
+		_config_SaveToFlash(CONFIG_FLASH_PAGE, CONFIG_SIZE_U32);
 		//__enable_irq();
 	}
 }

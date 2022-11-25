@@ -14,28 +14,18 @@
 #include "main.h"
 
 //*******************************************************************************************
-#define CONFIG_CHECK_KEY_DEFINE		0x12345678 
-#define CONFIG_DATA_WORD           (1024 / 4)//(FLASH_PAGE_SIZE / 4) //количество 32-х слов.
-#define CONFIG_FLASH_PAGE			FLASH_PAGE_127
-#define CONFIG_FLASH_PAGE_END_ADDR	FLASH_PAGE127_END_ADDR
-//***************************************
-//#pragma pack(push, 1)//размер выравнивания в 1 байт
-//typedef struct {
-//	//----------
-//	//Параметры входов ШС.
-//	uint16_t Type;
-//	uint16_t Timeout;
-//	//----------
-//}FireLineConfig_t;
-//#pragma pack(pop)//вернули предыдущую настройку.
-//***************************************
-/***************Конфигурация************/
+#define CONFIG_CHECK_KEY_DEFINE 0x12345678 						  //
+#define CONFIG_SIZE_U32 	    ((sizeof(DataForFLASH_t) / 4) + 1)//Размер в 32-хбитных словах.
+#define CONFIG_FLASH_PAGE 		FLASH_PAGE_127					  //
+
+//**********************************
 #pragma pack(push, 1)//размер выравнивания в 1 байт
+/***********Конфигурация***********/
 typedef struct{
 	uint32_t checkKey;//проверочная последовательность
 	char 	 name[16];//Название проекта
 	uint32_t xtalFreq;//Частота кварца.
-
+//	uint32_t timeUTC; //
 	//----------
 	char SW[4];//Версия ПО
 	char HW[4];//Версия железа
@@ -50,26 +40,24 @@ typedef struct{
 	uint16_t SpDeviation;//Отклонение для фиксации неисправности на линии Гр.
 	uint8_t  SpCheck;    //Установленные на контроль линии Гр.
 	//----------
-	//Параметры входов ШС.
-	//FireLineConfig_t FireLineConfig[FIRE_LINES_NUMBER];
-	//----------
 }Config_t;
-#pragma pack(pop)//вернули предыдущую настройку.
+//#pragma pack(pop)//вернули предыдущую настройку.
 //**********************************
 //
 typedef struct{
-	uint8_t  data[1024 - 12];//данные, записываемые в сектор памяти.
-	uint32_t Nwrite;         //количество записей в данный секетор памяти.
-	uint32_t ChangeConfig;   //используется для отслеживания изменений в конфигурации.
-	uint32_t CheckSum;       // 
+	uint8_t  data[sizeof(Config_t)];//данные, записываемые в сектор памяти.
+	uint32_t numWrite;         		//количество записей в данный секетор памяти.
+	uint32_t checkSum;      		//контрольная сумма
 }STM32_FLASH_Sector_t;
 //**********************************
 //
 typedef union{
 	Config_t             config;
 	STM32_FLASH_Sector_t sector;
-	uint32_t             data32[CONFIG_DATA_WORD];
+	uint32_t             data32[(sizeof(STM32_FLASH_Sector_t)/4) + 1];
 }DataForFLASH_t;
+//**********************************
+#pragma pack(pop)//вернули предыдущую настройку.
 //*******************************************************************************************
 //*******************************************************************************************
 Config_t* Config     (void);
