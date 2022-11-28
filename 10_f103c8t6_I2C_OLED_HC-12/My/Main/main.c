@@ -28,16 +28,138 @@ Encoder_t Encoder;
 
 I2C_IT_t I2cDma;
 
-
 static uint32_t ButtonPressCount = 0;
 static uint32_t hc12_BaudRate    = 123;
 
 static uint32_t redaction = 0;
 
 //Работа с Si5351
-static uint32_t calibr	 = SI5351_XTAL_FREQ_DEFAULT;
-static uint32_t freq 	 = 3650 * 1000; //SI5351_MIN_FREQ;
-static uint32_t stepFreq = 1000;
+static uint32_t si5351_xtalFreq	= 0;
+static uint32_t si5351_stepFreq = 0;
+static uint32_t si5351_freq 	= 3650 * 1000;
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+/*
+ * Функция пропорционально переносит значение (value) из текущего диапазона значений (fromLow .. fromHigh)
+ * в новый диапазон (toLow .. toHigh), заданный параметрами.
+ * Функция map() не ограничивает значение рамками диапазона, как это делает функция constrain().
+ *
+ * Contrain() может быть использован до или после вызова map(), если необходимо ограничить допустимые значения заданным диапазоном.
+ * Обратите внимание, что "нижняя граница" может быть как меньше, так и больше "верхней границы".
+ * Это может быть использовано для того чтобы "перевернуть" диапазон:
+ * y = map(x, 1, 50, 50, 1);
+ *
+ * Возможно использование отрицательных значений:
+ * y = map(x, 1, 50, 50, -100);
+ *
+ * Функция map() оперирует целыми числами.
+ * При пропорциональном переносе дробная часть не округляется по правилами, а просто отбрасывается.
+ *
+ * Параметры
+ * value   : значение для переноса
+ * in_min  : нижняя граница текущего диапазона
+ * in_max  : верхняя граница текущего диапазона
+ * out_min : нижняя граница нового диапазона, в который переноситься значение
+ * out_max : верхняя граница нового диапазона
+ * Возвращаемое значение:
+ * Значение в новом диапазоне */
+
+long map(long value, long in_min, long in_max, long out_min, long out_max){
+
+  return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+//************************************************************
+int32_t map_I32(int32_t value, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max){
+
+  return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//стрелочный индикатор
+#define ANALOG_SCALE_ANGLE_MIN	50
+#define ANALOG_SCALE_ANGLE_MAX	132
+
+/*
+ * Параметры:
+ * angle :угол на который нужно повернуть стрелку (слева направо)
+ *		  мин. уол  - 50  градусов.
+ *		  макс.угол - 132 градуса.
+ */
+void Lcd_AnalogScale(uint8_t angle){
+
+	const uint8_t markRadius = 95;// Радиус шкалы.
+	int8_t x0 =  64;		  	  // Х-координата центра шкалы
+	int8_t y0 = -65; 	  		  // Y-координата центра шкалы.
+	float cos;
+	float sin;
+	//-------------------
+	//Рисуем риски-метки шкалы
+	for(float i = 0; i < M_PI_2; i += M_PI_2/8)
+	{
+		cos = cosf(i + M_PI_4);
+		sin = sinf(i + M_PI_4);
+		Lcd_Line(x0 +  markRadius    * cos,	//x1
+				 y0 +  markRadius    * sin,	//y1
+				 x0 + (markRadius-6) * cos, //x2
+				 y0 + (markRadius-6) * sin, //y2
+				 PIXEL_ON);
+	}
+	//Стрелка.
+	angle = (180 - angle); 	     	   //Это нужно чтобы стрелка двигалась слева направо.
+	float rad = angle * (M_PI / 180.0);//перевод углов в радианы
+	cos = cosf(rad);
+	sin = sinf(rad);
+	//x0 += 1; //небольшое смещение по Х что бы стрелка точно поподала в среднюю риску.
+	y0 += 5; //небольшое смещение по Y что бы стрелка поподала в риски.
+	Lcd_Line(x0 + markRadius * cos,
+			 y0 + markRadius * sin,
+			 x0 + 1 * cos,
+			 y0 + 1 * sin,
+			 PIXEL_ON);
+}
+//************************************************************
+//Горизонтальная шкала с рисками.
+/*
+ * Параметры:
+ * x0	   : начальная координата шкалы по Х (мин. 0, макс. 127).
+ * y0	   : начальная координата шкалы по Y (мин. 0, макс. 63).
+ * sigLevel: отображаемое значение (мин. 0, макс. 127)
+ *
+ */
+void Lcd_HorizontalProgressBar(uint8_t x0, uint8_t y0, uint8_t level){
+
+//	uint8_t x0	      = 3;		//Начальная координата шкалы по Х.
+//	uint8_t y0	      = 2;		//Начальная координата шкалы по Y.
+//	uint8_t sigLevel  = (uint8_t)map(percent, 0, 100, 0, maxVal);//Отображаемый сигнал . Мин. 0, макс. 127.
+
+	const uint8_t numMarks  = 5;   //Необходимое кол-во вертикальных рисок на шкале.
+	const uint8_t scaleStep = 1;   //Шаг приращения шкалы в пикселях
+	const uint8_t maxVal    = 100; //Максимальное отображаемое значение, макс. 127 (на дисплее макс 128 пикселей).
+	uint8_t marksStep = maxVal / (numMarks-1);//Шаг между рисками.
+	uint8_t stepCount = x0;
+	//-------------------
+	//Рисуем риски высотой 5 пикселей.
+	for(uint8_t i = 0; i < numMarks; i++)
+	{
+		Lcd_Line(stepCount, y0, stepCount, y0+4, PIXEL_ON);//Первая Вертикальная палочка высотой 5 пикселей.
+		//Lcd_Line(stepCount+1, 1, stepCount+1, 5, PIXEL_ON);//Вторая Вертикальная палочка высотой 5 пикселей.
+		stepCount += marksStep;
+	}
+	//Рисуем шкалу высотой 3 пикселя.
+	if(level > maxVal) level = maxVal;
+	level /= scaleStep;						  //Равномерное распределение шагов на всю шкалу.
+	level += x0;							  //
+	Lcd_Line(x0, y0  , level, y0  , PIXEL_ON);//Горизонтальная линия высотой 1 пиксель.
+	Lcd_Line(x0, y0+1, level, y0+1, PIXEL_ON);//Горизонтальная линия высотой 1 пиксель.
+	Lcd_Line(x0, y0+2, level, y0+2, PIXEL_ON);//Горизонтальная линия высотой 1 пиксель.
+	//Циферки над рисками шкалы
+//	Lcd_SetCursor(1, 8);
+//	Lcd_Print("0   25  50  75  100");
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -138,12 +260,8 @@ void Task_Temperature_Display(void){
 	//Шапка
 	Lcd_SetCursor(1, 1);
 	Lcd_Print("_HC-12_");
-	//Вывод ошибок обvена по I2C.
-	Lcd_SetCursor(11, 1);
-	Lcd_Print("I2CNAC=");
-//	Lcd_BinToDec(I2C_GetNacCount(STM32_SLAVE_I2C), 4, LCD_CHAR_SIZE_NORM);
 	//Вывод времени.
-	Time_Display(1, 2);
+	Time_Display(14, 1);
 
 	//Скорсть обмена с модулем HС-12
 	Lcd_SetCursor(1, 3);
@@ -290,27 +408,74 @@ void Task_HC12(void){
 //*******************************************************************************************
 void Task_SI5351(void){
 
-	static uint32_t oldFreq   = 0;
-	static uint32_t oldCalibr = 0;
+	static uint32_t oldFreq     = 0;
+	static uint32_t oldXtalFreq = 0;
 	//-------------------
-	//Если производится редактирование то выбор частоты запрешен
-	if(!redaction) return;
-
-	//Установка шага установки частоты.
-		 if(redaction == 2) ENCODER_IncDecParam(&Encoder, &freq, stepFreq, SI5351_MIN_FREQ , SI5351_MAX_FREQ);
-	//Установка частоты энкодером
-	else if(redaction == 4) ENCODER_IncDecParam(&Encoder, &stepFreq, 100, 100 , 100000);
-	//Калибровка Si5351
-	else if(redaction == 6) ENCODER_IncDecParam(&Encoder, &calibr, 10, 24000000 , 26000000);
-
-	Si5351_SetXtalFreq(calibr);
+	//проверка наличия модуля Si5351.
+	if(!Si5351_Check()) return;
 
 	//Один раз передаем параметры в Si5351
-	if(freq != oldFreq || calibr != oldCalibr) Si5351_SetF0(freq);
-	oldFreq   = freq;
-	oldCalibr = calibr;
+	if(si5351_freq != oldFreq  || si5351_xtalFreq != oldXtalFreq)
+	{
+		Si5351_SetXtalFreq(si5351_xtalFreq);//Корректировка значения кварца.
+		Si5351_SetF0(si5351_freq);
+		oldFreq     = si5351_freq;
+		oldXtalFreq = si5351_xtalFreq;
+	}
+}
+//************************************************************
+void Task_SI5351_Setting(void){
 
-//	Config_Save()->xtalFreq = 125 * 1000;
+	static uint32_t settingIndex = 0;
+	static uint32_t redaction    = 0;
+	//-------------------
+	Lcd_ClearVideoBuffer();
+	//Шапка
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("_Si5351_Setting");
+	//Вывод времени.
+	//Time_Display(14, 1);
+	//-------------------
+	//Нет модуля, то выводим сообщение
+	if(!Si5351_Check())
+	{
+		Lcd_SetCursor(1, 3);
+		Lcd_PrintBold("no module");
+		return;
+	}
+	//-------------------
+	//Мигающий символ "<=" справа от редактируемой строки
+	Lcd_SetCursor(20, (2 + settingIndex));
+	if(redaction)
+	{
+		if(Blink(INTERVAL_250_mS)) Lcd_Print("<=");
+		else					   Lcd_Print("  ");
+	}
+	else
+	{
+		Lcd_Print("<=");
+		//Выдор редактируемого параметра энкодером.
+		ENCODER_IncDecParam(&Encoder, &settingIndex, 1, 0, 1);
+	}
+
+	//По нажатию на кнопку энкодера переход к выбору редактируемого параметра.
+	IncrementOnEachPass(&redaction, ENCODER_GetButton(&Encoder), 1, 1);
+	//Установка шага установки частоты
+		 if(redaction && settingIndex == 0) ENCODER_IncDecParam(&Encoder, &si5351_stepFreq, 100, 100 , 100000);
+	//Установка частоты кварца Si5351
+	else if(redaction && settingIndex == 1) ENCODER_IncDecParam(&Encoder, &si5351_xtalFreq, 10, 23500000, 25500000);
+	//-------------------
+	//Отображение шага установки частоты.
+	Lcd_PrintStringAndNumber(1, 2, "Step  : ", si5351_stepFreq, 6);
+	Lcd_Print("   Hz");
+
+	//Отображение значение калибровки
+	Lcd_PrintStringAndNumber(1, 3, "Calibr: ", si5351_xtalFreq, 8);
+	Lcd_Print(" Hz");
+	//-------------------
+	//Сохранение настроек во FLASH
+	Config_Save()->stepFreq = si5351_stepFreq;
+	Config_Save()->xtalFreq = si5351_xtalFreq;
 }
 //************************************************************
 void Task_SI5351_Display(void){
@@ -325,149 +490,157 @@ void Task_SI5351_Display(void){
 	//Вывод времени.
 	Time_Display(14, 1);
 	//-------------------
-	//По нажатию на кнопку энкодера переход к выбору редактируемого параметра.
-	IncrementOnEachPass(&redaction, ENCODER_GetButton(&Encoder), 2, 6);
-
-	//Ходим по пунктам страницы по нажатию на кнопку энкодера.
-	//if(redaction) Lcd_PrintStringAndNumber(20, (1 + redaction), "<=", 0, 0);
-	if(redaction)
+	//Нет модуля, то выводим сообщение и выходим
+	if(!Si5351_Check())
 	{
-		//Мигающий символ "<=" справа от редактируемой строки
-		Lcd_SetCursor(20, (1 + redaction));
-		if(Blink(INTERVAL_250_mS)) Lcd_Print("<=");
-		else					   Lcd_Print("  ");
+		Lcd_SetCursor(1, 3);
+		Lcd_PrintBold("no module");
+		redaction = 0;
+		return;
 	}
+	//-------------------
+	//Установка частоты энкодером
+	ENCODER_IncDecParam(&Encoder,
+						&si5351_freq,
+						si5351_stepFreq,
+						SI5351_MIN_FREQ,
+						SI5351_MAX_FREQ);
 	//-------------------
 	//Отображение установленной частота
 	Lcd_SetCursor(1, 3);
 
-	//Единицы МГц - два разряда.
-	Lcd_BinToDec(freq/1000000, 2, LCD_CHAR_SIZE_BOLD);
+	//МГц - два разряда.
+	Lcd_BinToDec(si5351_freq/1000000, 2, LCD_CHAR_SIZE_BOLD);
 	Lcd_ChrBold('.');
 
 	//кГц - три разряда.
-	temp = freq % 1000000;
+	temp = si5351_freq % 1000000;
 	Lcd_BinToDec(temp/1000 , 3, LCD_CHAR_SIZE_BOLD);
 	Lcd_Chr(' ');
 
 	//Гц - три разряда.
-	temp = freq % 1000;
+	//Lcd_SetCursor(14, 4);
+	temp = si5351_freq % 1000;
 	Lcd_BinToDec(temp, 3, LCD_CHAR_SIZE_NORM);
 	Lcd_Print(" Hz");
-
+	//-------------------
 	//Отображение шага установки частоты.
-	Lcd_PrintStringAndNumber(1, 6, "Step  : ", stepFreq, 6);
-	Lcd_Print("   Hz");
-
-	//Отображение значение калибровки
-	Lcd_PrintStringAndNumber(1, 7, "Calibr: ", calibr, 8);
+	Lcd_PrintStringAndNumber(1, 5, "Step:", si5351_stepFreq, 6);
 	Lcd_Print(" Hz");
-
-	//----------------------------------------------
+	//-------------------
 	//Горизонтальная шкала
-
-	//num подряд идущих двойных вертикальных высоких палочек с шагом step
-	uint8_t	num    = 5;				  //Необходимое кол-во вертикальных высоких палочек на шкале.
-	uint8_t step_x = 100 / (num - 1); //Шаг между палочками
-	uint8_t n_x    = 2;				  //Начальная координата по Х первой палочки.
-
-	for(uint8_t i = 0; i < num; i++)
-	{
-		Lcd_Line(n_x, 1, n_x, 5, PIXEL_ON); //Вертикальная палочка высотой 5 пикселей.
-		//Lcd_Line(1*n_x+1, 1, 1*n_x+1, 5, PIXEL_ON);
-		n_x += step_x;
-	}
-
-	//Циферки над высокими черточками
-//	Lcd_SetCursor(1, 7);
-//	Lcd_Print("0   25  50  75  100");
-
-	//lowNum подряд идущих двойных вертикальных низких палочек
-	uint8_t lowNum    = (uint8_t)50;//Кол-во палочек, макс 127
-	uint8_t lowStep_x = 1;				 //Шаг между палочками
-	uint8_t lowN_x    = 2;				 //Начальная координата по Х первой палочки.
-
-	lowNum /= lowStep_x;//равномерное распределение шагов на всю шкалу.
-
-	for(uint8_t i = 0; i < lowNum; i++)
-	{
-		Lcd_Line(lowN_x ,1 ,lowN_x ,3 ,PIXEL_ON);//Вертикальная палочка высотой 3 пикселя.
-		lowN_x += lowStep_x;
-	}
-	//----------------------------------------------
+	Lcd_HorizontalProgressBar(2, 0, 50);
 }
 //************************************************************
 void Task_AnalogMeter(void){
 
 	//-------------------
+	//Очистка видеобуфера.
 	Lcd_ClearVideoBuffer();
 	//Шапка
-	Lcd_SetCursor(1, 1);
-	Lcd_Print("AnalogMeter");
-	//Вывод времени.
+//	Lcd_SetCursor(1, 1);
+//	Lcd_Print("AnalogMeter");
+//	//Вывод времени.
 	Time_Display(14, 1);
 	//-------------------
-	static uint32_t encod = 0;
-
-	ENCODER_IncDecParam(&Encoder, &encod, 1, 0 , 179);
-
-	uint8_t radius = 50;
-	uint8_t angle  = encod;//Time.sec * 3; //175.0; //угол на который нужно повернуть стрелку
-
-	float rad = (angle * M_PI) / 180.0;
-	float x   = cosf(rad) * radius;
-	float y   = sinf(rad) * radius;
-
+	//Расчет процентов заряда АКБ
+//	uint8_t batPercent = Battery_GetPercentCharge();
 	//-------------------
-	//Полуокружность
-//	Lcd_Circle(63, 63, 42, PIXEL_ON);
+	//Энкодер
+//	static uint32_t angle = 90;
+//	ENCODER_IncDecParam(&Encoder, &angle, 1, 50 , 132);
+//	Lcd_PrintStringAndNumber(1, 1, "Angle: ", angle, 3);
 	//-------------------
-	//Стрелка
-	uint8_t x1 = 0;
+	//Аналговая стрелочная шкала.
+	//uint32_t temp = map_I32(angle, 1, 100, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
+	uint32_t temp = map_I32(ADC_GetMeas(8), 0, 3300, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
+	Lcd_AnalogScale((uint8_t)temp);
 
-	if(angle <= 90) x1 = 63 + (uint8_t)x;
-	else			x1 = 63 - (uint8_t)(-1 * x);
-
-	Lcd_Line  (63, 0, x1, (uint8_t)y, PIXEL_ON);
-	Lcd_Circle(63, 63, 2, PIXEL_ON);
-	//-------------------
-	//риски-метки шкалы
-	for(float i = 0; i < M_PI; i += M_PI / 6)
-	{
-		//Lcd_Line(0 - 127 * cos(i), 127 - 127 * sin(i), 0 - 115 * cos(i), 127 - 115 * sin(i), PIXEL_ON); // риски-метки шкалы
-		Lcd_Line(64 + radius * cos(i),
-				 0  + radius * sin(i),
-
-				 64 + (radius-10) * cos(i),
-				 0  + (radius-10) * sin(i),
-
-				 PIXEL_ON); // риски-метки шкалы
-	}
-	//-------------------
+	//Горизонтальная шкала с рисками.
+	temp = map_I32(ADC_GetMeas(8), 0, 3300, 0, 100);
+	Lcd_HorizontalProgressBar(3, 48, temp);
 }
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+//void IncrementOnEachPass(uint32_t *var, uint32_t event, uint32_t step, uint32_t max){
+//
+//		   uint32_t riseReg  = 0;
+//	static uint32_t oldState = 0;
+//	//-------------------
+//	riseReg  = (oldState ^ event) & event;
+//	oldState = event;
+////	if(riseReg) (*var)++;
+//	if(riseReg)
+//	{
+//		if(step == 0) step = 1;
+//		if((*var) < max) (*var)+= step;//Проверка на  максимум.
+//		else             (*var) = 0;   //Закольцовывание редактирования параметра.
+//	}
+//}
+
+
+//Длительное нажатие на кнопку энкодера.
+uint32_t BUTTON_LongPress(uint32_t butState, uint32_t delay){
+
+	static uint32_t mScount  = 0;
+	static uint32_t flag     = 0;
+
+	//--------------------
+	if(butState)
+	{
+		if(!flag && (RTOS_GetTickCount() - mScount) >= delay)
+		{
+			flag = 1;
+			return 1;
+		}
+	}
+	else
+	{
+		flag = 0;
+		mScount = RTOS_GetTickCount();
+	}
+	return 0;
+}
+//************************************************************
 void Task_LcdPageSelection(void){
 
 	static uint32_t pageIndex = 0;
-	//-----------------------------
+	//--------------------
+	//Мигающая индикация.
 	if(Blink(INTERVAL_100_mS))LED_PC13_On();
 	else 					  LED_PC13_Off();
 
+	//Перевод из мС в ЧЧ:ММ:СС
 	TIME_Calculation(&Time, RTOS_GetTickCount());
+
+	//Длительное нажатие на кнопку энкодера.
+	if(BUTTON_LongPress(ENCODER_GetButton(&Encoder), 2000)) pageIndex ^= 1;
+
 	//Если на какой-то странице производится редактирование то выбор страницы запрешен
-//	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 2);//Выбор сраницы
+//	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 3);//Выбор сраницы
 	switch(pageIndex){
 		//--------------------
 		case 0:
 			RTOS_SetTask(Task_SI5351,         0, 0);
-			//RTOS_SetTask(Task_SI5351_Display, 0, 0);
-			RTOS_SetTask(Task_AnalogMeter, 0, 0);
+			RTOS_SetTask(Task_SI5351_Display, 0, 0);
+			Config_SaveLoop();
 		break;
 		//--------------------
 		case 1:
+			RTOS_SetTask(Task_SI5351,         0, 0);
+			RTOS_SetTask(Task_SI5351_Setting, 0, 0);
+		break;
+		//--------------------
+		case 2:
+			RTOS_SetTask(Task_AnalogMeter, 0, 0);
+//			LED_PC13_On();
+//			Task_AnalogMeter();
+//			LED_PC13_Off();
+		break;
+		//--------------------
+		case 3:
 			RTOS_SetTask(Task_Temperature_Read,    0, 0);
 			RTOS_SetTask(Task_Temperature_Display, 0, 0);
 		break;
@@ -494,18 +667,26 @@ int main(void){
 	STM32_Clock_Init();
 	SYS_TICK_Init();
 	GPIO_Init();
-	DELAY_Init();
 	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+	ADC_Init();
 
+	DELAY_Init();
 	DELAY_milliS(250);//Эта задержка нужна для стабилизации напряжения патания.
 					  //Без задержки LCD-дисплей не работает.
-	//__enable_irq();
 	//***********************************************
 	Config_Init();					   //Чтение настроек
-	SSD1306_Init(SSD1306_128x64);      //Инициализация OLED SSD1306 (I2C1).
-	Si5351_Init();					   //Инициализация Si5351 (I2C1).
 
-	HC12_Init(HC12_BAUD_RATE_57600);   //Инициализация HC-12 (USART2).
+	SSD1306_Init(SSD1306_128x64);      //Инициализация OLED SSD1306 (I2C1).
+
+	//Инициализация Si5351 (I2C1).
+	si5351_stepFreq = Config()->stepFreq;
+	si5351_xtalFreq = Config()->xtalFreq;
+	Si5351_Init();
+	Si5351_SetXtalFreq(si5351_xtalFreq);
+	Si5351_SetF0(si5351_freq);
+
+	//Инициализация HC-12 (USART2).
+	HC12_Init(HC12_BAUD_RATE_57600);
 	hc12_BaudRate = HC12_GetBaudRate();
 	//***********************************************
 	//Инициализация Энкодера.
@@ -520,7 +701,7 @@ int main(void){
 	//Инициализация диспетчера.
 	RTOS_Init();
 //	RTOS_SetTask(Lcd_Update, 			0, 5); //Обновление изображения на экране каждые 10мс
-	RTOS_SetTask(Task_LcdPageSelection, 0, 10);
+	RTOS_SetTask(Task_LcdPageSelection, 0, 6);
 //	RTOS_SetTask(Task_HC12,      		0, 1000);
 //	RTOS_SetTask(Config_SaveLoop, 	    0, 1000);
 	//***********************************************

@@ -121,9 +121,9 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 	if(_i2c_LongWait(i2c, I2C_SR1_ADDR))//Ожидаем окончания передачи адреса
 	{
 		i2c->SR1 &= ~I2C_SR1_AF;  //Сброс флагов ошибок.
-
 		if(i2c == I2C1) I2C1NacCount++;
 		else			I2C2NacCount++;
+
 		return I2C_ERR_ADDR;
 	}
 	(void)i2c->SR1;	//сбрасываем бит ADDR (чтением SR1 и SR2):
@@ -186,6 +186,7 @@ I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 void I2C_Stop(I2C_TypeDef *i2c){
 
 	if(_i2c_LongWait(i2c, I2C_SR1_BTF)) return;
+//	if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return;
 	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
 }
 //**********************************************************
@@ -229,6 +230,15 @@ uint32_t I2C_Master_GetNacCount(I2C_TypeDef *i2c){
 
 	if(i2c == I2C1) return I2C1NacCount;
 					return I2C2NacCount;
+}
+//**********************************************************
+uint32_t I2C_Master_CheckSlave(I2C_TypeDef *i2c, uint8_t deviceAddr){
+
+	uint32_t err = I2C_StartAndSendDeviceAddr(i2c, deviceAddr);
+	i2c->CR1 |= I2C_CR1_STOP; //Формируем Stop
+
+	if(err == I2C_OK) return 1;
+					  return 0;
 }
 //**********************************************************
 /*  Ф-ия передачи массива данных в Slave-устройство.

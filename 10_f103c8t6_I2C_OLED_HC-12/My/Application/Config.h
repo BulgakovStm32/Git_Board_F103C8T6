@@ -25,7 +25,8 @@ typedef struct{
 	uint32_t checkKey;//проверочная последовательность
 	char 	 name[16];//Название проекта
 	uint32_t xtalFreq;//Частота кварца.
-//	uint32_t timeUTC; //
+	uint32_t stepFreq;
+	uint32_t timeUTC; //
 	//----------
 	char SW[4];//Версия ПО
 	char HW[4];//Версия железа

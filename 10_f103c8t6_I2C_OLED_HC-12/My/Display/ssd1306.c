@@ -44,7 +44,7 @@ static SSD1306_t SSD1306;
  * @param  count: how many bytes will be written
  * @retval None
  */
-static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
+void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
 
 	I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
 //	I2C_DMA_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);

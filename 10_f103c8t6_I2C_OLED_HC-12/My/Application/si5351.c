@@ -62,6 +62,8 @@ static void    si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, e
  */
 void Si5351_Init(void){
 
+	if(!Si5351_Check()) return;
+
 	//Disable all outputs
     si5351_write(SI5351_OUTPUT_ENABLE_CTRL, 0xFF);
 
@@ -87,6 +89,11 @@ void Si5351_Init(void){
 
     //Disable fanout (initial value is unknown)
     si5351_write(SI5351_FANOUT_ENABLE, 0);
+}
+//************************************************************
+uint32_t Si5351_Check(void){
+
+	return I2C_Master_CheckSlave(SI5351_I2C, SI5351_I2C_ADDR);
 }
 //************************************************************
 /*

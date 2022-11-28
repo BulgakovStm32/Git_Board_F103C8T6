@@ -55,7 +55,7 @@
 #define SI5351_MIN_FREQ         		   10000U     //(SI5351_MULTISYNTH_MIN_FREQ / 128)
 #define SI5351_MAX_FREQ					   50000000U //SI5351_MULTISYNTH_MAX_FREQ
 
-#define SI5351_XTAL_FREQ_DEFAULT		   25000000//23985500
+#define SI5351_XTAL_FREQ_DEFAULT		   25000000
 #define SI5351_PLL_FIXED				   900000000
 
 #define SI5351_PLL_VCO_MIN                 600000000
@@ -272,6 +272,7 @@ extern "C" {
 //*******************************************************************************************
 //*******************************************************************************************
 void Si5351_Init(void);
+uint32_t Si5351_Check(void);
 void Si5351_SetFreq(uint32_t freq, enum si5351_clock clk);
 void Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable);
 void Si5351_SetXtalFreq(uint32_t freq);

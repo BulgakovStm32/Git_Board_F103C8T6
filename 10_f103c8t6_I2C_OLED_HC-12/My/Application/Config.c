@@ -69,19 +69,18 @@ void Config_Init(void){
 	{
 		//Запись заводских установок во флеш.
 		dataForFLASH.config.checkKey = CONFIG_CHECK_KEY_DEFINE;
-
 		strcpy(dataForFLASH.config.name, "0123456789ABCDEF");
+		dataForFLASH.config.stepFreq = 1000;
+		dataForFLASH.config.xtalFreq = SI5351_XTAL_FREQ_DEFAULT;
+		dataForFLASH.config.timeUTC  = 1000;
 
-		dataForFLASH.config.xtalFreq = 25000 * 1000;
-
-		strcpy(dataForFLASH.config.SW, "SW01");
-		strcpy(dataForFLASH.config.HW, "HW01");
-
-		dataForFLASH.config.Address      = 1;
-		dataForFLASH.config.Group        = 2;
-		dataForFLASH.config.PowerCheckOn = 3;
-		dataForFLASH.config.SpDeviation  = 4;
-		dataForFLASH.config.SpCheck      = 5;
+//		strcpy(dataForFLASH.config.SW, "SW01");
+//		strcpy(dataForFLASH.config.HW, "HW01");
+//		dataForFLASH.config.Address      = 1;
+//		dataForFLASH.config.Group        = 2;
+//		dataForFLASH.config.PowerCheckOn = 3;
+//		dataForFLASH.config.SpDeviation  = 4;
+//		dataForFLASH.config.SpCheck      = 5;
 		//--------------------
 		//пишем данные в память.
 		dataForFLASH.sector.numWrite = 1;
