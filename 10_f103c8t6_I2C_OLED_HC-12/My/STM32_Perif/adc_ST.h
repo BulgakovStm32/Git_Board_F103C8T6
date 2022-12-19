@@ -14,9 +14,10 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-#define ADC_REF			  3264UL //Опорное напряжение
-#define ADC_RESOLUTION	  4096UL
-#define ADC_QUANT		  ((ADC_REF * ADC_RESOLUTION + ADC_RESOLUTION/2) / ADC_RESOLUTION)
+#define ADC_REF			  3255U //Опорное напряжение
+#define ADC_RESOLUTION	  4096U
+#define ADC_SCALE		  1024U
+#define ADC_QUANT		  ((ADC_REF * ADC_SCALE + ADC_RESOLUTION/2) / ADC_RESOLUTION)
 
 #define AdcMeasQuantity		16     //Количество измерений для усреднения
 #define AdcMeasShiftDev		4      //Количество сдвигов для деления

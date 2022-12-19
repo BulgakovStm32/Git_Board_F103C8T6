@@ -34,7 +34,7 @@
 #include "LcdGraphic.h"
 #include "Blink.h"
 #include "DS18B20.h"
-//#include "Filters.h"
+#include "Filters.h"
 //#include "AHT10.h"
 #include "DS2782.h"
 #include "EncoderMy.h"

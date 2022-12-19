@@ -551,14 +551,45 @@ void Task_AnalogMeter(void){
 //	ENCODER_IncDecParam(&Encoder, &angle, 1, 50 , 132);
 //	Lcd_PrintStringAndNumber(1, 1, "Angle: ", angle, 3);
 	//-------------------
+	uint16_t meas = ADC_GetMeas(8);
+
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("Meas= ");
+	Lcd_BinToDec(meas, 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 2);
+	Lcd_Print("Sma1= ");
+	Lcd_BinToDec(Filter_SMA(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 3);
+	Lcd_Print("Sma2= ");
+	Lcd_BinToDec(Filter_SMAv2(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("Ema1= ");
+	Lcd_BinToDec(Filter_EMA(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 5);
+	Lcd_Print("Ema2= ");
+	Lcd_BinToDec(Filter_EMAv2(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 6);
+	Lcd_Print("Avr = ");
+	Lcd_BinToDec(Filter_Average(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 7);
+	Lcd_Print("LPF = ");
+	Lcd_BinToDec(Filter_LowPass(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	//-------------------
 	//Аналговая стрелочная шкала.
 	//uint32_t temp = map_I32(angle, 1, 100, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
-	uint32_t temp = map_I32(ADC_GetMeas(8), 0, 3300, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
-	Lcd_AnalogScale((uint8_t)temp);
-
-	//Горизонтальная шкала с рисками.
-	temp = map_I32(ADC_GetMeas(8), 0, 3300, 0, 100);
-	Lcd_HorizontalProgressBar(3, 48, temp);
+//	uint32_t temp = map_I32(ADC_GetMeas(8), 0, 3300, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
+//	Lcd_AnalogScale((uint8_t)temp);
+//
+//	//Горизонтальная шкала с рисками.
+//	temp = map_I32(ADC_GetMeas(8), 0, 3300, 0, 100);
+//	Lcd_HorizontalProgressBar(3, 48, temp);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -580,13 +611,11 @@ void Task_AnalogMeter(void){
 //	}
 //}
 
-
 //Длительное нажатие на кнопку энкодера.
 uint32_t BUTTON_LongPress(uint32_t butState, uint32_t delay){
 
-	static uint32_t mScount  = 0;
-	static uint32_t flag     = 0;
-
+	static uint32_t mScount = 0;
+	static uint32_t flag    = 0;
 	//--------------------
 	if(butState)
 	{
@@ -606,11 +635,11 @@ uint32_t BUTTON_LongPress(uint32_t butState, uint32_t delay){
 //************************************************************
 void Task_LcdPageSelection(void){
 
-	static uint32_t pageIndex = 0;
+	static uint32_t pageIndex = 2;//0;
 	//--------------------
 	//Мигающая индикация.
-	if(Blink(INTERVAL_100_mS))LED_PC13_On();
-	else 					  LED_PC13_Off();
+//	if(Blink(INTERVAL_100_mS))LED_PC13_On();
+//	else 					  LED_PC13_Off();
 
 	//Перевод из мС в ЧЧ:ММ:СС
 	TIME_Calculation(&Time, RTOS_GetTickCount());
@@ -674,20 +703,22 @@ int main(void){
 	DELAY_milliS(250);//Эта задержка нужна для стабилизации напряжения патания.
 					  //Без задержки LCD-дисплей не работает.
 	//***********************************************
-	Config_Init();					   //Чтение настроек
-
-	SSD1306_Init(SSD1306_128x64);      //Инициализация OLED SSD1306 (I2C1).
+	//Чтение настроек
+	Config_Init();
 
 	//Инициализация Si5351 (I2C1).
-	si5351_stepFreq = Config()->stepFreq;
-	si5351_xtalFreq = Config()->xtalFreq;
-	Si5351_Init();
-	Si5351_SetXtalFreq(si5351_xtalFreq);
-	Si5351_SetF0(si5351_freq);
+//	si5351_stepFreq = Config()->stepFreq;
+//	si5351_xtalFreq = Config()->xtalFreq;
+//	Si5351_Init();
+//	Si5351_SetXtalFreq(si5351_xtalFreq);
+//	Si5351_SetF0(si5351_freq);
+//
+//	//Инициализация HC-12 (USART2).
+//	HC12_Init(HC12_BAUD_RATE_57600);
+//	hc12_BaudRate = HC12_GetBaudRate();
 
-	//Инициализация HC-12 (USART2).
-	HC12_Init(HC12_BAUD_RATE_57600);
-	hc12_BaudRate = HC12_GetBaudRate();
+	//Инициализация OLED SSD1306 (I2C1).
+	SSD1306_Init(SSD1306_128x64);
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GpioPort_A 	 	= GPIOB;

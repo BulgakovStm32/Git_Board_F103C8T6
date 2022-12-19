@@ -11,92 +11,133 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-uint16_t Average(uint16_t inValue, uint8_t div){
+#define AVR_DIV		32
 
-	static uint8_t  avrCount    = 0;
-	static uint32_t sum         = 0;
-	static uint16_t avrOldValue = 0;
+uint16_t Filter_Average(uint16_t inVal){
+
+	static uint8_t  count = 0;
+	static uint32_t sum   = 0;
+	static uint16_t out   = 0;
 	//-------------------
-	if(avrCount < div)
-		{
-			avrCount++;
-			sum += inValue;
-		}
-	else
-		{
-			avrCount    = 0;
-			avrOldValue = sum / div;
-			sum         = 0;
-			return avrOldValue;
-		}
-	return avrOldValue;
+	sum += inVal;
+	count++;
+	if(count >= AVR_DIV)
+	{
+		out = (sum + AVR_DIV/2) / AVR_DIV;
+		sum   = 0;
+		count = 0;
+	}
+	return out;
 }
 //************************************************************
 //Цифровой фильтр НЧ
 
-#define SPS 200UL //Частота дискретизации АЦП в Гц.
-#define Trc 0.1f //постоянная времени фильтра в Секундах
-#define K  (SPS*Trc)
+#define SPS 		   166U 	//Частота дискретизации АЦП в Гц.
+#define Trc 		   0.1f  	//постоянная времени фильтра в Секундах
+#define K  	(uint16_t)(SPS*Trc) //
 
-uint16_t Filter(uint16_t inValue){
+uint16_t Filter_LowPass(uint16_t inVal){
 
-	static uint32_t Dacc = 0;
-	static uint16_t Dout  = 0;
+	static int32_t acc = 0;
+	static int32_t out = 0;
 	//-------------------
-	Dacc = Dacc + inValue - Dout;
-	Dout = Dacc >> 4; // /(uint16_t)K;
-	return Dout;
+	acc += inVal - out;
+	out = (acc + K/2) / K;
+	return (uint16_t)out;
 }
 //************************************************************
-#define FILTER_SMA_WINDOW_SIZE	64
+//************************************************************
+#define SMA_WINDOW_SIZE		32 //размер окна усреднения(кратно степени 2)
+
 //Алгоритм скользящего среднего (Simple Moving Average)
 uint16_t Filter_SMA(uint16_t inValue){
 
-	static uint16_t filterBuf[FILTER_SMA_WINDOW_SIZE] = {0};
+	static uint16_t filterBuf[SMA_WINDOW_SIZE] = {0};
 	       uint32_t outVal = 0;
 	//-------------------
-	filterBuf[FILTER_SMA_WINDOW_SIZE - 1] = inValue;
+	filterBuf[SMA_WINDOW_SIZE-1] = inValue;
 	//Расчет среднего.
-	for(uint16_t j = 0; j < FILTER_SMA_WINDOW_SIZE; j++)
-		{
-			outVal += filterBuf[j];
-		}
-	outVal /= FILTER_SMA_WINDOW_SIZE;
+	for(uint16_t j = 0; j < SMA_WINDOW_SIZE; j++)
+	{
+		outVal += filterBuf[j];
+	}
+	outVal = (outVal + SMA_WINDOW_SIZE/2) / SMA_WINDOW_SIZE;
 	//сдвинем масив на один элемент влево.
-	for(uint16_t i = 0; i < FILTER_SMA_WINDOW_SIZE; i++)
-		{
-			filterBuf[i] = filterBuf[i+1];
-		}
+	for(uint16_t i = 0; i < SMA_WINDOW_SIZE; i++)
+	{
+		filterBuf[i] = filterBuf[i+1];
+	}
 	return (uint16_t)outVal;
 }
 //************************************************************
-#define NUM_READ 16
-//оптимальное бегущее среднее арифметическое
-uint16_t runMiddleArifmOptim(uint16_t inValue){
+//скользящее среднее.
+uint16_t Filter_SMAv2(uint16_t inVal){
 
-  static uint16_t t = 0;
-  static uint16_t arr[NUM_READ] = {0};
-  static uint32_t average = 0;
-  //-------------------
-  if(++t >= NUM_READ) t = 0;// перемотка t
-  average -= arr[t];        // вычитаем старое
-  average += inValue;       // прибавляем новое
-  arr[t]   = inValue;       // запоминаем в массив
-  return (uint16_t)(average / NUM_READ);
+	static uint16_t window[SMA_WINDOW_SIZE] = {0};
+	static uint16_t winIndex = 0;
+	static  int32_t avrMeas  = 0;
+	//-------------------
+	avrMeas -= window[winIndex];     // вычитаем старое
+	avrMeas += inVal;                // прибавляем новое
+	window[winIndex] = inVal;        // запоминаем в массив
+	winIndex++;					     //
+	winIndex &= (SMA_WINDOW_SIZE-1); //
+	return(uint16_t)((avrMeas + SMA_WINDOW_SIZE/2) / SMA_WINDOW_SIZE);
+}
+//************************************************************
+//************************************************************
+#define EMA_WINDOW_SIZE		64 //размер окна усреднения(кратно степени 2)
+
+//Эспоненциальное скользящее среднее (Exponential Moving Average, EMA).
+uint16_t Filter_EMA(uint32_t inVal){
+
+	const uint16_t SCALE = 1024;
+	const uint16_t DIV   = 2;
+	static int32_t out   = 0;
+		   int32_t delta;
+	//-------------------
+	//filVal += ((inVal - filVal) + WINDOW_SIZE/2) / WINDOW_SIZE;
+	//return (uint16_t)filVal;
+
+	inVal *= SCALE;
+	out   *= SCALE;
+	delta  = inVal - out;
+	delta  = (delta + DIV/2) / DIV;
+	out   += (delta + EMA_WINDOW_SIZE/2) / EMA_WINDOW_SIZE;
+	out    = (out + SCALE/2) / SCALE;
+	return (uint16_t)out;
 }
 //************************************************************
 //Эспоненциальное скользящее среднее (Exponential Moving Average, EMA).
-uint16_t Filter_EMA(uint16_t inValue){
+uint16_t Filter_EMAv2(uint32_t inVal){
 
-  static uint16_t filVal = 0;
-  //-------------------
-  filVal += ((inValue - filVal) >> 3);
-  return (uint16_t)filVal;
+	const  uint16_t SCALE = 1024;
+	//static uint32_t inOld = 0;
+	static  int32_t out   = 0;
+	 	    int32_t delta;
+	//-------------------
+	//k = 2/(N+1)
+	//out = outOld + (inVal - outOld) * k;
+
+	inVal *= SCALE;
+	out   *= SCALE;
+	delta  = inVal - out;
+	out   += ((delta * 1 + EMA_WINDOW_SIZE/2) / EMA_WINDOW_SIZE);
+	out    = ((out + SCALE/2) / SCALE);
+	return (uint16_t)out;
 }
-//************************************************************
-
-
-
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
+
+
+
+
+
+
+
+
+
 

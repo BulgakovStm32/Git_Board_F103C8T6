@@ -50,7 +50,7 @@ uint32_t ADC_GetMeas(uint32_t adcChannel){
 	ADC1->CR2 |= ADC_CR2_SWSTART;     //запуск преобразования в регулярном канале.
 	while(!(ADC1->SR & ADC_SR_EOC)){};//дождаться окончания преобразования
 	//Вычитать значение самокалибровки ненужно, АЦП это делает сам.
-	return (uint32_t)((ADC1->DR * ADC_QUANT) / 4096);
+	return (uint32_t)((ADC1->DR * ADC_QUANT + ADC_SCALE/2) / ADC_SCALE);
 	//return ADC1->DR;
 }
 //**********************************************************
