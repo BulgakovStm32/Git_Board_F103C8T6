@@ -17,9 +17,9 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
+void TIM3_InitForPWM(uint32_t freq_Hz);
 void TIM1_Init(uint32_t freq_Hz);
 void TIM2_Init(void);
-void TIM3_InitForPWM(void);
 
 
 void TIMx_Enable(TIM_TypeDef *tim);

@@ -26,6 +26,8 @@ uint16_t Filter_SMAv2(uint16_t inVal);
 
 uint16_t Filter_EMA(uint32_t inVal);		//Эспоненциальное скользящее среднее (Exponential Moving Average, EMA).
 uint16_t Filter_EMAv2(uint32_t inVal);
+
+int16_t DcRemovalFilter(uint16_t inVal); //DC removal filter:
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* FILTERS_H_ */

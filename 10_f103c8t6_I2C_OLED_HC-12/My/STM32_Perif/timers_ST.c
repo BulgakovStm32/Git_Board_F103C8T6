@@ -11,19 +11,22 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-void TIM3_InitForPWM(void){
+void TIM3_InitForPWM(uint32_t freq_Hz){
 
+	//APB1_CLK = 36MHz, TIM3_CLK = APB1_CLK * 2 = 72MHz.
+	//таймер будет тактироваться с частотой TIM3_CLK/(PSC - 1).
+	uint32_t psc = ((72000000 / freq_Hz + 50)/100) - 1;
+	//--------------------------
 	//Включение тактирования таймера.
 	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 	//Прескаллер.
-	//APB1_CLK = 36MHz, TIM3_CLK = APB1_CLK * 2 = 72MHz.
-	TIM3->PSC = (72 - 1);  //таймер будет тактироваться с частотой 72МГц/PSC.
+	TIM3->PSC = psc; //(72 - 1);  //таймер будет тактироваться с частотой 72МГц/PSC.
 	TIM3->ARR = (100 - 1);//Auto reload register. - это значение, до которого будет считать таймер.
 
-//	//Задаем режим работы - PWM mode on OC1
-//	TIM3->CCMR1 |= TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | //OC1M: Output compare 1 mode - 110: PWM mode 1.
-//				   TIM_CCMR1_OC1PE;						 //OC1PE: Output compare 1 preload enable. 1: Preload register on TIMx_CCR1 enabled.
-//
+	//Задаем режим работы - PWM mode on OC1
+	TIM3->CCMR1 |= TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | //OC1M:  Output compare 1 mode - 110: PWM mode 1.
+				   TIM_CCMR1_OC1PE;						 //OC1PE: Output compare 1 preload enable. 1: Preload register on TIMx_CCR1 enabled.
+
 //	//Задаем режим работы - PWM mode on OC2
 //	TIM3->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | //OC2M: Output compare 1 mode - 110: PWM mode 1.
 //				   TIM_CCMR1_OC2PE;						 //OC2PE: Output compare 1 preload enable. 1: Preload register on TIMx_CCR1 enabled.
@@ -31,38 +34,39 @@ void TIM3_InitForPWM(void){
 //	//Задаем режим работы - PWM mode on OC3
 //	TIM3->CCMR2 |= TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | //OC3M: Output compare 1 mode - 110: PWM mode 1.
 //				   TIM_CCMR2_OC3PE;						 //OC3PE: Output compare 1 preload enable. 1: Preload register on TIMx_CCR1 enabled.
+//
+//	//Задаем режим работы - PWM mode on OC4
+//	TIM3->CCMR2 |= TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | //OC4M: Output compare 1 mode - 110: PWM mode 1.
+//				   TIM_CCMR2_OC4PE;						 //OC4PE: Output compare 1 preload enable. 1: Preload register on TIMx_CCR1 enabled.
 
-	//Задаем режим работы - PWM mode on OC4
-	TIM3->CCMR2 |= TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | //OC4M: Output compare 1 mode - 110: PWM mode 1.
-				   TIM_CCMR2_OC4PE;						 //OC4PE: Output compare 1 preload enable. 1: Preload register on TIMx_CCR1 enabled.
-
-//	TIM3->CCER |= TIM_CCER_CC1E;//Enable CC1 - включение первого канала
+	TIM3->CCER |= TIM_CCER_CC1E;//Enable CC1 - включение первого канала
 //	TIM3->CCER |= TIM_CCER_CC2E;//Enable CC2 - включение второго канала
 //	TIM3->CCER |= TIM_CCER_CC3E;//Enable CC3 - включение третьего канала.
-	TIM3->CCER |= TIM_CCER_CC4E;//Enable CC4 - включение четвертого канала.
+//	TIM3->CCER |= TIM_CCER_CC4E;//Enable CC4 - включение четвертого канала.
 
 	//Настройка ножки микроконтроллера.
-//	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
-//
-//	GPIOA->CRL |= GPIO_CRL_CNF6_1;//PA6(TIM3_CH1) - выход, альтернативный режим push-pull.
-//	GPIOA->CRL |= GPIO_CRL_MODE6; //PA6(TIM3_CH1) - тактирование 50МГц.
-//
+	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+
+	GPIOA->CRL |= GPIO_CRL_CNF6_1;//PA6(TIM3_CH1) - выход, альтернативный режим push-pull.
+	GPIOA->CRL |= GPIO_CRL_MODE6; //PA6(TIM3_CH1) - тактирование 50МГц.
+
 //	GPIOA->CRL |= GPIO_CRL_CNF7_1;//PA7(TIM3_CH2) - выход, альтернативный режим push-pull.
 //	GPIOA->CRL |= GPIO_CRL_MODE7; //PA7(TIM3_CH2) - тактирование 50МГц.
-//
+
+//	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
+
 //	GPIOB->CRL |= GPIO_CRL_CNF0_1;//PB0(TIM3_CH3) - выход, альтернативный режим push-pull.
 //	GPIOB->CRL |= GPIO_CRL_MODE0; //PB0(TIM3_CH3) - тактирование 50МГц.
 
-	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
-
-	GPIOB->CRL |= GPIO_CRL_CNF1_1 | //PB1(TIM3_CH4) - выход, альтернативный режим push-pull.
-				  GPIO_CRL_MODE1;   //PB1(TIM3_CH4) - тактирование 50МГц.
+//	GPIOB->CRL |= GPIO_CRL_CNF1_1 | //PB1(TIM3_CH4) - выход, альтернативный режим push-pull.
+//				  GPIO_CRL_MODE1;   //PB1(TIM3_CH4) - тактирование 50МГц.
 
 	//Включение DMA для работы с таймером.
 //	TIM3->DIER |= TIM_DIER_CC1DE;
 
 	//Установка длительности цикла ШИМ.
-	TIM3->CCR4 = 10;
+	TIM3->CCR1 = 80;
+//	TIM3->CCR4 = 10;
 
 	//Включение таймера
 	TIM3->CR1 |= TIM_CR1_CEN;

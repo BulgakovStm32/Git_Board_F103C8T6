@@ -581,6 +581,9 @@ void Task_AnalogMeter(void){
 	Lcd_Print("LPF = ");
 	Lcd_BinToDec(Filter_LowPass(meas), 4, LCD_CHAR_SIZE_NORM);
 
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("DCR = ");
+	Lcd_BinToDec(DcRemovalFilter(meas), 4, LCD_CHAR_SIZE_NORM);
 	//-------------------
 	//Аналговая стрелочная шкала.
 	//uint32_t temp = map_I32(angle, 1, 100, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
@@ -719,6 +722,8 @@ int main(void){
 
 	//Инициализация OLED SSD1306 (I2C1).
 	SSD1306_Init(SSD1306_128x64);
+
+	TIM3_InitForPWM(20000);
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GpioPort_A 	 	= GPIOB;

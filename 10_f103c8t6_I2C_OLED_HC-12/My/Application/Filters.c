@@ -130,6 +130,65 @@ uint16_t Filter_EMAv2(uint32_t inVal){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+//DC removal filter
+//информация на сайте http://www.leoniv.diod.club/projects/audio/e-004/e-004_meter/e-004_meter.html
+
+//----------------------------------------------------------------------------
+//-------------------------------- Macros: -----------------------------------
+#define LO(x)    ((uint8_t) (((x) >> 0) & 0xFF)) // ((x) & 0xFF))
+#define HI(x)    ((uint8_t) (((x) >> 8) & 0xFF))
+
+#define LO_W(x)  ((uint16_t)(((x) >>  0) & 0xFFFF))  //((x) & 0xFFFF))
+#define HI_W(x)  ((uint16_t)(((x) >> 16) & 0xFFFF))
+#define SHL16(x) ((uint32_t)  (x) << 16)
+
+#define BYTE1(x) (LO(x))
+#define BYTE2(x) (HI(x))
+#define BYTE3(x) ((uint8_t)(((uint32_t)(x) >> 16) & 0xFF))
+#define BYTE4(x) ((uint8_t)(((uint32_t)(x) >> 24) & 0xFF))
+#define BYTE5(x) ((uint8_t)(((uint64_t)(x) >> 32) & 0xFF))
+#define BYTE6(x) ((uint8_t)(((uint64_t)(x) >> 40) & 0xFF))
+#define BYTE7(x) ((uint8_t)(((uint64_t)(x) >> 48) & 0xFF))
+#define BYTE8(x) ((uint8_t)(((uint64_t)(x) >> 56) & 0xFF))
+
+#define WORD(b1,b0)        (((uint16_t)(b1) << 8) | (b0))
+#define DWORD(b3,b2,b1,b0) (((uint32_t)WORD(b3,b2) << 16) | WORD(b1,b0))
+
+//#define ABS(x) ((x < 0)? -x : x)
+
+//----------------------------------------------------------------------------
+static const double PI = 3.14159265358979323846;
+
+static const uint32_t DCRF_ADC_FS = 167; //96000; //ADC Sampling frequency, Hz
+static const double   DCRF_FN     = 5.0;   //DC removal filter corner frequency, Hz
+static const double   DCRF_POLE   = 1.0 - 2.0 * PI * DCRF_FN / DCRF_ADC_FS;
+static const uint16_t DCRF_A      = (uint16_t)(DCRF_POLE * UINT16_MAX);
+
+//DC removal filter:
+static int32_t DCRF_acc   = 0; //DC removal filter accumulator
+static int16_t DCRF_in_1  = 0; //DC removal filter input value
+static int16_t DCRF_out_1 = 0; //DC removal filter output value
+
+int16_t DcRemovalFilter(uint16_t inVal){
+
+	int16_t DCRF_in = inVal; //*Pnt++;
+	DCRF_acc   = LO_W(DCRF_acc) + (int32_t)DCRF_out_1 * DCRF_A;
+	DCRF_out_1 = DCRF_in - DCRF_in_1 + HI_W(DCRF_acc);
+	DCRF_in_1  = DCRF_in;
+
+	return ABS(DCRF_out_1);
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
+
+
+
+
+
+
 
 
 

@@ -43,8 +43,7 @@ typedef struct{
 	GPIO_TypeDef *GpioPort_BUTTON;
 	uint32_t	  GpioPin_BUTTON;
 
-	uint32_t	  encoderNumber;
-	//------------
+	uint32_t	  		 encoderNumber;
 	EncoderState_t	  	 encoderState;
 	EncoderButtonState_t buttonState;
 }Encoder_t;
