@@ -641,8 +641,8 @@ void Task_LcdPageSelection(void){
 	static uint32_t pageIndex = 2;//0;
 	//--------------------
 	//Мигающая индикация.
-//	if(Blink(INTERVAL_100_mS))LED_PC13_On();
-//	else 					  LED_PC13_Off();
+	if(Blink(INTERVAL_100_mS))LED_PC13_On();
+	else 					  LED_PC13_Off();
 
 	//Перевод из мС в ЧЧ:ММ:СС
 	TIME_Calculation(&Time, RTOS_GetTickCount());
