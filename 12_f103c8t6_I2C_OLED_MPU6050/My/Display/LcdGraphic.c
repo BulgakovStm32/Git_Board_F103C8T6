@@ -206,14 +206,12 @@ void Lcd_GotoXYFont(uint8_t x, uint8_t y){
 //Displays a character at current cursor location and increment cursor location
 void Lcd_Chr(char ch){
   
-	unsigned char i;
-	//--------------------
 	//Проверка на максимум.
 	//if(ch > LCD_CACHE_SIZE) return;
 	//--------------------
 	UartTextBuffer[UartTextBufferIndex++] = (uint8_t)ch;
 
-	for (i=0; i<5; i++)
+	for(uint8_t i=0; i<5; i++)
 	{
 		//выделяем байт-столбик из символа и грузим в массив - 5 раз
 		lcdVideoBuffer[LcdCacheIdx++] = TabAscii[ch*5+i];
@@ -232,7 +230,7 @@ void Lcd_SetCursor(uint8_t x, uint8_t y){
 	}
 	//--------------------
 	Lcd_GotoXYFont (x, y);
-	for(uint8_t i  =0; i < (22-x); i++)
+	for(uint8_t i = 0; i < (22-x); i++)
 	{
 		if(lcdTextBuf[i]) Lcd_Chr(lcdTextBuf[i]);
 	}
@@ -241,33 +239,32 @@ void Lcd_SetCursor(uint8_t x, uint8_t y){
 //Displays a bold character at current cursor location and increment cursor location
 void Lcd_ChrBold(char ch){
   
-  unsigned char i;
-  unsigned char a = 0, b = 0, c = 0;
-  //--------------------    	
-  for(i = 0; i < 5; i++)
-    {
-      c = TabAscii[(ch*5+i)];//выделяем столбец из символа
+	unsigned char i;
+	unsigned char a = 0, b = 0, c = 0;
+	//--------------------
+	for(i = 0; i < 5; i++)
+	{
+		c = TabAscii[(ch*5+i)];//выделяем столбец из символа
 
-      b  = (c & 0x01) * 3;   //"растягиваем" столбец на два байта
-      b |= (c & 0x02) * 6;
-      b |= (c & 0x04) * 12;
-      b |= (c & 0x08) * 24;
+		b  = (c & 0x01) * 3;   //"растягиваем" столбец на два байта
+		b |= (c & 0x02) * 6;
+		b |= (c & 0x04) * 12;
+		b |= (c & 0x08) * 24;
 
-      c >>= 4;
-      a  = (c & 0x01) * 3;
-      a |= (c & 0x02) * 6;
-      a |= (c & 0x04) * 12;
-      a |= (c & 0x08) * 24;
+		c >>= 4;
+		a  = (c & 0x01) * 3;
+		a |= (c & 0x02) * 6;
+		a |= (c & 0x04) * 12;
+		a |= (c & 0x08) * 24;
 
-      lcdVideoBuffer[LcdCacheIdx]     = b;//копируем байты в экранный буфер
-      lcdVideoBuffer[LcdCacheIdx+1]   = b;//дублируем для получения жирного шрифта
-      lcdVideoBuffer[LcdCacheIdx+128] = a;
-      lcdVideoBuffer[LcdCacheIdx+129] = a;
-      LcdCacheIdx = LcdCacheIdx+2;
-    }
-
-  lcdVideoBuffer[LcdCacheIdx++] = 0x00;	//для пробела между символами
-  lcdVideoBuffer[LcdCacheIdx++] = 0x00;
+		lcdVideoBuffer[LcdCacheIdx]     = b;//копируем байты в экранный буфер
+		lcdVideoBuffer[LcdCacheIdx+1]   = b;//дублируем для получения жирного шрифта
+		lcdVideoBuffer[LcdCacheIdx+128] = a;
+		lcdVideoBuffer[LcdCacheIdx+129] = a;
+		LcdCacheIdx = LcdCacheIdx+2;
+	}
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;	//для пробела между символами
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;
 }
 //*****************************************************************************
 //Печатает символ на текущем месте, большой и жирный.
@@ -284,28 +281,28 @@ void Lcd_StringBold (unsigned char x, unsigned char y){
 //Displays a character at current cursor location and increment cursor location
 void Lcd_ChrBig (char ch){
   
-  unsigned char i;
-  unsigned char a = 0, b = 0, c = 0;
-  //-------------------- 
-  for ( i = 0; i < 5; i++ )
-    {
-      c = TabAscii[(ch*5+i)];		//выделяем столбец из символа
+	unsigned char i;
+	unsigned char a = 0, b = 0, c = 0;
+	//--------------------
+	for(i = 0; i < 5; i++)
+	{
+		c = TabAscii[(ch*5+i)];		//выделяем столбец из символа
 
-      b  = (c & 0x01) * 3;            //"растягиваем" столбец на два байта 
-      b |= (c & 0x02) * 6;
-      b |= (c & 0x04) * 12;
-      b |= (c & 0x08) * 24;
+		b  = (c & 0x01) * 3;            //"растягиваем" столбец на два байта
+		b |= (c & 0x02) * 6;
+		b |= (c & 0x04) * 12;
+		b |= (c & 0x08) * 24;
 
-      c >>= 4;
-      a  = (c & 0x01) * 3;
-      a |= (c & 0x02) * 6;
-      a |= (c & 0x04) * 12;
-      a |= (c & 0x08) * 24;
-      lcdVideoBuffer[LcdCacheIdx] = b;
-      lcdVideoBuffer[LcdCacheIdx+128] = a;
-      LcdCacheIdx = LcdCacheIdx+1;
-    }
-  lcdVideoBuffer[LcdCacheIdx++] = 0x00;
+		c >>= 4;
+		a  = (c & 0x01) * 3;
+		a |= (c & 0x02) * 6;
+		a |= (c & 0x04) * 12;
+		a |= (c & 0x08) * 24;
+		lcdVideoBuffer[LcdCacheIdx] = b;
+		lcdVideoBuffer[LcdCacheIdx+128] = a;
+		LcdCacheIdx = LcdCacheIdx+1;
+	}
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;
 }
 //*****************************************************************************
 //Displays a string at current cursor location
@@ -316,101 +313,112 @@ void Lcd_StringBig (unsigned char x, unsigned char y){
 	if (x > 22 && y > 5) return;
 	Lcd_GotoXYFont(x, y);
 	for(i=0; i<(22-x); i++)
-		{
-			if(lcdTextBuf[i]) Lcd_ChrBig(lcdTextBuf[i]);
-		}
+	{
+		if(lcdTextBuf[i]) Lcd_ChrBig(lcdTextBuf[i]);
+	}
 	ClearTextBuf();
 }
 //*****************************************************************************
 uint8_t Lcd_Print(char *txt){
   
-  uint8_t i = 0;
-  //-------------------- 
-  ClearTextBuf();
-  while(*txt)
-    {
-      Lcd_Chr(*txt++);
-      i++;  
-    } 
-  return i;
+	uint8_t i = 0;
+	//--------------------
+	ClearTextBuf();
+	while(*txt)
+	{
+		Lcd_Chr(*txt++);
+		i++;
+	}
+	return i;
 }
 //*****************************************************************************
 uint8_t Lcd_PrintBold(char *txt){
 
-  uint8_t i = 0;
-  //--------------------
-  ClearTextBuf();
-  while(*txt)
-    {
-      Lcd_ChrBold(*txt++);
-      i++;
-    }
-  return i;
+	uint8_t i = 0;
+	//--------------------
+	ClearTextBuf();
+	while(*txt)
+	{
+		Lcd_ChrBold(*txt++);
+		i++;
+	}
+	return i;
 }
 //*****************************************************************************
 uint8_t Lcd_PrintBig(char *txt){
 
-  uint8_t i = 0;
-  //--------------------
-  ClearTextBuf();
-  while(*txt)
-    {
-      Lcd_ChrBig(*txt++);
-      i++;
-    }
-  return i;
+	uint8_t i = 0;
+	//--------------------
+	ClearTextBuf();
+	while(*txt)
+	{
+		Lcd_ChrBig(*txt++);
+		i++;
+	}
+	return i;
 }
 //*****************************************************************************
 //вывод изображения.
 void Lcd_Image(const uint8_t *imageData){
 
-  for(uint16_t i=0; i < LCD_VIDEO_BUFFER_SIZE; i++)
-    {
-	  lcdVideoBuffer[i] = imageData[1023 - i];	//грузим данные
-	  //lcdVideoBuffer[i] = imageData[i];	//грузим данные
-    }
+	for(uint32_t i=0; i < LCD_VIDEO_BUFFER_SIZE; i++)
+	{
+		lcdVideoBuffer[i] = imageData[1023 - i];	//грузим данные
+		//lcdVideoBuffer[i] = imageData[i];	//грузим данные
+	}
 }
 //*****************************************************************************
 uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize){
 
-	uint8_t	temp;
-	uint8_t decArray[10];
+	#define DEC_ARR_SIZE 10
+
+	uint8_t  decArray[DEC_ARR_SIZE];
+	//uint8_t	 temp;
+	uint32_t div = 1000000000;
 	//--------------------
 	//Преобразование числа в строку.
-	decArray[9] = (uint8_t)(var/1000000000);
-	var %= 1000000000;
+	for(uint32_t i = DEC_ARR_SIZE; i > 0; i--)
+	{
+		decArray[i-1] = (uint8_t)(var/div);
+		var %= div;
+		div /= 10;
+	}
 
-	decArray[8] = (uint8_t)(var/100000000);
-	var %= 100000000;
-
-	decArray[7] = (uint8_t)(var/10000000);
-	var %= 10000000;
-
-	decArray[6] = (uint8_t)(var/1000000);
-	var %= 1000000;
-
-	decArray[5] = (uint8_t)(var/100000);
-	var %= 100000;
-
-	decArray[4] = (uint8_t)(var/10000);
-	var %= 10000;
-
-	decArray[3] = (uint8_t)(var/1000);
-	var %= 1000;
-
-	decArray[2] = (uint8_t)(var/100);
-	var %= 100;
-
-	decArray[1] = (uint8_t)(var/10);
-	decArray[0] = (uint8_t)(var%10);
+//	//Преобразование числа в строку. - старый вариант.
+//	decArray[9] = (uint8_t)(var/1000000000);
+//	var %= 1000000000;
+//
+//	decArray[8] = (uint8_t)(var/100000000);
+//	var %= 100000000;
+//
+//	decArray[7] = (uint8_t)(var/10000000);
+//	var %= 10000000;
+//
+//	decArray[6] = (uint8_t)(var/1000000);
+//	var %= 1000000;
+//
+//	decArray[5] = (uint8_t)(var/100000);
+//	var %= 100000;
+//
+//	decArray[4] = (uint8_t)(var/10000);
+//	var %= 10000;
+//
+//	decArray[3] = (uint8_t)(var/1000);
+//	var %= 1000;
+//
+//	decArray[2] = (uint8_t)(var/100);
+//	var %= 100;
+//
+//	decArray[1] = (uint8_t)(var/10);
+//	decArray[0] = (uint8_t)(var%10);
 	//--------------------
 	//Вывод на дисплей
 	for(uint32_t i = 0; i < num; i++)
 	{
-		temp = 0x30 + decArray[(num - 1) - i];
-			 if(charSize == LCD_CHAR_SIZE_BIG) Lcd_ChrBig(temp);
-		else if(charSize == LCD_CHAR_SIZE_BOLD)Lcd_ChrBold(temp);
-		else					     		   Lcd_Chr(temp);
+		var = 0x30 + decArray[(num - 1) - i];
+			 if(charSize == LCD_CHAR_SIZE_BIG) Lcd_ChrBig((uint8_t)var);
+		else if(charSize == LCD_CHAR_SIZE_BOLD)Lcd_ChrBold((uint8_t)var);
+		else					     		   Lcd_Chr((uint8_t)var);
 	}
 	return num+1;
 }

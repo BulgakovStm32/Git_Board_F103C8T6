@@ -69,7 +69,7 @@ void Config_Init(void){
 	{
 		//Запись заводских установок во флеш.
 		dataForFLASH.config.checkKey = CONFIG_CHECK_KEY_DEFINE;
-		strcpy(dataForFLASH.config.name, "SyntSi5351");
+		strcpy(dataForFLASH.config.name, "IMU_MPU6050");
 		dataForFLASH.config.stepFreq = 1000;
 		dataForFLASH.config.xtalFreq = SI5351_XTAL_FREQ_DEFAULT;
 		dataForFLASH.config.timeUTC  = 1000;

@@ -106,30 +106,43 @@ static uint32_t _oneWire_ReadData(GPIO_TypeDef *const port, uint32_t pin, uint32
 //*******************************************************************************************
 static void _ds18b20_ReadScratchPad(DS18B20_t *sensor){
 
-	int16_t temperature;
-	uint8_t crcCalc = 0;
+	int16_t tempReg;
+	uint8_t crcCalc;
 	//---------------------
 	//Чтение блокнота (9 байт) из DS18B20
 	for(uint32_t i = 0; i < 9; i++)
 	{
-		sensor->ScratchPad.Blk[i]= _oneWire_ReadData(sensor->GPIO_PORT, sensor->GPIO_PIN, 8);
+		sensor->scratchPad.Blk[i]= _oneWire_ReadData(sensor->GPIO_PORT, sensor->GPIO_PIN, 8);
 	}
 	//Проверка CRC
-	crcCalc = CRC8_TableOneWire(sensor->ScratchPad.Blk, 8);
-	if(sensor->ScratchPad.Str.Crc != crcCalc) return;
+	crcCalc = CRC8_TableOneWire(sensor->scratchPad.Blk, 8);
+	if(sensor->scratchPad.Str.Crc != crcCalc) return;
 	//Собираем температуру.
-	temperature = (sensor->ScratchPad.Str.Temperature_MSB << 8) |
-				   sensor->ScratchPad.Str.Temperature_LSB;
-	//Знак температуры.
-	if(temperature < 0)
-	{
-		sensor->TemperatureSign = DS18B20_SIGN_NEGATIVE;
-		temperature  = (temperature ^ 0xFFFF) + 1;
-		temperature &= 0x0FFF;//Маска для выделения 12 бит.???Возможно не нужна.
-	}
-	else sensor->TemperatureSign = DS18B20_SIGN_POSITIVE;
+	tempReg = (sensor->scratchPad.Str.Temperature_MSB << 8) |
+			   sensor->scratchPad.Str.Temperature_LSB;
+	//Смотрим какое разрешение
+	#define DS18B20_SCALE_9_bit  (uint16_t)(0.5    * 10000) // 9 бит - 0,5    градуса
+	#define DS18B20_SCALE_10_bit (uint16_t)(0.25   * 10000) //10 бит - 0,25   градуса
+	#define DS18B20_SCALE_11_bit (uint16_t)(0.125  * 10000) //11 бит - 0,125  градуса
+	#define DS18B20_SCALE_12_bit (uint16_t)(0.0625 * 10000) //12 бит - 0,0625 градуса
+
+//	     if(resolution == DS18B20_Resolution_9_bit)  scale = DS18B20_SCALE_9_bit;
+//	else if(resolution == DS18B20_Resolution_10_bit) scale = DS18B20_SCALE_10_bit;
+//	else if(resolution == DS18B20_Resolution_11_bit) scale = DS18B20_SCALE_11_bit;
+//	else if(resolution == DS18B20_Resolution_12_bit) scale = DS18B20_SCALE_12_bit;
+
+	//Расчет температуры. Два знака после запятой.
+	sensor->temperature = (tempReg * DS18B20_SCALE_12_bit + 50) / 100;
+
+//	//Знак температуры.
+//	if(temperature < 0)
+//	{
+//		sensor->sign = DS18B20_SIGN_NEGATIVE;
+//		temperature = -temperature;
+//	}
+//	else sensor->sign = DS18B20_SIGN_POSITIVE;
 	//Расчет температуры
-	sensor->Temperature = (uint32_t)(((temperature * 625) + 500) / 1000);
+//	sensor->temperature = (uint32_t)(((temperature * 625) + 500) / 1000);
 }
 //**********************************************************
 /*! \brief  Sends the SEARCH ROM command and returns 1 id found on the
@@ -261,14 +274,14 @@ static void _ds18b20_SetResolution(DS18B20_t *sensor){
 	_oneWire_WriteByte(port, pin, WRITE_SCRATCHPAD);
 	_oneWire_WriteByte(port, pin, TH_REGISTER);
 	_oneWire_WriteByte(port, pin, TL_REGISTER);
-	_oneWire_WriteByte(port, pin, sensor->Resolution);
+	_oneWire_WriteByte(port, pin, sensor->resolution);
 }
 //**********************************************************
 static void _ds18b20_Init(DS18B20_t *sensor){
 
 	_ds18b20_GpioInit(sensor);
 	_ds18b20_SetResolution(sensor);
-	sensor->Temperature = 0xFFFFFFFF;
+	sensor->temperature = -255;
 }
 //**********************************************************
 static void _ds18b20_StartConvertTemperature(DS18B20_t *sensor){
@@ -288,7 +301,7 @@ static void _ds18b20_ReadTemperature(DS18B20_t *sensor){
 	//---------------------
 	if(_oneWire_ResetAndPresencePulse(port, pin)) //Нет сигнала присутсвия на шине - выходим.
 	{
-		//sensor->Temperature = 0;
+		sensor->temperature = -255;
 		return;
 	}
 	_oneWire_WriteByte(port, pin, SKIP_ROM);
@@ -305,19 +318,19 @@ static DS18B20_t TemperatureSensor_2;
 //*******************************************************************************************
 void TEMPERATURE_SENSE_Init(void){
 
-	TemperatureSensor_1.SensorNumber = 1;
-	TemperatureSensor_1.GPIO_PORT    = GPIOB;
-	TemperatureSensor_1.GPIO_PIN     = 14;
-	TemperatureSensor_1.Resolution   = DS18B20_Resolution_12_bit;
+	TemperatureSensor_1.sensNumber   = 1;
+	TemperatureSensor_1.GPIO_PORT    = GPIOA;
+	TemperatureSensor_1.GPIO_PIN     = 1;
+	TemperatureSensor_1.resolution   = DS18B20_Resolution_12_bit;
 	_ds18b20_Init(&TemperatureSensor_1);
 	_ds18b20_StartConvertTemperature(&TemperatureSensor_1);
 
-	TemperatureSensor_2.SensorNumber = 2;
-	TemperatureSensor_2.GPIO_PORT    = GPIOB;
-	TemperatureSensor_2.GPIO_PIN     = 15;
-	TemperatureSensor_2.Resolution   = DS18B20_Resolution_12_bit;
-	_ds18b20_Init(&TemperatureSensor_2);
-	_ds18b20_StartConvertTemperature(&TemperatureSensor_2);
+//	TemperatureSensor_2.SensorNumber = 2;
+//	TemperatureSensor_2.GPIO_PORT    = GPIOB;
+//	TemperatureSensor_2.GPIO_PIN     = 15;
+//	TemperatureSensor_2.Resolution   = DS18B20_Resolution_12_bit;
+//	_ds18b20_Init(&TemperatureSensor_2);
+//	_ds18b20_StartConvertTemperature(&TemperatureSensor_2);
 }
 //**********************************************************
 void TEMPERATURE_SENSE1_ReadTemperature(void){
@@ -345,10 +358,10 @@ void TEMPERATURE_SENSE_BuildPack(uint32_t numSensor, uint8_t *buf){
 	else if(numSensor == 2) sensor = &TemperatureSensor_2;
 	else return;
 
-	buf[0] = (uint8_t) sensor->TemperatureSign;
-	buf[1] = (uint8_t)(sensor->Temperature >> 8);
-	buf[2] = (uint8_t) sensor->Temperature;
-	buf[3] = (uint8_t) sensor->SensorNumber; // sensorsNum
+//	buf[0] = (uint8_t) sensor->TemperatureSign;
+//	buf[1] = (uint8_t)(sensor->Temperature >> 8);
+//	buf[2] = (uint8_t) sensor->Temperature;
+//	buf[3] = (uint8_t) sensor->SensorNumber; // sensorsNum
 }
 //*******************************************************************************************
 //*******************************************************************************************

@@ -73,12 +73,14 @@ typedef union{
 typedef struct{
 	GPIO_TypeDef		   *GPIO_PORT;
 	uint32_t	  			GPIO_PIN;
-	uint32_t				SensorNumber;	 //SENSOR_NUMBER;
-	DS18B20_Resolution_Enum Resolution;  	 //RESOLUTION;
-	DS18B20_ScratchPad_t	ScratchPad;		 //
-	uint32_t				TemperatureSign; //TEMPERATURE_SIGN;
-	uint32_t				Temperature;     //TEMPERATURE;
+	uint32_t				sensNumber;   //SENSOR_NUMBER;
+	DS18B20_Resolution_Enum resolution;   //RESOLUTION;
+	DS18B20_ScratchPad_t	scratchPad;	  //
+//	uint32_t				sign;         //TEMPERATURE_SIGN;
+//	uint32_t				temperature;  //TEMPERATURE;
+	int32_t					temperature;
 }DS18B20_t;
+//#pragma pack(pop)//вернули предыдущую настройку.
 //*******************************************************************************************
 //*******************************************************************************************
 void TEMPERATURE_SENSE_Init(void);
