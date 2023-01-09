@@ -63,7 +63,7 @@ uint16_t Filter_SMA(uint16_t inValue){
 	}
 	outVal = (outVal + SMA_WINDOW_SIZE/2) / SMA_WINDOW_SIZE;
 	//сдвинем масив на один элемент влево.
-	for(uint16_t i = 0; i < SMA_WINDOW_SIZE; i++)
+	for(uint16_t i = 0; i < SMA_WINDOW_SIZE+1; i++)
 	{
 		filterBuf[i] = filterBuf[i+1];
 	}

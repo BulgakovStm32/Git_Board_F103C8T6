@@ -3,7 +3,6 @@
 	<name>f103c8t6_I2C_OLED_SI5351</name>
 	<comment></comment>
 	<projects>
-		<project>f103c8t6_I2C_OLED_SI5351</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -1,10 +1,12 @@
 /*
  * 	main.c
  *
- *  Created on: 3 января 2023 года.
+ *  Created on: 19 октября 2021 года.
  *  Autho     : Беляев А.А.
  *
- *	Описание        :Работа с синтезатором Si5351
+ *	Описание        :
+ *  Датчики         :
+ *  Вывод информации:
  *
  */
 //*******************************************************************************************
@@ -15,14 +17,22 @@
 //*******************************************************************************************
 //*******************************************************************************************
 Time_t	  Time;
+
+DS18B20_t Sensor_1;
+DS18B20_t Sensor_2;
+DS18B20_t Sensor_3;
+
+DS2782_t  DS2782;
+
 Encoder_t Encoder;
 
-//DS18B20_t Sensor_1;
-//DS18B20_t Sensor_2;
-//DS18B20_t Sensor_3;
-//DS2782_t  DS2782;
+I2C_IT_t I2cDma;
+
+static uint32_t ButtonPressCount = 0;
+static uint32_t hc12_BaudRate    = 123;
 
 static uint32_t redaction = 0;
+
 //Работа с Si5351
 static uint32_t si5351_xtalFreq	= 0;
 static uint32_t si5351_stepFreq = 0;
@@ -183,6 +193,40 @@ uint32_t Led_Blink(uint32_t millis, uint32_t period, uint32_t switch_on_time){
 	return flag;
 }
 //************************************************************
+void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
+
+	uint32_t temperature = sensor->Temperature;
+	uint32_t sensorNum   = sensor->SensorNumber;
+	//-------------------
+	Lcd_SetCursor(cursor_x, cursor_y);
+	Lcd_Print("Sens");
+	Lcd_BinToDec(sensorNum, 1, LCD_CHAR_SIZE_NORM);
+	Lcd_Print("= ");
+	if(TEMPERATURE_SENSE_GetSens(sensorNum)->TemperatureSign == DS18B20_SIGN_NEGATIVE)Lcd_Chr('-');
+	else                    														  Lcd_Chr('+');
+	Lcd_BinToDec(temperature/10, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_Chr('.');
+	Lcd_BinToDec(temperature%10, 1, LCD_CHAR_SIZE_NORM);
+	Lcd_Print("o ");
+	Lcd_Chr('C');
+}
+//************************************************************
+void Temperature_TxtDisplay(DS18B20_t *sensor){
+
+	uint32_t temperature = sensor->Temperature;
+	uint32_t sensorNum   = sensor->SensorNumber;
+	//-------------------
+	Txt_Print("Sens");
+	Txt_BinToDec(sensorNum, 1);
+	Txt_Print("= ");
+	if(TEMPERATURE_SENSE_GetSens(sensorNum)->TemperatureSign == DS18B20_SIGN_NEGATIVE)Txt_Chr('-');
+	else                    														  Txt_Chr('+');
+	Txt_BinToDec(temperature/10, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(temperature%10, 1);
+	Txt_Print(" C\n");
+}
+//************************************************************
 void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 
 	//Вывод времени.
@@ -195,6 +239,168 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 	if(Time.sec & 1) Lcd_Chr(':');//Мигание разделительным знаком
 	else			 Lcd_Chr(' ');
 	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM);//секунды
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void Task_Temperature_Read(void){
+
+//	TemperatureSens_ReadTemperature(&Sensor_1);
+//	TemperatureSens_ReadTemperature(&Sensor_2);
+//	TemperatureSens_ReadTemperature(&Sensor_3);
+}
+//************************************************************
+void Task_Temperature_Display(void){
+
+//	static char xtxBuf[32] = {0};
+	//-------------------
+	Lcd_ClearVideoBuffer();
+
+	//Шапка
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("_HC-12_");
+	//Вывод времени.
+	Time_Display(14, 1);
+
+	//Скорсть обмена с модулем HС-12
+	Lcd_SetCursor(1, 3);
+	Lcd_Print("BaudRate = ");
+	Lcd_BinToDec(hc12_BaudRate, 6, LCD_CHAR_SIZE_NORM);
+
+	//Вывод принятой строки
+//	RING_BUFF_CopyRxBuff(xtxBuf);//копирование принятых данных
+//	Lcd_SetCursor(1, 4);
+//	Lcd_Print(xtxBuf);
+
+
+	//Значение энкодера MCUv7.
+//	Lcd_SetCursor(1, 4);
+//	Lcd_Print("MCU_Enc  = ");
+//	Lcd_BinToDec(MCUv7_EncoderVal, 6, LCD_CHAR_SIZE_NORM);
+
+//	Lcd_SetCursor(1, 5);
+//	Lcd_Print("MCU_Sense= ");
+//	Lcd_u32ToHex(MCUv7_Sense);
+//	Lcd_BinToDec(MCUv7_EncoderVal, 6, LCD_CHAR_SIZE_NORM);
+
+	//Енкодер.
+//	static uint16_t tempReg = 0;
+//	Encoder_IncDecParam(&Encoder, &tempReg, 5, 0, 100);
+//	TIM3->CCR1 = tempReg; //Задаем коэф-т заполнения.
+
+//	Lcd_SetCursor(1, 6);
+//	Lcd_Print("Encoder=");
+//	Lcd_BinToDec(tempReg, 4, LCD_CHAR_SIZE_NORM);
+
+	//PID
+//	Lcd_SetCursor(1, 8);
+//	Lcd_Print("PID_Out=");
+//	if(PIDcontrol < 0)
+//	{
+//		PIDcontrol = (PIDcontrol ^ 0xFFFF) + 1;//Уберем знак.
+//		Lcd_Chr('-');
+//	}
+//	else Lcd_Chr(' ');
+//	Lcd_BinToDec((uint16_t)PIDcontrol, 4, LCD_CHAR_SIZE_NORM);
+
+//	//Вывод темперетуры DS18B20.
+//	Sensor_1.SENSOR_NUMBER    = 1;
+//	Sensor_1.TEMPERATURE_SIGN = I2CRxBuf[0];
+//	Sensor_1.TEMPERATURE  	  = (uint32_t)((I2CRxBuf[1] << 8) | I2CRxBuf[2]);
+//
+//	Sensor_2.SENSOR_NUMBER    = 2;
+//	Sensor_2.TEMPERATURE_SIGN = I2CRxBuf[3];
+//	Sensor_2.TEMPERATURE      = (uint32_t)((I2CRxBuf[4] << 8) | I2CRxBuf[5]);
+//
+//	Sensor_3.SENSOR_NUMBER    = 3;
+//	Sensor_3.TEMPERATURE_SIGN = I2CRxBuf[6];
+//	Sensor_3.TEMPERATURE      = (uint32_t)((I2CRxBuf[7] << 8) | I2CRxBuf[8]);
+
+//	Temperature_Display(&Sensor_1, 1, 6);
+//	Temperature_Display(&Sensor_2, 1, 7);
+//	Temperature_Display(&Sensor_3, 1, 6);
+	//Кнопка энкодера.
+	IncrementOnEachPass(&ButtonPressCount, ENCODER_GetButton(&Encoder), 1, 100);
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("Button=");
+	Lcd_BinToDec(ButtonPressCount, 4, LCD_CHAR_SIZE_NORM);
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void Task_HC12(void){
+
+	//--------------------------------
+	Txt_Chr('\f');
+
+	Txt_Print("******************\n");
+
+	Txt_Print("_MCUv7_(+BT)\n");
+
+	Txt_Print("Time: ");
+	Txt_BinToDec(Time.hour, 2);//часы
+	Txt_Chr(':');
+	Txt_BinToDec(Time.min, 2); //минуты
+	Txt_Chr(':');
+	Txt_BinToDec(Time.sec, 2); //секунды
+	Txt_Chr('\n');
+
+	//Вывод темперетуры DS18B20.
+	Temperature_TxtDisplay(&Sensor_1);
+	Temperature_TxtDisplay(&Sensor_2);
+	Temperature_TxtDisplay(&Sensor_3);
+	//Txt_Chr('\n');
+
+	//--------------------------------
+	//Вывод данных DS2782.
+	//Вывод адреса на шине I2C
+	Txt_Chr('\n');
+	Txt_Print("DS2782_I2C_ADDR:");
+	Txt_Print("0x");
+	Txt_u8ToHex(DS2782.I2C_Address);
+	Txt_Chr('\n');
+
+	//Вывод температуры.
+	Txt_Print("Bat_T=");
+	Txt_BinToDec(DS2782.Temperature/10, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(DS2782.Temperature%10, 1);
+	Txt_Print(" C");
+	Txt_Chr('\n');
+
+	//Вывод напряжения на АКБ.
+	Txt_Print("Bat_U=");
+	Txt_BinToDec(DS2782.Voltage/100, 2);
+	Txt_Chr('.');
+	Txt_BinToDec(DS2782.Voltage%100, 2);
+	Txt_Chr('V');
+	Txt_Chr('\n');
+
+	//Вывод тока потребления от АКБ.
+	Txt_Print("Bat_I  =");
+	if(DS2782.Current < 0)
+	{
+		DS2782.Current = (DS2782.Current ^ 0xFFFF) + 1;//Уберем знак.
+		Txt_Chr('-');
+	}
+	else Txt_Chr(' ');
+	Txt_BinToDec(DS2782.Current, 4);
+	Txt_Print("mA");
+	Txt_Chr('\n');
+	Txt_Chr('\n');
+
+	//Количество нажатий на кнопку.
+	Txt_Print("ButtonPress=");
+	Txt_BinToDec(ButtonPressCount, 4);
+
+	Txt_Chr('\n');
+	Txt_Print("******************123456\n");
+	//--------------------------------
+	//USART2_TX -> DMA1_Channel7
+	DMAxChxStartTx(DMA1_Channel7, Txt_Buf()->buf, Txt_Buf()->bufIndex);
+	Txt_Buf()->bufIndex = 0;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -325,6 +531,69 @@ void Task_SI5351_Display(void){
 	//Горизонтальная шкала
 	Lcd_HorizontalProgressBar(2, 0, 50);
 }
+//************************************************************
+void Task_AnalogMeter(void){
+
+	//-------------------
+	//Очистка видеобуфера.
+	Lcd_ClearVideoBuffer();
+	//Шапка
+//	Lcd_SetCursor(1, 1);
+//	Lcd_Print("AnalogMeter");
+//	//Вывод времени.
+	Time_Display(14, 1);
+	//-------------------
+	//Расчет процентов заряда АКБ
+//	uint8_t batPercent = Battery_GetPercentCharge();
+	//-------------------
+	//Энкодер
+//	static uint32_t angle = 90;
+//	ENCODER_IncDecParam(&Encoder, &angle, 1, 50 , 132);
+//	Lcd_PrintStringAndNumber(1, 1, "Angle: ", angle, 3);
+	//-------------------
+	uint16_t meas = ADC_GetMeas(8);
+
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("Meas= ");
+	Lcd_BinToDec(meas, 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 2);
+	Lcd_Print("Sma1= ");
+	Lcd_BinToDec(Filter_SMA(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 3);
+	Lcd_Print("Sma2= ");
+	Lcd_BinToDec(Filter_SMAv2(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("Ema1= ");
+	Lcd_BinToDec(Filter_EMA(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 5);
+	Lcd_Print("Ema2= ");
+	Lcd_BinToDec(Filter_EMAv2(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 6);
+	Lcd_Print("Avr = ");
+	Lcd_BinToDec(Filter_Average(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 7);
+	Lcd_Print("LPF = ");
+	Lcd_BinToDec(Filter_LowPass(meas), 4, LCD_CHAR_SIZE_NORM);
+
+	Lcd_SetCursor(1, 8);
+	Lcd_Print("DCR = ");
+	Lcd_BinToDec(DcRemovalFilter(meas), 4, LCD_CHAR_SIZE_NORM);
+	//-------------------
+	//Аналговая стрелочная шкала.
+	//uint32_t temp = map_I32(angle, 1, 100, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
+//	uint32_t temp = map_I32(ADC_GetMeas(8), 0, 3300, ANALOG_SCALE_ANGLE_MIN, ANALOG_SCALE_ANGLE_MAX);
+//	Lcd_AnalogScale((uint8_t)temp);
+//
+//	//Горизонтальная шкала с рисками.
+//	temp = map_I32(ADC_GetMeas(8), 0, 3300, 0, 100);
+//	Lcd_HorizontalProgressBar(3, 48, temp);
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -369,11 +638,11 @@ uint32_t BUTTON_LongPress(uint32_t butState, uint32_t delay){
 //************************************************************
 void Task_LcdPageSelection(void){
 
-	static uint32_t pageIndex = 0;
+	static uint32_t pageIndex = 2;//0;
 	//--------------------
 	//Мигающая индикация.
-	if(Blink(INTERVAL_100_mS))LED_PC13_On();
-	else 					  LED_PC13_Off();
+//	if(Blink(INTERVAL_100_mS))LED_PC13_On();
+//	else 					  LED_PC13_Off();
 
 	//Перевод из мС в ЧЧ:ММ:СС
 	TIME_Calculation(&Time, RTOS_GetTickCount());
@@ -382,7 +651,7 @@ void Task_LcdPageSelection(void){
 	if(BUTTON_LongPress(ENCODER_GetButton(&Encoder), 2000)) pageIndex ^= 1;
 
 	//Если на какой-то странице производится редактирование то выбор страницы запрешен
-	//if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 3);//Выбор сраницы
+//	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 3);//Выбор сраницы
 	switch(pageIndex){
 		//--------------------
 		case 0:
@@ -394,6 +663,18 @@ void Task_LcdPageSelection(void){
 		case 1:
 			RTOS_SetTask(Task_SI5351,         0, 0);
 			RTOS_SetTask(Task_SI5351_Setting, 0, 0);
+		break;
+		//--------------------
+		case 2:
+			RTOS_SetTask(Task_AnalogMeter, 0, 0);
+//			LED_PC13_On();
+//			Task_AnalogMeter();
+//			LED_PC13_Off();
+		break;
+		//--------------------
+		case 3:
+			RTOS_SetTask(Task_Temperature_Read,    0, 0);
+			RTOS_SetTask(Task_Temperature_Display, 0, 0);
 		break;
 		//--------------------
 		default:
@@ -419,23 +700,30 @@ int main(void){
 	SYS_TICK_Init();
 	GPIO_Init();
 	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+	ADC_Init();
 
 	DELAY_Init();
 	DELAY_milliS(500);//Эта задержка нужна для стабилизации напряжения патания.
 					  //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Чтение настроек
-	Config_Init();
+//	Config_Init();
 
 	//Инициализация Si5351 (I2C1).
-	si5351_stepFreq = Config()->stepFreq;
-	si5351_xtalFreq = Config()->xtalFreq;
-	Si5351_Init();
-	Si5351_SetXtalFreq(si5351_xtalFreq);
-	Si5351_SetF0(si5351_freq);
+//	si5351_stepFreq = Config()->stepFreq;
+//	si5351_xtalFreq = Config()->xtalFreq;
+//	Si5351_Init();
+//	Si5351_SetXtalFreq(si5351_xtalFreq);
+//	Si5351_SetF0(si5351_freq);
+//
+//	//Инициализация HC-12 (USART2).
+//	HC12_Init(HC12_BAUD_RATE_57600);
+//	hc12_BaudRate = HC12_GetBaudRate();
 
 	//Инициализация OLED SSD1306 (I2C1).
 	SSD1306_Init(SSD1306_128x64);
+
+	TIM3_InitForPWM(20000);
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GpioPort_A 	 	= GPIOB;
@@ -448,7 +736,10 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
+//	RTOS_SetTask(Lcd_Update, 			0, 5); //Обновление изображения на экране каждые 10мс
 	RTOS_SetTask(Task_LcdPageSelection, 0, 6);
+//	RTOS_SetTask(Task_HC12,      		0, 1000);
+//	RTOS_SetTask(Config_SaveLoop, 	    0, 1000);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();
