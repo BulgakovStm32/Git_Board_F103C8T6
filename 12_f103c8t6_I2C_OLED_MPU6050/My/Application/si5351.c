@@ -20,156 +20,23 @@
  * option) any later version.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+//#include <stdio.h>
+//#include <stdint.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <math.h>
 
 #include "si5351.h"
 //#include "config.h"
 //#include "rational.h"
 //#include "font.h"
 //#include "crash.h"
-
+//*******************************************************************************************
+//*******************************************************************************************
 struct Si5351Status 	dev_status;
 struct Si5351IntStatus 	dev_int_status;
+static uint32_t 		si5351xtalFreq = SI5351_XTAL_FREQ_DEFAULT;
 
-static uint32_t si5351xtalFreq = SI5351_XTAL_FREQ_DEFAULT;
-/******************************/
-/* Suggested private functions */
-/******************************/
-static uint8_t si5351_read_device_reg(uint8_t reg) __attribute__((unused));
-static void    set_multisynth_alt(uint32_t freq, enum si5351_clock clk);
-static uint8_t si5351_write_bulk(uint8_t, uint8_t, uint8_t *);
-static uint8_t si5351_write(uint8_t, uint8_t);
-static uint8_t si5351_read(uint8_t, uint8_t *);
-static void    si5351_set_clk_control(enum si5351_clock, enum si5351_pll, int isIntegerMode, enum si5351_drive drive);
-static void    si5351_set_pll(uint32_t a, uint32_t b, uint32_t c, enum si5351_pll pll);
-static void    si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, enum si5351_clock clk);
-//static uint8_t si5351_detect_address(void);
-
-//*******************************************************************************************
-//*******************************************************************************************
-/******************************/
-/* Suggested public functions */
-/******************************/
-/*
- * si5351_Init(void)
- *
- * Call this to initialize I2C communications and get the
- * Si5351 ready for use.
- */
-void Si5351_Init(void){
-
-	if(!Si5351_Check()) return;
-
-	//Disable all outputs
-    si5351_write(SI5351_OUTPUT_ENABLE_CTRL, 0xFF);
-
-    //Powerdown all output drivers
-    uint8_t a;
-    for(a = SI5351_CLK0_CTRL; a <= SI5351_CLK0_CTRL; a++)
-    {
-        si5351_write(a, SI5351_CLK_POWERDOWN);
-    }
-
-    // Set crystal load capacitance
-    //si5351_write(SI5351_CRYSTAL_LOAD, ((CFG_GetParam(CFG_PARAM_SI5351_CAPS) & 3) << 6) | 0x12); //Bits 5:0 should be written as 0x12
-    si5351_write(SI5351_CRYSTAL_LOAD, SI5351_CRYSTAL_LOAD_8PF);
-
-    //Set input source
-    si5351_write(SI5351_PLL_INPUT_SOURCE, 0); // Input source is XTAL for both PLLs, CLK not divided
-
-    //Disable spread spectrum (value after reset is unknown), including the entire range of SS registers
-    for(a = SI5351_SSC_PARAM0; a <= SI5351_SSC_PARAM12; a++)
-    {
-        si5351_write(a, 0);
-    }
-
-    //Disable fanout (initial value is unknown)
-    si5351_write(SI5351_FANOUT_ENABLE, 0);
-}
-//************************************************************
-uint32_t Si5351_Check(void){
-
-	return I2C_Master_CheckSlave(SI5351_I2C, SI5351_I2C_ADDR);
-}
-//************************************************************
-/*
- * si5351_SetFreq(uint32_t freq, enum si5351_clock output)
- *
- * Sets the clock frequency of the specified CLK output
- *
- * freq - Output frequency in Hz
- * clk - Clock output
- *   (use the si5351_clock enum)
- */
-void Si5351_SetFreq(uint32_t freq, enum si5351_clock clk){
-
-	set_multisynth_alt(freq, clk);
-}
-//************************************************************
-/*
- * si5351_ClockEnable(enum si5351_clock clk, uint8_t enable)
- *
- * Enable or disable a chosen clock
- * clk - Clock output
- *   (use the si5351_clock enum)
- * enable - Set to 1 to enable, 0 to disable
- */
-void Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable){
-
-	uint8_t reg_val = 0;
-	//-------------------
-    if(si5351_read(SI5351_OUTPUT_ENABLE_CTRL, &reg_val) != 0)
-    {
-        return;
-    }
-
-    if(enable == SI5351_CLOCK_ENABLE)reg_val &= ~(1<<(uint8_t)clk);
-    else		   					 reg_val |=  (1<<(uint8_t)clk);
-
-    si5351_write(SI5351_OUTPUT_ENABLE_CTRL, reg_val);
-}
-//************************************************************
-void Si5351_SetXtalFreq(uint32_t freq){
-
-	si5351xtalFreq = freq;
-}
-//************************************************************
-uint32_t Si5351_GetXtalFreq(void){
-
-	return si5351xtalFreq;
-}
-//************************************************************
-void Si5351_SetF0(uint32_t fhz){
-
-	Si5351_SetFreq(fhz, SI5351_CLK0);
-	Si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_ENABLE);
-}
-//************************************************************
-void Si5351_SetLO(uint32_t fhz){
-
-	Si5351_SetFreq(fhz, SI5351_CLK1);
-	Si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_ENABLE);
-}
-//************************************************************
-void Si5351_SetF2(uint32_t fhz){
-
-	Si5351_SetFreq(fhz, SI5351_CLK2);
-	Si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_ENABLE);
-}
-//************************************************************
-void Si5351_AllOff(void){
-
-	Si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_DISABLE);
-	Si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_DISABLE);
-	Si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_DISABLE);
-    si5351_write(SI5351_CLK0_CTRL, SI5351_CLK_POWERDOWN);
-    si5351_write(SI5351_CLK1_CTRL, SI5351_CLK_POWERDOWN);
-    si5351_write(SI5351_CLK2_CTRL, SI5351_CLK_POWERDOWN);
-}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -177,66 +44,58 @@ void Si5351_AllOff(void){
 /*******************************/
 /* Suggested private functions */
 /*******************************/
-/*
- * Calculate best rational approximation for a given fraction
- * taking into account restricted register size, e.g. to find
- * appropriate values for a pll with 5 bit denominator and
- * 8 bit numerator register fields, trying to set up with a
- * frequency ratio of 3.1415, one would say:
- *
- * rational_best_approximation(31415, 10000,
- *              (1 << 8) - 1, (1 << 5) - 1, &n, &d);
- *
- * you may look at given_numerator as a fixed point number,
- * with the fractional part size described in given_denominator.
- *
- * for theoretical background, see:
- * http://en.wikipedia.org/wiki/Continued_fraction
- */
-void rational_best_approximation(
-    uint64_t given_numerator, uint64_t given_denominator,
-    uint32_t max_numerator,   uint32_t max_denominator,
-    uint32_t *best_numerator, uint32_t *best_denominator)
-{
+static uint8_t si5351_read(uint8_t addr, uint8_t *data){
 
-    uint64_t n, d, n0, d0, n1, d1;
-    n = given_numerator;
-    d = given_denominator;
-    n0 = d1 = 0;
-    n1 = d0 = 1;
-    for (;;)
-    {
-        uint64_t t = 0, a = 0;
-        if ((n1 > max_numerator) || (d1 > max_denominator))
-        {
-            n1 = n0;
-            d1 = d0;
-            break;
-        }
-        if (d == 0)
-            break;
-        t = d;
-        a = n / d;
-        d = n % d;
-        n = t;
-        t = n0 + a * n1;
-        n0 = n1;
-        n1 = t;
-        t = d0 + a * d1;
-        d0 = d1;
-        d1 = t;
-    }
-    *best_numerator = (uint32_t)n1;
-    *best_denominator = (uint32_t)d1;
+	I2C_Master_Read(SI5351_I2C, SI5351_I2C_ADDR, addr, data, 1);
+    return 0;
 }
+//************************************************************
+//static uint8_t si5351_read_device_reg(uint8_t reg){
+//
+//    uint8_t data = 0;
+//    //-------------------
+//    si5351_read(reg, &data);
+//    return data;
+//}
+//************************************************************
+static uint8_t si5351_write(uint8_t addr, uint8_t data){
 
-static void si5351_set_pll(uint32_t a, uint32_t b, uint32_t c, enum si5351_pll pll)
-{//Set PLL parameters
+	I2C_Master_Write(SI5351_I2C, SI5351_I2C_ADDR, addr, &data, 1);
+    return 0;
+}
+//************************************************************
+static uint8_t si5351_write_bulk(uint8_t addr, uint8_t size, uint8_t *data){
+
+	I2C_Master_Write(SI5351_I2C, SI5351_I2C_ADDR, addr, data, size);
+    return 0;
+}
+//************************************************************
+static void si5351_set_clk_control(enum si5351_clock clk, enum si5351_pll pll, int isIntegerMode, enum si5351_drive drive){
+
+    //Bit  D7       D6      D5      D4       D3 D2         D1 D0
+    //Name CLK0_PDN MS0_INT MS0_SRC CLK0_INV CLK0_SRC[1:0] CLK0_IDRV[1:0]
+    uint8_t reg_val = 0x0C; //Select this multisynth as the source for clk output,
+    //-------------------
+    reg_val |= ((uint8_t)drive) & 3;//Set drive strength
+
+    //Select PLLB as the source for this multisynth, otherwise PLLA will be used
+    if(pll == SI5351_PLLB) reg_val |= SI5351_CLK_PLL_SELECT;
+
+    //Set integer mode for this multisynth
+    if (isIntegerMode) reg_val |= SI5351_CLK_INTEGER_MODE;
+
+    //clk value can be used as offset to address proper register
+    si5351_write(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+}
+//************************************************************
+static void si5351_set_pll(uint32_t a, uint32_t b, uint32_t c, enum si5351_pll pll){
+
+	//Set PLL parameters
     uint8_t params[8];
     uint8_t i = 0;
     uint8_t temp;
     uint32_t p1, p2, p3;
-
+    //-------------------
     p3  = c;
     p2  = (128 * b) % c;
     p1  = 128 * a;
@@ -287,13 +146,14 @@ static void si5351_set_pll(uint32_t a, uint32_t b, uint32_t c, enum si5351_pll p
     }
 }
 
+//************************************************************
 static void si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, enum si5351_clock clk)
 {
     uint8_t params[8];
     uint8_t i = 0;
     uint8_t temp;
     uint32_t p1, p2, p3;
-
+    //-------------------
     if (a == 4)
     {
         p1 = 0;
@@ -302,11 +162,11 @@ static void si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, enum
     }
     else
     {
-        p3  = c;
+        p3  =  c;
         p2  = (128 * b) % c;
-        p1  = 128 * a;
+        p1  =  128 * a;
         p1 += (128 * b / c);
-        p1 -= 512;
+        p1 -=  512;
     }
 
     /* Registers 42-43 */
@@ -318,8 +178,7 @@ static void si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, enum
 
     /* Register 44 (or 52)*/
     temp = (uint8_t)((p1 >> 16) & 0x03);
-    if (a == 4) //Set div by 4 bits
-        temp |= 0x0C;
+    if (a == 4) temp |= 0x0C; //Set div by 4 bits
     temp |= ((rdiv & 7) << 4);
     params[i++] = temp;
 
@@ -343,20 +202,79 @@ static void si5351_set_ms(uint32_t a, uint32_t b, uint32_t c, uint8_t rdiv, enum
     params[i++] = temp;
 
     /* Write the parameters */
-    if (clk == SI5351_CLK0)
-    {
-        si5351_write_bulk(SI5351_CLK0_PARAMETERS, 8, params);
-    }
-    else if (clk == SI5351_CLK1)
-    {
-        si5351_write_bulk(SI5351_CLK1_PARAMETERS, 8, params);
-    }
-    else if (clk == SI5351_CLK2)
-    {
-        si5351_write_bulk(SI5351_CLK2_PARAMETERS, 8, params);
-    }
+    	 if(clk == SI5351_CLK0) si5351_write_bulk(SI5351_CLK0_PARAMETERS, 8, params);
+    else if(clk == SI5351_CLK1) si5351_write_bulk(SI5351_CLK1_PARAMETERS, 8, params);
+    else if(clk == SI5351_CLK2) si5351_write_bulk(SI5351_CLK2_PARAMETERS, 8, params);
 }
+//************************************************************
+//Return 0 if si5351 is not found, or its address on the i2c bus
+//static uint8_t si5351_detect_address(void)
+//{
+//    uint8_t addr = 2;
+//    while (1)
+//    {
+//       //uint8_t data = CAMERA_IO_Read(addr, 0);
+//    	uint8_t data = I2C_StartAndSendDeviceAddr(SI5351_I2C, addr);
+//        if(data != 0xFF && data != 0)
+//            break; //Should be 0x10 - LOS bit is set
+//        addr += 2;
+//        if (addr == 0)
+//            break;
+//    }
+//    return addr;
+//}
+//************************************************************
+/*
+ * Calculate best rational approximation for a given fraction
+ * taking into account restricted register size, e.g. to find
+ * appropriate values for a pll with 5 bit denominator and
+ * 8 bit numerator register fields, trying to set up with a
+ * frequency ratio of 3.1415, one would say:
+ *
+ * rational_best_approximation(31415, 10000,
+ *              (1 << 8) - 1, (1 << 5) - 1, &n, &d);
+ *
+ * you may look at given_numerator as a fixed point number,
+ * with the fractional part size described in given_denominator.
+ *
+ * for theoretical background, see:
+ * http://en.wikipedia.org/wiki/Continued_fraction
+ */
+void rational_best_approximation(uint64_t  given_numerator, uint64_t  given_denominator,
+								 uint32_t  max_numerator,   uint32_t  max_denominator,
+								 uint32_t *best_numerator,  uint32_t *best_denominator){
 
+    uint64_t n, d, n0, d0, n1, d1;
+    n = given_numerator;
+    d = given_denominator;
+    n0 = d1 = 0;
+    n1 = d0 = 1;
+    for (;;)
+    {
+        uint64_t t = 0, a = 0;
+        if ((n1 > max_numerator) || (d1 > max_denominator))
+        {
+            n1 = n0;
+            d1 = d0;
+            break;
+        }
+        if (d == 0)
+            break;
+        t = d;
+        a = n / d;
+        d = n % d;
+        n = t;
+        t = n0 + a * n1;
+        n0 = n1;
+        n1 = t;
+        t = d0 + a * d1;
+        d0 = d1;
+        d1 = t;
+    }
+    *best_numerator = (uint32_t)n1;
+    *best_denominator = (uint32_t)d1;
+}
+//************************************************************
 static void set_multisynth_alt(uint32_t freq, enum si5351_clock clk){
 
     uint32_t a  = 0,
@@ -477,71 +395,131 @@ static void set_multisynth_alt(uint32_t freq, enum si5351_clock clk){
 //    }
 //    #endif
 }
-
-static uint8_t si5351_write_bulk(uint8_t addr, uint8_t bytes, uint8_t *data)
-{
-//    CAMERA_IO_WriteBulk(CFG_GetParam(CFG_PARAM_SI5351_BUS_BASE_ADDR), addr, data, (uint16_t)bytes);
-	I2C_Master_Write(SI5351_I2C, SI5351_I2C_ADDR, addr, data, bytes);
-    return 0;
-}
-
-static uint8_t si5351_write(uint8_t addr, uint8_t data)
-{
-//    CAMERA_IO_Write(CFG_GetParam(CFG_PARAM_SI5351_BUS_BASE_ADDR), addr, data);
-	I2C_Master_Write(SI5351_I2C, SI5351_I2C_ADDR, addr, &data, 1);
-    return 0;
-}
-
-static uint8_t si5351_read(uint8_t addr, uint8_t *data)
-{
-//    *data = CAMERA_IO_Read(CFG_GetParam(CFG_PARAM_SI5351_BUS_BASE_ADDR), addr);
-	I2C_Master_Read (SI5351_I2C, SI5351_I2C_ADDR, addr, data, 1);
-    return 0;
-}
-
-static void si5351_set_clk_control(enum si5351_clock clk, enum si5351_pll pll, int isIntegerMode, enum si5351_drive drive)
-{
-    //Bit  D7       D6      D5      D4       D3 D2         D1 D0
-    //Name CLK0_PDN MS0_INT MS0_SRC CLK0_INV CLK0_SRC[1:0] CLK0_IDRV[1:0]
-    uint8_t reg_val = 0x0C; //Select this multisynth as the source for clk output,
-
-    reg_val |= ((uint8_t)drive) & 3;//Set drive strength
-
-    //Select PLLB as the source for this multisynth, otherwise PLLA will be used
-    if(pll == SI5351_PLLB) reg_val |= SI5351_CLK_PLL_SELECT;
-
-    //Set integer mode for this multisynth
-    if (isIntegerMode) reg_val |= SI5351_CLK_INTEGER_MODE;
-
-    //clk value can be used as offset to address proper register
-    si5351_write(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
-}
-
-static uint8_t si5351_read_device_reg(uint8_t reg)
-{
-    uint8_t data = 0;
-    si5351_read(reg, &data);
-    return data;
-}
-
-//Return 0 if si5351 is not found, or its address on the i2c bus
-//static uint8_t si5351_detect_address(void)
-//{
-//    uint8_t addr = 2;
-//    while (1)
-//    {
-//       //uint8_t data = CAMERA_IO_Read(addr, 0);
-//    	uint8_t data = I2C_StartAndSendDeviceAddr(SI5351_I2C, addr);
-//        if(data != 0xFF && data != 0)
-//            break; //Should be 0x10 - LOS bit is set
-//        addr += 2;
-//        if (addr == 0)
-//            break;
-//    }
-//    return addr;
-//}
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+/******************************/
+/* Suggested public functions */
+/******************************/
+/*
+ * si5351_Init(void)
+ *
+ * Call this to initialize I2C communications and get the
+ * Si5351 ready for use.
+ */
+void Si5351_Init(void){
+
+	if(!Si5351_Check()) return;
+
+	//Disable all outputs
+    si5351_write(SI5351_OUTPUT_ENABLE_CTRL, 0xFF);
+
+    //Powerdown all output drivers
+    uint8_t a;
+    for(a = SI5351_CLK0_CTRL; a <= SI5351_CLK0_CTRL; a++)
+    {
+        si5351_write(a, SI5351_CLK_POWERDOWN);
+    }
+
+    // Set crystal load capacitance
+    //si5351_write(SI5351_CRYSTAL_LOAD, ((CFG_GetParam(CFG_PARAM_SI5351_CAPS) & 3) << 6) | 0x12); //Bits 5:0 should be written as 0x12
+    si5351_write(SI5351_CRYSTAL_LOAD, SI5351_CRYSTAL_LOAD_8PF);
+
+    //Set input source
+    si5351_write(SI5351_PLL_INPUT_SOURCE, 0); // Input source is XTAL for both PLLs, CLK not divided
+
+    //Disable spread spectrum (value after reset is unknown), including the entire range of SS registers
+    for(a = SI5351_SSC_PARAM0; a <= SI5351_SSC_PARAM12; a++)
+    {
+        si5351_write(a, 0);
+    }
+
+    //Disable fanout (initial value is unknown)
+    si5351_write(SI5351_FANOUT_ENABLE, 0);
+}
+//************************************************************
+uint32_t Si5351_Check(void){
+
+	return I2C_Master_CheckSlave(SI5351_I2C, SI5351_I2C_ADDR);
+}
+//************************************************************
+/*
+ * si5351_SetFreq(uint32_t freq, enum si5351_clock output)
+ *
+ * Sets the clock frequency of the specified CLK output
+ *
+ * freq - Output frequency in Hz
+ * clk - Clock output
+ *   (use the si5351_clock enum)
+ */
+void Si5351_SetFreq(uint32_t freq, enum si5351_clock clk){
+
+	set_multisynth_alt(freq, clk);
+}
+//************************************************************
+/*
+ * si5351_ClockEnable(enum si5351_clock clk, uint8_t enable)
+ *
+ * Enable or disable a chosen clock
+ * clk - Clock output
+ *   (use the si5351_clock enum)
+ * enable - Set to 1 to enable, 0 to disable
+ */
+void Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable){
+
+	uint8_t reg_val = 0;
+	//-------------------
+    if(si5351_read(SI5351_OUTPUT_ENABLE_CTRL, &reg_val) != 0) return;
+
+    if(enable == SI5351_CLOCK_ENABLE)reg_val &= ~(1<<(uint8_t)clk);
+    else		   					 reg_val |=  (1<<(uint8_t)clk);
+
+    si5351_write(SI5351_OUTPUT_ENABLE_CTRL, reg_val);
+}
+//************************************************************
+void Si5351_SetXtalFreq(uint32_t freq){
+
+	si5351xtalFreq = freq;
+}
+//************************************************************
+uint32_t Si5351_GetXtalFreq(void){
+
+	return si5351xtalFreq;
+}
+//************************************************************
+void Si5351_SetF0(uint32_t fhz){
+
+	Si5351_SetFreq(fhz, SI5351_CLK0);
+	Si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_ENABLE);
+}
+//************************************************************
+void Si5351_SetLO(uint32_t fhz){
+
+	Si5351_SetFreq(fhz, SI5351_CLK1);
+	Si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_ENABLE);
+}
+//************************************************************
+void Si5351_SetF2(uint32_t fhz){
+
+	Si5351_SetFreq(fhz, SI5351_CLK2);
+	Si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_ENABLE);
+}
+//************************************************************
+void Si5351_AllOff(void){
+
+	Si5351_ClockEnable(SI5351_CLK0, SI5351_CLOCK_DISABLE);
+	Si5351_ClockEnable(SI5351_CLK1, SI5351_CLOCK_DISABLE);
+	Si5351_ClockEnable(SI5351_CLK2, SI5351_CLOCK_DISABLE);
+    si5351_write(SI5351_CLK0_CTRL, SI5351_CLK_POWERDOWN);
+    si5351_write(SI5351_CLK1_CTRL, SI5351_CLK_POWERDOWN);
+    si5351_write(SI5351_CLK2_CTRL, SI5351_CLK_POWERDOWN);
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
 
 
 

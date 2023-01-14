@@ -30,7 +30,6 @@
 void     ADC_Init(void);
 uint32_t ADC_GetMeas(uint32_t channel);
 uint16_t ADC_GetRegDR(ADC_TypeDef *adc);
-
 uint16_t ADC_GetRegJDRx(ADC_TypeDef *adc, uint8_t ch);
 //*******************************************************************************************
 //*******************************************************************************************

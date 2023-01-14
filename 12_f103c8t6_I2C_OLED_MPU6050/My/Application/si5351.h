@@ -27,7 +27,7 @@
 //*******************************************************************************************
 //*******************************************************************************************
 
-#include <stdint.h>
+//#include <stdint.h>
 //#include "config.h"
 
 #include "main.h"
@@ -262,30 +262,19 @@ struct Si5351IntStatus
     uint8_t LOL_A_STKY;
     uint8_t LOS_STKY;
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-/* Suggested public function prototypes */
 //*******************************************************************************************
 //*******************************************************************************************
-void Si5351_Init(void);
+void     Si5351_Init(void);
 uint32_t Si5351_Check(void);
-void Si5351_SetFreq(uint32_t freq, enum si5351_clock clk);
-void Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable);
-void Si5351_SetXtalFreq(uint32_t freq);
+void     Si5351_SetFreq(uint32_t freq, enum si5351_clock clk);
+void     Si5351_ClockEnable(enum si5351_clock clk, uint8_t enable);
+void     Si5351_SetXtalFreq(uint32_t freq);
 uint32_t Si5351_GetXtalFreq(void);
 
 void Si5351_SetF0(uint32_t fhz);
 void Si5351_SetLO(uint32_t fhz);
 void Si5351_SetF2(uint32_t fhz);
 void Si5351_AllOff(void);
-
-#ifdef __cplusplus
-}
-#endif
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* SI5351_H_ */

@@ -352,11 +352,11 @@ DS18B20_t* TEMPERATURE_SENSE_GetSens(uint32_t numSensor){
 //**********************************************************
 void TEMPERATURE_SENSE_BuildPack(uint32_t numSensor, uint8_t *buf){
 
-	DS18B20_t *sensor;
-	//---------------------
-		 if(numSensor == 1) sensor = &TemperatureSensor_1;
-	else if(numSensor == 2) sensor = &TemperatureSensor_2;
-	else return;
+//	DS18B20_t *sensor;
+//	//---------------------
+//		 if(numSensor == 1) sensor = &TemperatureSensor_1;
+//	else if(numSensor == 2) sensor = &TemperatureSensor_2;
+//	else return;
 
 //	buf[0] = (uint8_t) sensor->TemperatureSign;
 //	buf[1] = (uint8_t)(sensor->Temperature >> 8);

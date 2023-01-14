@@ -638,7 +638,7 @@ uint32_t BUTTON_LongPress(uint32_t butState, uint32_t delay){
 //************************************************************
 void Task_LcdPageSelection(void){
 
-	static uint32_t pageIndex = 2;//0;
+	static uint32_t pageIndex = 0;
 	//--------------------
 	//Мигающая индикация.
 //	if(Blink(INTERVAL_100_mS))LED_PC13_On();
@@ -707,31 +707,25 @@ int main(void){
 					  //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Чтение настроек
-//	Config_Init();
+	Config_Init();
 
 	//Инициализация Si5351 (I2C1).
-//	si5351_stepFreq = Config()->stepFreq;
-//	si5351_xtalFreq = Config()->xtalFreq;
-//	Si5351_Init();
-//	Si5351_SetXtalFreq(si5351_xtalFreq);
-//	Si5351_SetF0(si5351_freq);
-//
-//	//Инициализация HC-12 (USART2).
-//	HC12_Init(HC12_BAUD_RATE_57600);
-//	hc12_BaudRate = HC12_GetBaudRate();
+	si5351_stepFreq = Config()->stepFreq;
+	si5351_xtalFreq = Config()->xtalFreq;
+	Si5351_Init();
+	Si5351_SetXtalFreq(si5351_xtalFreq);
+	Si5351_SetF0(si5351_freq);
 
 	//Инициализация OLED SSD1306 (I2C1).
 	SSD1306_Init(SSD1306_128x64);
-
-	TIM3_InitForPWM(20000);
 	//***********************************************
 	//Инициализация Энкодера.
-	Encoder.GpioPort_A 	 	= GPIOB;
-	Encoder.GpioPin_A       = 10;
-	Encoder.GpioPort_B 	 	= GPIOB;
-	Encoder.GpioPin_B  	 	= 11;
-	Encoder.GpioPort_BUTTON = GPIOB;
-	Encoder.GpioPin_BUTTON  = 1;
+	Encoder.GpioPort_A 	 	= GPIOC;
+	Encoder.GpioPin_A       = 15;
+	Encoder.GpioPort_B 	 	= GPIOC;
+	Encoder.GpioPin_B  	 	= 14;
+	Encoder.GpioPort_BUTTON = GPIOA;
+	Encoder.GpioPin_BUTTON  = 0;
 	ENCODER_Init(&Encoder);
 	//***********************************************
 	//Инициализация диспетчера.

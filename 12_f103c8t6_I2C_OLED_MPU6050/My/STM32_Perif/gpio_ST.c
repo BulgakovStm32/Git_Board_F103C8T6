@@ -69,22 +69,66 @@ void GPIO_InitForInputPullUp(GPIO_TypeDef *port, uint32_t pin){
 		pin = pin * 4;
 		port->CRL &= ~(0x03 << pin);//GPIO_CRL_MODEx - 00:Input mode (reset state)
 		//CNFy[1:0]: 10 - Input with pull-up / pull-down.
-		port->CRL &= ~(0x03 << (pin + 2));
-		port->CRL |=  (0x02 << (pin + 2));
+		port->CRL &= ~(0b11 << (pin + 2));
+		port->CRL |=  (0b10 << (pin + 2));
 	}
 	else
 	{
 		pin = (pin - 8) * 4;
 		port->CRH &= ~(0x03 << pin);//GPIO_CRL_MODEx - 00:Input mode (reset state)
 		//CNFy[1:0]: 10 - Input with pull-up / pull-down.
-		port->CRH &= ~(0x03 << (pin + 2));
-		port->CRH |=  (0x02 << (pin + 2));
+		port->CRH &= ~(0b11 << (pin + 2));
+		port->CRH |=  (0b10 << (pin + 2));
 	}
 	port->ODR |= (1 << pin); //pull-up.
 }
 //**********************************************************
+void GPIO_InitForInputPullDown(GPIO_TypeDef *port, uint32_t pin){
 
+	//Включение тактирования портов.
+	if(!_gpio_PortXClockEnable(port)) return;
+	//Конфигурация выводов: Input with pull-up.
+	if(pin <= 7)
+	{
+		pin = pin * 4;
+		port->CRL &= ~(0x03 << pin);//GPIO_CRL_MODEx - 00:Input mode (reset state)
+		//CNFy[1:0]: 10 - Input with pull-up / pull-down.
+		port->CRL &= ~(0b11 << (pin + 2));
+		port->CRL |=  (0b10 << (pin + 2));
+	}
+	else
+	{
+		pin = (pin - 8) * 4;
+		port->CRH &= ~(0x03 << pin);//GPIO_CRL_MODEx - 00:Input mode (reset state)
+		//CNFy[1:0]: 10 - Input with pull-up / pull-down.
+		port->CRH &= ~(0b11 << (pin + 2));
+		port->CRH |=  (0b10 << (pin + 2));
+	}
+	port->ODR &= ~(1 << pin); //pull-down.
+}
+//**********************************************************
+void GPIO_InitForFloatingInput(GPIO_TypeDef *port, uint32_t pin){
 
+	//Включение тактирования портов.
+	if(!_gpio_PortXClockEnable(port)) return;
+	//Конфигурация выводов: Input with pull-up.
+	if(pin <= 7)
+	{
+		pin = pin * 4;
+		port->CRL &= ~(0x03 << pin);//GPIO_CRL_MODEx - 00:Input mode (reset state)
+		//CNFy[1:0]: 01: Floating input (reset state)
+		port->CRL &= ~(0b11 << (pin + 2));
+		port->CRL |=  (0b01 << (pin + 2));
+	}
+	else
+	{
+		pin = (pin - 8) * 4;
+		port->CRH &= ~(0x03 << pin);//GPIO_CRL_MODEx - 00:Input mode (reset state)
+		//CNFy[1:0]: 01: Floating input (reset state)
+		port->CRH &= ~(0b11 << (pin + 2));
+		port->CRH |=  (0b01 << (pin + 2));
+	}
+}
 //**********************************************************
 //Инициализация переферии.
 void GPIO_Init(void){
@@ -107,12 +151,12 @@ void GPIO_Init(void){
 //	RCC->CFGR |= RCC_CFGR_MCO_HSI;   //Подключение к выводу PA8 частоту HSI.
 //	RCC->CFGR |= RCC_CFGR_MCO_HSE;      //Подключение к выводу PA8 частоту HSE.
 //	RCC->CFGR |= RCC_CFGR_MCO_PLL;   //Подключение к выводу PA8 частоту PLL/2.
-//	//--------------------
+	//--------------------
 	// LED_PC13 - PC13
-	GPIO_InitForOutputPushPull(GPIOC, 13);
+	GPIO_InitForOutputPushPull(LED_PC13_PORT, LED_PC13_PIN);
 
 	// HC12_SET - PA4
-	GPIO_InitForOutputOpenDrain(HC12_SET_GPIO_PORT, HC12_SET_GPIO_PIN);
+	GPIO_InitForOutputPushPull(HC12_SET_PORT, HC12_SET_PIN);
 }
 //**********************************************************
 void GPIO_CheckLoop(void){
