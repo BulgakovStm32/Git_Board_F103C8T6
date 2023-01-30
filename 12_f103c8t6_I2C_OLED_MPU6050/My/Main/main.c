@@ -231,10 +231,48 @@ void Task_MPU6050_GetData(void){
 //************************************************************
 
 
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void Task_AHT10_ReadData(void){
 
+	AHT10_ReadData();
+}
+//************************************************************
+void Task_AHT10_Display(void){
 
+	//-------------------
+	Lcd_ClearVideoBuffer();
+	//Шапка
+	Lcd_SetCursor(1, 1);
+	Lcd_Print("_AHT10_");
+	//Вывод времени.
+	Time_Display(14, 1);
+	//-------------------
+	Temperature_Display(TEMPERATURE_SENSE_GetSens(1), 1, 2);
 
+	//Температура
+	int32_t temp = AHT10_GetTemperature();
+	Lcd_SetCursor(1, 4);
+	Lcd_Print("Temp =");
+	if(temp < 0)
+	{
+		temp = -temp;
+		Lcd_Chr('-');
+	}
+	else Lcd_Chr('+');
+	Lcd_BinToDec(temp/100, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_Chr('.');
+	Lcd_BinToDec(temp%100, 2, LCD_CHAR_SIZE_NORM);
+	Lcd_Print(" C");
 
+	//Влажность
+	Lcd_SetCursor(1, 5);
+	Lcd_Print("Hum  = ");
+	Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
+	Lcd_Print(" %");
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -308,9 +346,13 @@ void Task_LcdPageSelection(void){
 	switch(pageIndex){
 		//--------------------
 		case 0:
-			RTOS_SetTask(Task_MPU6050_GetData, 0, 0);
+			//RTOS_SetTask(Task_MPU6050_GetData, 0, 0);
 			//Task_MPU6050_GetData();
 			//Config_SaveLoop();
+
+			RTOS_SetTask(Task_AHT10_Display, 0, 0);
+
+
 		break;
 		//--------------------
 		case 1:
@@ -361,7 +403,7 @@ int main(void){
 	//Чтение настроек
 	//Config_Init();
 	//Инициализация OLED SSD1306 (I2C1).
-	SSD1306_Init(SSD1306_128x64);
+	Lcd_Init();
 
 	//Инициализация DS18B20
 	TEMPERATURE_SENSE_Init();
@@ -377,12 +419,14 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 0, 10);
+	RTOS_SetTask(Task_LcdPageSelection, 0, 5);
 	RTOS_SetTask(Task_TemperatureRead,  0, 1000);
-//	RTOS_SetTask(Task_LedBlink, 0, 5);
+	RTOS_SetTask(Task_AHT10_ReadData,   0, 500);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();
+
+	//__set_MSP(');
 	//**************************************************************
 	while(1)
 	{

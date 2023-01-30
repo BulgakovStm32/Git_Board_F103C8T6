@@ -1,5 +1,5 @@
 /*
- * AHT10.c
+ *  AHT10.c
  *
  *  Created on: 25 янв. 2021 г.
  *      Author: belyaev
@@ -12,10 +12,25 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
+static uint8_t rxBuf[6] = {0};
 
-static AHT10_t AHT10Str;
-static uint8_t TemperatureSign = 0;
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+static uint8_t aht10_read(uint8_t addr, uint8_t *data, uint8_t size){
 
+	I2C_Master_Read(AHT10_I2C, AHT10_ADDR, addr, data, size);
+    return 0;
+}
+//************************************************************
+//static uint8_t aht10_write(uint8_t addr, uint8_t *data, uint8_t size){
+//
+//	I2C_Master_Write(AHT10_I2C, AHT10_ADDR, addr, data, size);
+//    return 0;
+//}
+//*******************************************************************************************
+//*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 void AHT10_Init(void){
@@ -29,60 +44,50 @@ void AHT10_SoftReset(void){
 	I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR);
 	//I2C_SendData(I2C2, &cmd, 1);
 	I2C_SendDataWithStop(AHT10_I2C, &cmd, 1);
-	msDelay(50);
-}
-//************************************************************
-AHT10_t* AHT10(void){
 
-	return &AHT10Str;
+//	aht10_write(0xBA, uint8_t *data, uint8_t size);//0xBA - soft reset command
+	msDelay(50);
 }
 //************************************************************
 void AHT10_ReadData(void){
 
-	uint8_t  cmd           = 0xAC;//start measurment command
-	uint8_t  rxBuf[6]      = {0}; //
-	uint32_t AHT10_ADC_Raw = 0;   //
-	int32_t  temp          = 0;   //
-	//-------------------
-	I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR|I2C_MODE_WRITE);
-	//I2C_SendData(I2C2, &cmd, 1);
-	I2C_SendDataWithoutStop(AHT10_I2C, &cmd, 1);
-
-	//msDelay(100);
-	//msDelay(10);
-
-	I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR|I2C_MODE_READ);
-	I2C_ReadData(AHT10_I2C, rxBuf, 6);
-
-	//Расчет влажности
-	AHT10_ADC_Raw   = (rxBuf[1] << 16) | (rxBuf[2] << 8) | (rxBuf[3] & 0xF0);
-	AHT10_ADC_Raw >>= 4;
-	AHT10_ADC_Raw  /= 100;
-	AHT10Str.Humidity = (uint16_t)AHT10_ADC_Raw;
-
-	AHT10_ADC_Raw  = ((rxBuf[3] & 0x0F) << 16) | (rxBuf[4] << 8) | rxBuf[5];
-	//Расчет температуры.
-	AHT10_ADC_Raw *= 19;
-	temp = AHT10_ADC_Raw - 5000000;
-	//Знак температуры
-	if(temp & 0x80000000)
-	{
-		TemperatureSign = AHT10_SIGN_NEGATIVE;
-		temp *= -1;
-	}
-	else	TemperatureSign = AHT10_SIGN_POSITIVE;
-
-	AHT10_ADC_Raw = temp / 10000;
-
-	AHT10Str.Temperature = (uint16_t)AHT10_ADC_Raw;
+	//Чтение данных
+	aht10_read(0xAC, rxBuf, 6); //0xAC - start measurment command
 }
 //**********************************************************
-uint8_t AHT10_GetTemperatureSign(void){
+int32_t AHT10_GetTemperature(void){
 
-	return TemperatureSign;
+	int32_t temp;
+	//-------------------
+	//Расчет температуры.
+	//Выражение для преобразования температуры, °C: T = AHT10_ADC_Raw * 200 / 2^20 - 50
+	temp  = ((rxBuf[3] & 0x0F) << 16) | (rxBuf[4] << 8) | rxBuf[5];//собираем значение температуры
+	temp *= 19; // 19 - это 200 / 2^20 * 100000
+	temp  = temp - (50 * 100000);
+	return ((temp + 1000/2) / 1000);
+}
+//**********************************************************
+uint32_t  AHT10_GetHumidity(void){
+
+	uint32_t temp;
+	const uint32_t div = 1<<20;//это 2^20
+	//-------------------
+	//Расчет влажности
+	//Выражение для преобразования относительной влажности, %: H = AHT10_ADC_Raw * 100 / 2^20
+	temp   = (rxBuf[1] << 16) | (rxBuf[2] << 8) | (rxBuf[3] & 0xF0);//собираем значение влажности
+	temp >>= 4;
+	return ((temp * 100 + div/2) / div);
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
+
+
+
+
+
 
 
 
