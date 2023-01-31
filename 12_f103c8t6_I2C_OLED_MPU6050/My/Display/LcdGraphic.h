@@ -1,9 +1,13 @@
-
+/*
+ * LcdGraphic.h
+ *
+ *  Created on: 
+ *      Author: belyaev
+ */
 #ifndef _LcdGraphic_H
 #define _LcdGraphic_H
 //*******************************************************************************************
 //*******************************************************************************************
-//#include "Rtc.h"
 //#include "lcd12864.h"
 //#include "LM6063D.h"
 //#include "Lcd_TIC32.h"
@@ -39,17 +43,17 @@ void Lcd_Line   (int x1, int y1, int x2, int y2, uint8_t mode);
 void Lcd_Circle (uint8_t x, uint8_t y, uint8_t radius, uint8_t mode);
 void Lcd_Bar    (int x1, int y1, int x2, int y2, uint8_t persent);
 
-void Lcd_GotoXYFont  (uint8_t x, uint8_t y);
-void Lcd_Chr         (char ch);
-void Lcd_SetCursor   (uint8_t x, uint8_t y);
-void Lcd_ChrBold     (char ch);
-void Lcd_StringBold  (uint8_t x, uint8_t y);
-void Lcd_ChrBig      (char ch);
-void Lcd_StringBig   (uint8_t x, uint8_t y);
-uint8_t Lcd_Print    (char *txt);
-uint8_t Lcd_PrintBold(char *txt);
-uint8_t Lcd_PrintBig (char *txt);
-void Lcd_Image       (const uint8_t *imageData);
+void 	Lcd_GotoXYFont(uint8_t x, uint8_t y);
+void 	Lcd_Chr       (char ch);
+void 	Lcd_SetCursor (uint8_t x, uint8_t y);
+void 	Lcd_ChrBold   (char ch);
+void 	Lcd_StringBold(uint8_t x, uint8_t y);
+void 	Lcd_ChrBig    (char ch);
+void 	Lcd_StringBig (uint8_t x, uint8_t y);
+uint8_t Lcd_Print     (char *txt);
+uint8_t Lcd_PrintBold (char *txt);
+uint8_t Lcd_PrintBig  (char *txt);
+void 	Lcd_Image     (const uint8_t *imageData);
 
 uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize);
 void     Lcd_u8ToHex (uint8_t hexChar);
