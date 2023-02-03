@@ -16,7 +16,9 @@
 //*******************************************************************************************
 #define CONFIG_CHECK_KEY_DEFINE 0x12345678 						  //
 #define CONFIG_SIZE_U32 	    ((sizeof(DataForFLASH_t) / 4) + 1)//Размер в 32-хбитных словах.
-#define CONFIG_FLASH_PAGE 		FLASH_PAGE_127					  //
+
+#define CONFIG_FLASH_PAGE_NUM	64
+#define CONFIG_FLASH_PAGE 		(FLASH_PAGE_ADDR( CONFIG_FLASH_PAGE_NUM))//FLASH_PAGE_127					  //
 
 //**********************************
 #pragma pack(push, 1)//размер выравнивания в 1 байт

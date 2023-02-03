@@ -16,7 +16,18 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-#define APP_START_ADDR	(FLASH_BASE + 6 * 1024)	//Адрес приложения
+//Bootloader key configuration
+#define BOOT_KEY_VALUE				0xAAAA5555		//
+#define BOOT_KEY_FLASH_PAGE_NUM		5				//
+#define BOOT_KEY_START_ADDR			(FLASH_PAGE_ADDR(BOOT_KEY_FLASH_PAGE_NUM))
+
+//Адрес приложения.
+//Расчитывается так: 0x0800 0000 + FLASH_PAGE_SIZE * FLASH_PAGE_NUM
+//где: 	FLASH_PAGE_SIZE - размер страницы флеш-памяти в байтах (смотрим RM0008 Reference manual раздел 3.3.3 Embedded Flash memory)
+//		FLASH_PAGE_NUM  - номер страници флеш-памяти, от 0 до FLASH_PAGES_NUM (зависит от размера флеш-памяти контроллера)
+#define MAIN_PROGRAM_FLASH_PAGE_NUM	(BOOT_KEY_FLASH_PAGE_NUM + 1)				  //Страница флеш-памяти приложения
+#define MAIN_PROGRAM_START_ADDR 	(FLASH_PAGE_ADDR(MAIN_PROGRAM_FLASH_PAGE_NUM))//0x08000000 + 1024 * 6 = 0x08001800
+//**********************************
 
 
 uint8_t buf[1024] = {0};
@@ -24,17 +35,47 @@ uint8_t buf[1024] = {0};
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-static void _initAll(void){
+//static void _initAll(void){
+//
+//	STM32_Clock_Init();
+//	GPIO_Init();
+//	DELAY_Init();
+//}
+//*******************************************************************************************
+// Function      SetKey()
+// Description   Sets bootloader key
+// Parameters    None
+// RetVal        None
+//*******************************************************************************************
+void SetKey(){
 
-	STM32_Clock_Init();
-	GPIO_Init();
-	DELAY_Init();
-//	SYS_TICK_Init();
-//	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+	STM32_Flash_Unlock();
+	STM32_Flash_WriteWord(BOOT_KEY_VALUE, BOOT_KEY_START_ADDR);
+	STM32_Flash_Lock();
 }
-//************************************************************
+//*******************************************************************************************
+// Function      ResetKey()
+// Description   Resets bootloader key
+// Parameters    None
+// RetVal        None
+//*******************************************************************************************
+void ResetKey(){
 
-//************************************************************
+	STM32_Flash_Unlock();
+	STM32_Flash_ErasePage(BOOT_KEY_START_ADDR);
+	STM32_Flash_Lock();
+}
+//*******************************************************************************************
+// Function      ReadKey()
+// Description   Reads bootloader key value
+// Parameters    None
+// RetVal        None
+//*******************************************************************************************
+uint32_t ReadKey(){
+
+  return (*(__IO uint32_t*)BOOT_KEY_START_ADDR);
+}
+//*******************************************************************************************
 
 //************************************************************
 static void _goToApp(uint32_t appAddr){
@@ -54,12 +95,20 @@ static void _goToApp(uint32_t appAddr){
 //*******************************************************************************************
 int main(void){
 
-//	__disable_irq();
+	__disable_irq();
 //	SCB->VTOR = 0x08002800;
 	//***********************************************
-	_initAll(); //Инициализация нужной периферии.
-
-	DELAY_milliS(100);//Задержка для стабилизации напряжения питания.
+	//Если установлен признак, то запуск приложения
+	if(ReadKey() == BOOT_KEY_VALUE)
+	{
+		_goToApp(MAIN_PROGRAM_START_ADDR);
+	}
+	//***********************************************
+	//Иниц-я нужной периферии.
+	STM32_Clock_Init();
+	GPIO_Init();
+	DELAY_Init();
+//	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
 	//***********************************************
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
@@ -69,8 +118,29 @@ int main(void){
 		LED_PC13_Off();
 		DELAY_milliS(250);
 	}
-	DELAY_milliS(1000);
+	//DELAY_milliS(1000);
+	//***********************************************
+	//Очистка всех страниц пямяти приложения
+	STM32_Flash_Unlock();
+	for(uint32_t i=0; i < (FLASH_PAGES_NUM - MAIN_PROGRAM_FLASH_PAGE_NUM); i++)
+	{
+		STM32_Flash_ErasePage(MAIN_PROGRAM_START_ADDR + FLASH_PAGE_SIZE * i);
+	}
+	STM32_Flash_Lock();
+	//***********************************************
+	//
 
+
+
+
+
+
+
+
+
+
+
+	//-----------------------
 	//Тест1 - запись буфера в 1024 байта во шлэш. - Работает!!
 	#define FLASH_BUF_SIZE	1024
 	uint8_t flashBuf[FLASH_BUF_SIZE] = {0};
@@ -81,30 +151,25 @@ int main(void){
 	}
 
 	STM32_Flash_Unlock();
-	STM32_Flash_ErasePage(FLASH_PAGE_127);
-	STM32_Flash_WriteBuf(flashBuf, (uint32_t*)FLASH_PAGE_127, FLASH_BUF_SIZE);
+
+	//Заполение всех страниц пямяти приложения
+	for(uint32_t i=0; i < (FLASH_PAGES_NUM - MAIN_PROGRAM_FLASH_PAGE_NUM); i++)
+	{
+		//STM32_Flash_Unlock();
+		//STM32_Flash_ErasePage(MAIN_PROGRAM_START_ADDR);
+		//STM32_Flash_WriteBuf(flashBuf, (uint32_t*)MAIN_PROGRAM_START_ADDR, FLASH_BUF_SIZE);
+		//STM32_Flash_Lock();
+
+		STM32_Flash_WriteBuf(flashBuf, (uint32_t*)(MAIN_PROGRAM_START_ADDR + FLASH_PAGE_SIZE * i), FLASH_BUF_SIZE);
+	}
+
+	//Очистка всех страниц пямяти приложения
+	for(uint32_t i=0; i < (FLASH_PAGES_NUM - MAIN_PROGRAM_FLASH_PAGE_NUM); i++)
+	{
+		STM32_Flash_ErasePage(MAIN_PROGRAM_START_ADDR + FLASH_PAGE_SIZE * i);
+	}
+
 	STM32_Flash_Lock();
-
-
-
-//	flash = STM32_Flash_ReadWord(FLASH_PAGE_127);
-//
-//	STM32_Flash_ErasePage(FLASH_PAGE_127);
-//
-//	STM32_Flash_WriteWord(0x12345678, FLASH_PAGE_127);
-//
-//	flash = STM32_Flash_ReadWord(FLASH_PAGE_127);
-//
-//	STM32_Flash_WriteWord(0, FLASH_PAGE_127);
-//
-//	flash = STM32_Flash_ReadWord(FLASH_PAGE_127);
-//
-//	STM32_Flash_WriteWord(0xFFFFFFFF, FLASH_PAGE_127);
-//
-//	flash = STM32_Flash_ReadWord(FLASH_PAGE_127);
-
-
-//	_goToApp(APP_START_ADDR);
 
 //	SYS_TICK_Control(SYS_TICK_ON);
 //	__enable_irq();

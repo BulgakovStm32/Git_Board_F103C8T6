@@ -10,23 +10,27 @@
 //*******************************************************************************************
 //*******************************************************************************************
 
-#include "main.h"
+//#include "main.h"
+#include "stm32f103xb.h"
 
 //*******************************************************************************************
 //*******************************************************************************************
 //Как же определить свободную страницу? Это зависит от размера прошивки.
 //Обычно используют последнюю страницу в памяти.
 //Её адрес можно вычислить как [начальный адрес] + [номер страницы - 1] * [размер страницы].
-//Выберем 16 страницу: 0x0800 0000 + 15 * 0x0000 0400 = 0x0800 3C00
+//Выберем 16 страницу: 0x0800 0000 + 15 * 1024 = 0x0800 3C00
 
-#define FLASH_SIZE 			64 //128 //Размер FLASH в кБ.
-#define FLASH_PAGE_SIZE		1024 //Размер страницы FLASH в кБ.
+//#define FLASH_PAGES_NUM 			64		//Кол-во страниц флеш-памяти для микроконтроллера с  64kB FLASH.
+#define FLASH_PAGES_NUM				128 	//Кол-во страниц флеш-памяти для микроконтроллера с 128kB FLASH.
+#define FLASH_PAGE_SIZE				1024	//Размер страницы флеш-памяти в байтах для STM32F103xx.
+#define FLASH_PAGE_ADDR(pageNum)	(uint32_t)(FLASH_BASE + FLASH_PAGE_SIZE * pageNum)
 
-#define FLASH_PAGE_127 (FLASH_BASE + (FLASH_PAGE_SIZE * (FLASH_SIZE - 0)))
-#define FLASH_PAGE_126 (FLASH_BASE + (FLASH_PAGE_SIZE * (FLASH_SIZE	- 1)))
-
-#define FLASH_PAGE127_END_ADDR 	(FLASH_PAGE_127 + FLASH_PAGE_SIZE)
-#define FLASH_PAGE126_END_ADDR 	(FLASH_PAGE_126 + FLASH_PAGE_SIZE)
+//Адреса страниц флеш-памяти
+//#define FLASH_PAGE_127 (FLASH_BASE + (FLASH_PAGE_SIZE * (FLASH_PAGE_NUM - 0)))
+//#define FLASH_PAGE_126 (FLASH_BASE + (FLASH_PAGE_SIZE * (FLASH_PAGE_NUM	- 1)))
+//
+//#define FLASH_PAGE127_END_ADDR 	(FLASH_PAGE_127 + FLASH_PAGE_SIZE)
+//#define FLASH_PAGE126_END_ADDR 	(FLASH_PAGE_126 + FLASH_PAGE_SIZE)
 //*******************************************************************************************
 //*******************************************************************************************
 void     STM32_Flash_Lock     (void);
