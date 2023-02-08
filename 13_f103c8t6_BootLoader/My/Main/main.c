@@ -16,6 +16,26 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
+//Параметры загрузчика
+//Начальный адрес: 0х0800 0000
+//Размер		 : 10КБ(10240 байт = 0х2800)
+//из них 9КБ - это сам загрузчик,
+//       1КБ - это обасть хранения условий запуска основного приложения.
+//
+//Праметры приложения
+//Начальный адрес: 0х0800 0000 + 0х2800 = 0х0800 2800
+//Размер         : размер_флеш_памяти - размер_зегрузчика
+
+#define BOOT_SIZE					(9 * 1024) //размер загрузчика, в байтах
+#define APP_START_CONDITION_SIZE	(1 * 1024) //размер области хранения условий запуска основного приложения, в байтах
+
+//Состояния основного приложения
+#define APP_NO				0xFFFFFFFF	//приложение отсутствует
+#define APP_OK_AND_START 	0xAAAA0001	//CRC в норме, можно запускать
+#define APP_REWRITE_ME		0xAAAA0002	//была команда на переход в загрузчик после ресета
+#define APP_CRC_ERR 		0xAAAA001F	//ошибка CRC
+
+
 //Bootloader key configuration
 #define BOOT_KEY_VALUE				0xAAAA5555		//
 #define BOOT_KEY_FLASH_PAGE_NUM		5				//
@@ -29,8 +49,8 @@
 #define MAIN_PROGRAM_START_ADDR 	(FLASH_PAGE_ADDR(MAIN_PROGRAM_FLASH_PAGE_NUM))//0x08000000 + 1024 * 6 = 0x08001800
 //**********************************
 
-
-uint8_t buf[1024] = {0};
+#define FLASH_BUF_SIZE	1024
+static uint8_t flashBuf[FLASH_BUF_SIZE] = {0};
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -42,15 +62,15 @@ uint8_t buf[1024] = {0};
 //	DELAY_Init();
 //}
 //*******************************************************************************************
-// Function      SetKey()
+// Function      SetAppState()
 // Description   Sets bootloader key
 // Parameters    None
 // RetVal        None
 //*******************************************************************************************
-void SetKey(){
+void SetAppState(uint32_t state){
 
 	STM32_Flash_Unlock();
-	STM32_Flash_WriteWord(BOOT_KEY_VALUE, BOOT_KEY_START_ADDR);
+	STM32_Flash_WriteWord(state, BOOT_KEY_START_ADDR);
 	STM32_Flash_Lock();
 }
 //*******************************************************************************************
@@ -59,19 +79,19 @@ void SetKey(){
 // Parameters    None
 // RetVal        None
 //*******************************************************************************************
-void ResetKey(){
+void ResetAppState(){
 
 	STM32_Flash_Unlock();
 	STM32_Flash_ErasePage(BOOT_KEY_START_ADDR);
 	STM32_Flash_Lock();
 }
 //*******************************************************************************************
-// Function      ReadKey()
+// Function      GetAppState()
 // Description   Reads bootloader key value
 // Parameters    None
 // RetVal        None
 //*******************************************************************************************
-uint32_t ReadKey(){
+uint32_t GetAppState(){
 
   return (*(__IO uint32_t*)BOOT_KEY_START_ADDR);
 }
@@ -99,9 +119,15 @@ int main(void){
 //	SCB->VTOR = 0x08002800;
 	//***********************************************
 	//Если установлен признак, то запуск приложения
-	if(ReadKey() == BOOT_KEY_VALUE)
+	if(GetAppState() == APP_OK_AND_START) //BOOT_KEY_VALUE)
 	{
-		_goToApp(MAIN_PROGRAM_START_ADDR);
+		//Дополнительная проверка:
+		//по стартовому адресу приложения должен лежать значение вершины стека приложения
+		//т.е. значение больше 0x2000 0000
+		if((STM32_Flash_ReadWord(MAIN_PROGRAM_START_ADDR) & 0x2FFF0000) == 0x20000000)
+		{
+			_goToApp(MAIN_PROGRAM_START_ADDR);
+		}
 	}
 	//***********************************************
 	//Иниц-я нужной периферии.
@@ -142,9 +168,6 @@ int main(void){
 
 	//-----------------------
 	//Тест1 - запись буфера в 1024 байта во шлэш. - Работает!!
-	#define FLASH_BUF_SIZE	1024
-	uint8_t flashBuf[FLASH_BUF_SIZE] = {0};
-
 	for(uint32_t i=0; i < FLASH_BUF_SIZE; i++)//заполнение буфера числами от 0 до 1023
 	{
 		flashBuf[i] = i;
