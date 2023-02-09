@@ -13,7 +13,10 @@
 //*******************************************************************************************
 static uint8_t  lcdTextBuf[LCD_TEXT_BUFFER_SIZE];	   //буфер для вывода текста
 static uint8_t  lcdVideoBuffer[LCD_VIDEO_BUFFER_SIZE]; //Cache buffer in SRAM 128*64 bits or 1024 bytes
-static uint16_t lcdVideoBufferIndex = 0;               //Cache index
+static uint16_t LcdCacheIdx = 0;                       //Cache index
+
+static uint8_t  UartTextBuffer[128] ={0,};
+static uint16_t UartTextBufferIndex = 0;
 //*****************************
 extern const unsigned char Ascii_Tab_12864[];//Рабочая.
 #define TabAscii	       Ascii_Tab_12864   //Рабочая.
@@ -24,7 +27,7 @@ extern const unsigned char Ascii_Tab_12864[];//Рабочая.
 //Очистка текстового буфера.
 static void ClearTextBuf(void){
 
-	for(uint8_t i=0; i < LCD_TEXT_BUFFER_SIZE; i++) lcdTextBuf[i] = 0;
+	for(uint8_t i=0; i<LCD_TEXT_BUFFER_SIZE; i++) lcdTextBuf[i] = 0;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -39,8 +42,8 @@ void Lcd_Init(void){
 //Вывод буфера на дисплей.
 void Lcd_Update(void){
 
-//	Lm6063LcdUpdate(lcdVideoBuffer);
-//	Lcd_TIC32_SendData(lcdVideoBuffer);
+//	Lm6063LcdUpdate(LcdCache);
+//	Lcd_TIC32_SendData(LcdCache);
 	SSD1306_UpdateScreen(lcdVideoBuffer, LCD_VIDEO_BUFFER_SIZE);
 }
 //*****************************************************************************
@@ -49,16 +52,10 @@ uint8_t* Lcd_pVideoBuffer(void){
 	return lcdVideoBuffer;
 }
 //*****************************************************************************
-void Lcd_Filling(uint8_t byte){
-
-	for(uint16_t i=0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = byte;
-}
-//*****************************************************************************
 //Clears the display
 void Lcd_ClearVideoBuffer(void){
   
 	//забиваем всю память 0
-<<<<<<< HEAD
 	for(uint16_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = 0;
 }
 //*****************************************************************************
@@ -71,10 +68,6 @@ uint8_t* UartTextBuf(void){
 void Lcd_Filling(uint8_t byte){
   
 	for(uint16_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = byte;
-=======
-	//for(uint16_t i = 0; i < LCD_VIDEO_BUFFER_SIZE; i++) lcdVideoBuffer[i] = 0;
-	Lcd_Filling(0);
->>>>>>> 8dd8b351ca4032e63ffd12579620785e7286e893
 }
 //*****************************************************************************
 //управление пикселем с координатами x,y. mode -> Off, On or Xor.
@@ -170,98 +163,97 @@ void Lcd_Line(int x1, int y1, int x2, int y2, uint8_t mode){
 //рисуем круг по координатам с радиусом - по Брезенхейму
 void Lcd_Circle(uint8_t center_x, uint8_t center_y, uint8_t radius, uint8_t mode){
   
-	signed char xc = 0;
-	signed char yc = 0;
-	signed char p  = 0;
-	//--------------------
-	if(center_x > LCD_X_RES || center_y > LCD_Y_RES) return;
-	//--------------------
-	yc = radius;
-	p  = 3 - (radius<<1);
-	while(xc <= yc)
-	{
-		Lcd_Pixel(center_x + xc, center_y + yc, mode);
-		Lcd_Pixel(center_x + xc, center_y - yc, mode);
-		Lcd_Pixel(center_x - xc, center_y + yc, mode);
-		Lcd_Pixel(center_x - xc, center_y - yc, mode);
-		Lcd_Pixel(center_x + yc, center_y + xc, mode);
-		Lcd_Pixel(center_x + yc, center_y - xc, mode);
-		Lcd_Pixel(center_x - yc, center_y + xc, mode);
-		Lcd_Pixel(center_x - yc, center_y - xc, mode);
-		if(p < 0) p +=  (xc++ << 2) + 6;
-		else      p += ((xc++ - yc--)<<2) + 10;
-	}
+  signed char xc = 0;
+  signed char yc = 0;
+  signed char p  = 0;
+  //--------------------
+  if(center_x > LCD_X_RES || center_y > LCD_Y_RES) return;
+  //--------------------
+  yc = radius;
+  p  = 3 - (radius<<1);
+  while(xc <= yc)
+    {
+      Lcd_Pixel(center_x + xc, center_y + yc, mode);
+      Lcd_Pixel(center_x + xc, center_y - yc, mode);
+      Lcd_Pixel(center_x - xc, center_y + yc, mode);
+      Lcd_Pixel(center_x - xc, center_y - yc, mode);
+      Lcd_Pixel(center_x + yc, center_y + xc, mode);
+      Lcd_Pixel(center_x + yc, center_y - xc, mode);
+      Lcd_Pixel(center_x - yc, center_y + xc, mode);
+      Lcd_Pixel(center_x - yc, center_y - xc, mode);
+      if(p < 0) p +=  (xc++ << 2) + 6;
+      else      p += ((xc++ - yc--)<<2) + 10;
+    }
 }
 //*****************************************************************************
 //рисуем батарейку с заполнением в %
 void Lcd_Bar(int x1, int y1, int x2, int y2, uint8_t persent){
   
-	unsigned char horizon_line,horizon_line2,i;
-	//--------------------
-	if(persent>100)return;
+  unsigned char horizon_line,horizon_line2,i;
+  //--------------------
+  if(persent>100)return;
+  
+  Lcd_Line(x1,y2,x2,y2,1);  //down
+  Lcd_Line(x2,y1,x2,y2,1);  //right
+  Lcd_Line(x1,y1,x1,y2,1);  //left
+  Lcd_Line(x1,y1,x2,y1,1);  //up
+  Lcd_Line(x1+7,y1-1,x2-7,y1-1,1);
+  Lcd_Line(x1+7,y1-2,x2-7,y1-2,1);
 
-	Lcd_Line(x1,y2,x2,y2,1);  //down
-	Lcd_Line(x2,y1,x2,y2,1);  //right
-	Lcd_Line(x1,y1,x1,y2,1);  //left
-	Lcd_Line(x1,y1,x2,y1,1);  //up
-	Lcd_Line(x1+7,y1-1,x2-7,y1-1,1);
-	Lcd_Line(x1+7,y1-2,x2-7,y1-2,1);
+  horizon_line = persent*(y2-y1-3)/100;
+  for(i=0;i<horizon_line;i++) Lcd_Line(x1+2,y2-2-i,x2-2,y2-2-i,1);
 
-	horizon_line = persent*(y2-y1-3)/100;
-	for(i=0;i<horizon_line;i++) Lcd_Line(x1+2,y2-2-i,x2-2,y2-2-i,1);
-
-	horizon_line2 = (y2-y1-3);
-	for(i=horizon_line2;i>horizon_line;i--) Lcd_Line(x1+2,y2-2-i,x2-2,y2-2-i,0);
-}
-//*****************************************************************************
-//вывод изображения.
-void Lcd_Image(const uint8_t *imageData){
-
-	for(uint32_t i=0; i < LCD_VIDEO_BUFFER_SIZE; i++)
-	{
-		lcdVideoBuffer[i] = imageData[1023 - i];	//грузим данные
-		//lcdVideoBuffer[i] = imageData[i];	//грузим данные
-	}
+  horizon_line2 = (y2-y1-3);
+  for(i=horizon_line2;i>horizon_line;i--) Lcd_Line(x1+2,y2-2-i,x2-2,y2-2-i,0);
 }
 //*****************************************************************************
 //Установка курсора в положение Х,У. Диапазон значений Х,У: 1,1 .. 14,8.
 void Lcd_GotoXYFont(uint8_t x, uint8_t y){
   
-	if((x > 24) || (y > 8)) return;
-	lcdVideoBufferIndex = (uint16_t)((y-1) * 128) + (uint16_t)((x-1) * 6);
+  if((x > 24) || (y > 8)) return;
+  LcdCacheIdx = (uint16_t)((y-1) * 128) + (uint16_t)((x-1) * 6);
+}
+//*****************************************************************************
+//Displays a character at current cursor location and increment cursor location
+void Lcd_Chr(char ch){
+  
+	//Проверка на максимум.
+	//if(ch > LCD_CACHE_SIZE) return;
+	//--------------------
+	UartTextBuffer[UartTextBufferIndex++] = (uint8_t)ch;
+
+	for(uint8_t i=0; i<5; i++)
+	{
+		//выделяем байт-столбик из символа и грузим в массив - 5 раз
+		lcdVideoBuffer[LcdCacheIdx++] = TabAscii[ch*5+i];
+	}
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;	//добавляем пробел между символами
 }
 //*****************************************************************************
 //Утсановка курсора.
 void Lcd_SetCursor(uint8_t x, uint8_t y){
   
-	if(x > 22) x = 22;
-	if(y > 8)  y = 8;
+	//if (x > 15 || y > 8) return;
+	if(x > 22 || y > 8)
+	{
+		x = 22;
+		y = 8;
+	}
 	//--------------------
-	Lcd_GotoXYFont(x, y);
-
-	for(uint8_t i=0; i < (22-x); i++)
+	Lcd_GotoXYFont (x, y);
+	for(uint8_t i = 0; i < (22-x); i++)
 	{
 		if(lcdTextBuf[i]) Lcd_Chr(lcdTextBuf[i]);
 	}
 }
 //*****************************************************************************
-//Displays a character at current cursor location and increment cursor location
-void Lcd_Chr(char ch){
-
-	for(uint8_t i=0; i<5; i++)
-	{
-		//выделяем байт-столбик из символа и грузим в массив - 5 раз
-		lcdVideoBuffer[lcdVideoBufferIndex++] = TabAscii[ch*5+i];
-	}
-	lcdVideoBuffer[lcdVideoBufferIndex++] = 0x00; //добавляем пробел между символами
-}
-//*****************************************************************************
 //Displays a bold character at current cursor location and increment cursor location
 void Lcd_ChrBold(char ch){
   
-	uint8_t a = 0, b = 0, c = 0;
+	unsigned char i;
+	unsigned char a = 0, b = 0, c = 0;
 	//--------------------
-	for(uint8_t i = 0; i < 5; i++)
+	for(i = 0; i < 5; i++)
 	{
 		c = TabAscii[(ch*5+i)];//выделяем столбец из символа
 
@@ -276,26 +268,38 @@ void Lcd_ChrBold(char ch){
 		a |= (c & 0x04) * 12;
 		a |= (c & 0x08) * 24;
 
-		lcdVideoBuffer[lcdVideoBufferIndex]     = b;//копируем байты в экранный буфер
-		lcdVideoBuffer[lcdVideoBufferIndex+1]   = b;//дублируем для получения жирного шрифта
-		lcdVideoBuffer[lcdVideoBufferIndex+128] = a;
-		lcdVideoBuffer[lcdVideoBufferIndex+129] = a;
-		lcdVideoBufferIndex = lcdVideoBufferIndex+2;
+		lcdVideoBuffer[LcdCacheIdx]     = b;//копируем байты в экранный буфер
+		lcdVideoBuffer[LcdCacheIdx+1]   = b;//дублируем для получения жирного шрифта
+		lcdVideoBuffer[LcdCacheIdx+128] = a;
+		lcdVideoBuffer[LcdCacheIdx+129] = a;
+		LcdCacheIdx = LcdCacheIdx+2;
 	}
-	lcdVideoBuffer[lcdVideoBufferIndex++] = 0x00;	//для пробела между символами
-	lcdVideoBuffer[lcdVideoBufferIndex++] = 0x00;
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;	//для пробела между символами
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;
+}
+//*****************************************************************************
+//Печатает символ на текущем месте, большой и жирный.
+void Lcd_StringBold (unsigned char x, unsigned char y){
+  
+	Lcd_GotoXYFont (x, y);
+	for(uint8_t i = 0; i < 12-x; i++ )
+	{
+		if(lcdTextBuf[i]) Lcd_ChrBold(lcdTextBuf[i]);
+	}
+	ClearTextBuf();
 }
 //*****************************************************************************	
 //Displays a character at current cursor location and increment cursor location
-void Lcd_ChrBig(char ch){
+void Lcd_ChrBig (char ch){
   
-	uint8_t a = 0, b = 0, c = 0;
+	unsigned char i;
+	unsigned char a = 0, b = 0, c = 0;
 	//--------------------
-	for(uint8_t i = 0; i < 5; i++)
+	for(i = 0; i < 5; i++)
 	{
 		c = TabAscii[(ch*5+i)];		//выделяем столбец из символа
 
-		b  = (c & 0x01) * 3;        //"растягиваем" столбец на два байта
+		b  = (c & 0x01) * 3;            //"растягиваем" столбец на два байта
 		b |= (c & 0x02) * 6;
 		b |= (c & 0x04) * 12;
 		b |= (c & 0x08) * 24;
@@ -305,12 +309,25 @@ void Lcd_ChrBig(char ch){
 		a |= (c & 0x02) * 6;
 		a |= (c & 0x04) * 12;
 		a |= (c & 0x08) * 24;
-
-		lcdVideoBuffer[lcdVideoBufferIndex]     = b;
-		lcdVideoBuffer[lcdVideoBufferIndex+128] = a;
-		lcdVideoBufferIndex = lcdVideoBufferIndex+1;
+		lcdVideoBuffer[LcdCacheIdx] = b;
+		lcdVideoBuffer[LcdCacheIdx+128] = a;
+		LcdCacheIdx = LcdCacheIdx+1;
 	}
-	lcdVideoBuffer[lcdVideoBufferIndex++] = 0x00;
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;
+}
+//*****************************************************************************
+//Displays a string at current cursor location
+void Lcd_StringBig (unsigned char x, unsigned char y){
+  
+	unsigned char i;
+	//-------------------- 
+	if (x > 22 && y > 5) return;
+	Lcd_GotoXYFont(x, y);
+	for(i=0; i<(22-x); i++)
+	{
+		if(lcdTextBuf[i]) Lcd_ChrBig(lcdTextBuf[i]);
+	}
+	ClearTextBuf();
 }
 //*****************************************************************************
 uint8_t Lcd_Print(char *txt){
@@ -352,19 +369,24 @@ uint8_t Lcd_PrintBig(char *txt){
 	return i;
 }
 //*****************************************************************************
+//вывод изображения.
+void Lcd_Image(const uint8_t *imageData){
+
+	for(uint32_t i=0; i < LCD_VIDEO_BUFFER_SIZE; i++)
+	{
+		lcdVideoBuffer[i] = imageData[1023 - i];	//грузим данные
+		//lcdVideoBuffer[i] = imageData[i];	//грузим данные
+	}
+}
+//*****************************************************************************
 uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize){
 
 	#define DEC_ARR_SIZE 10
 
 	uint8_t  decArray[DEC_ARR_SIZE];
-	uint32_t div = 1000000000;
 	//uint8_t	 temp;
-	void(*func)(char);
+	uint32_t div = 1000000000;
 	//--------------------
-	//Выбираем функцию для выводв символа
-	 	 if(charSize == LCD_CHAR_SIZE_BIG) func = Lcd_ChrBig;
-	else if(charSize == LCD_CHAR_SIZE_BOLD)func = Lcd_ChrBold;
-	else								   func = Lcd_Chr;
 	//Преобразование числа в строку.
 	for(uint32_t i = DEC_ARR_SIZE; i > 0; i--)
 	{
@@ -372,38 +394,46 @@ uint32_t Lcd_BinToDec(uint32_t var, uint32_t num, uint32_t charSize){
 		var %= div;
 		div /= 10;
 	}
-	//Вывод десятичных разрядов числа.
+
+//	//Преобразование числа в строку. - старый вариант.
+//	decArray[9] = (uint8_t)(var/1000000000);
+//	var %= 1000000000;
+//
+//	decArray[8] = (uint8_t)(var/100000000);
+//	var %= 100000000;
+//
+//	decArray[7] = (uint8_t)(var/10000000);
+//	var %= 10000000;
+//
+//	decArray[6] = (uint8_t)(var/1000000);
+//	var %= 1000000;
+//
+//	decArray[5] = (uint8_t)(var/100000);
+//	var %= 100000;
+//
+//	decArray[4] = (uint8_t)(var/10000);
+//	var %= 10000;
+//
+//	decArray[3] = (uint8_t)(var/1000);
+//	var %= 1000;
+//
+//	decArray[2] = (uint8_t)(var/100);
+//	var %= 100;
+//
+//	decArray[1] = (uint8_t)(var/10);
+//	decArray[0] = (uint8_t)(var%10);
+	//--------------------
+	//Вывод на дисплей
 	for(uint32_t i = 0; i < num; i++)
 	{
 		var = 0x30 + decArray[(num - 1) - i];
-		(*func)((uint8_t)var);
+			 if(charSize == LCD_CHAR_SIZE_BIG) Lcd_ChrBig((uint8_t)var);
+		else if(charSize == LCD_CHAR_SIZE_BOLD)Lcd_ChrBold((uint8_t)var);
+		else					     		   Lcd_Chr((uint8_t)var);
 	}
-	//Возвращаем кол-во выведенных символов.
 	return num+1;
 }
 //*****************************************************************************
-<<<<<<< HEAD
-=======
-uint32_t Lcd_BinToDecWithSign(int32_t var, uint32_t num, uint32_t charSize){
-
-	void(*func)(char);
-	//--------------------
-	//Выбираем функцию для выводв символа
-	 	 if(charSize == LCD_CHAR_SIZE_BIG) func = Lcd_ChrBig;
-	else if(charSize == LCD_CHAR_SIZE_BOLD)func = Lcd_ChrBold;
-	else					     		   func = Lcd_Chr;
-	//Вывод знака
-	if(var < 0)
-	{
-		var  = -var;
-		(*func)('-');
-	}
-	else (*func)(' ');
-	//Вывод десятичных разрядов числа. Возвращаем кол-во выведенных символов.
-	return Lcd_BinToDec(var, num, charSize) + 1;
-}
-//*****************************************************************************
->>>>>>> 8dd8b351ca4032e63ffd12579620785e7286e893
 void Lcd_u8ToHex(uint8_t var){
 
 	uint8_t ch;

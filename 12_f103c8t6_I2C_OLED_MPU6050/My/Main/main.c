@@ -394,7 +394,7 @@ int main(void){
 	STM32_Clock_Init();
 	SYS_TICK_Init();
 	GPIO_Init();
-	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 100000);
 
 	DELAY_Init();
 	DELAY_milliS(100);//Эта задержка нужна для стабилизации напряжения патания.

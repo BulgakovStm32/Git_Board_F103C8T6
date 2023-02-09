@@ -105,7 +105,7 @@ uint32_t SSD1306_Init(uint32_t lcdType){
 
 	ssd1306_I2C_WriteCMD(0xAF); //--turn on SSD1306 panel
 	//-------------------------
-	pVideoBuffer = Lcd_pVideoBuffer();
+	//pVideoBuffer = Lcd_pVideoBuffer();
 	return 0;
 }
 //***********************************************************************
