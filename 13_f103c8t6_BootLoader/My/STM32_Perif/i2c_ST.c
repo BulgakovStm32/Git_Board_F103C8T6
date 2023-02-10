@@ -469,43 +469,22 @@ static void I2C_IT_ReadByteToBuffer(I2C_IT_t *i2cIt){
 		//Складываем принятый байт в приемный буфер.
 		*(i2cIt->pRxBuf + i2cIt->rxBufIndex) = (uint8_t)i2cIt->i2c->DR;
 		i2cIt->rxBufIndex++;
-		//if(i2cIt->rxBufIndex < I2C_IT_RX_BUF_LEN_MAX) i2cIt->rxBufIndex++;
-		//смотрим сколько байт нужно принять.
-		//второй байт пакета - это размер принимаемого пакета. подробности в описании протокола.
-		if(i2cIt->rxBufIndex == 2 &&
-		   i2cIt->pRxBuf[1]	 != 0) i2cIt->rxBufSize = i2cIt->pRxBuf[1] + 2;
-		if(i2cIt->rxBufSize > I2C_IT_RX_BUF_LEN_MAX) i2cIt->rxBufSize = I2C_IT_RX_BUF_LEN_MAX;
-		//приняли нужное кол-во байтов.
-		if(i2cIt->rxBufIndex >= i2cIt->rxBufSize)
-		{
-			i2cIt->i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
-			i2cIt->i2cSlaveRxCpltCallback();    //Разбор принятого пакета.
-		}
 
 
-//		data = (uint8_t)i2cIt->i2c->DR;
-//		//Складываем принятый байт в приемный буфер.
-//		*(i2cIt->pRxBuf + i2cIt->rxBufIndex) = data;
-//		i2cIt->rxBufIndex++;
-//		//if(i2cIt->rxBufIndex < I2C_IT_RX_BUF_LEN_MAX) i2cIt->rxBufIndex++;
 //		//смотрим сколько байт нужно принять.
 //		//второй байт пакета - это размер принимаемого пакета. подробности в описании протокола.
 //		if(i2cIt->rxBufIndex == 2 &&
 //		   i2cIt->pRxBuf[1]	 != 0) i2cIt->rxBufSize = i2cIt->pRxBuf[1] + 2;
 //		if(i2cIt->rxBufSize > I2C_IT_RX_BUF_LEN_MAX) i2cIt->rxBufSize = I2C_IT_RX_BUF_LEN_MAX;
-//		//Считаем CRC при приеме каждого байта.
-//		crc = CRC8_ForEachByte(data, crc);
-//		//приняли нужное кол-во байтов.
-//		if(i2cIt->rxBufIndex >= i2cIt->rxBufSize)
-//		{
-//			i2cIt->i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
-//
-//			if(crc == *(i2cIt->pRxBuf + i2cIt->rxBufIndex - 1))
-//			{
-//				i2cIt->i2cSlaveRxCpltCallback();    //Разбор принятого пакета.
-//			}
-//			crc = 0xff;
-//		}
+
+
+		//приняли нужное кол-во байтов.
+		if(i2cIt->rxBufIndex >= i2cIt->rxBufSize)
+		{
+			i2cIt->i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
+			i2cIt->rxBufIndex = 0;				//сброс счетчика принятых байт.
+			i2cIt->i2cSlaveRxCpltCallback();    //Разбор принятого пакета.
+		}
 	}
 }
 //**********************************************************
@@ -559,6 +538,11 @@ static void I2C_IT_Slave(I2C_IT_t *i2cIt){
 	{
 		i2c->CR1 &= ~I2C_CR1_STOP;   //и записью в CR1 (из примера от ST)
 		i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
+
+		I2C_IT_ReadByteToBuffer(i2cIt);//Складываем принятый байт в приемный буфер.
+		(void)i2c->SR1;//рекомендация по сбросу бита BTF из даташита
+		(void)i2c->DR;
+
 		i2cIt->ITState = I2C_IT_STATE_STOP;
 	}
 	/*------------------------------------------------------------------------*/

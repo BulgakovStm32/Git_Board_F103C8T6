@@ -4,7 +4,7 @@
  *  Created on: 19 октября 2021 года.
  *  Autho     : Беляев А.А.
  *
- *	Описание        :
+ *	Описание        : I2C Boot Loader
  *  Датчики         :
  *  Вывод информации:
  *
@@ -16,61 +16,48 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-//Параметры загрузчика
-//Начальный адрес: 0х0800 0000
-//Размер		 : 10КБ(10240 байт = 0х2800)
-//из них 9КБ - это сам загрузчик,
-//       1КБ - это обасть хранения условий запуска основного приложения.
-//
-//Праметры приложения
-//Начальный адрес: 0х0800 0000 + 0х2800 = 0х0800 2800
-//Размер         : размер_флеш_памяти - размер_зегрузчика
+//Параметры загрузчика:
+//Интерфейс        			: I2C (I2C1 или I2C зависит от устройства)
+//Скорость        			: 400кГц (возможно лучше 100кГц для лучшей надежности)
+//Переход в режим загрузчика: при старте МК первым запускается З
+//Начальный адрес  			: 0х0800 0000
+//Размер	         		: 10КБ(10240 байт = 0х2800)
+//							  из них 9КБ - это сам загрузчик,
+//      						     1КБ - это обасть хранения состояния приложения.
 
-#define BOOT_SIZE					(9 * 1024) //размер загрузчика, в байтах
-#define APP_START_CONDITION_SIZE	(1 * 1024) //размер области хранения условий запуска основного приложения, в байтах
+#define BOOT_SIZE				(9 * 1024) 					//размер загрузчика, в байтах
+#define APP_CONDITION_SIZE		(1 * 1024) 					//размер области хранения условий запуска основного приложения, в байтах
+#define APP_CONDITION_ADDR  	(FLASH_BASE + BOOT_SIZE) 	//адрес обасти хранения состояния приложения
 
 //Состояния основного приложения
-#define APP_NO				0xFFFFFFFF	//приложение отсутствует
-#define APP_OK_AND_START 	0xAAAA0001	//CRC в норме, можно запускать
-#define APP_REWRITE_ME		0xAAAA0002	//была команда на переход в загрузчик после ресета
-#define APP_CRC_ERR 		0xAAAA001F	//ошибка CRC
+#define APP_NO					0xFFFFFFFF	//приложение отсутствует
+#define APP_OK_AND_START 		0xAAAA0001	//CRC в норме, можно запускать
+#define APP_REWRITE_ME			0xAAAA0002	//была команда на переход в загрузчик после ресета
+#define APP_CRC_ERR 			0xAAAA001F	//ошибка CRC
 
-
-//Bootloader key configuration
-#define BOOT_KEY_VALUE				0xAAAA5555		//
-#define BOOT_KEY_FLASH_PAGE_NUM		5				//
-#define BOOT_KEY_START_ADDR			(FLASH_PAGE_ADDR(BOOT_KEY_FLASH_PAGE_NUM))
-
-//Адрес приложения.
-//Расчитывается так: 0x0800 0000 + FLASH_PAGE_SIZE * FLASH_PAGE_NUM
-//где: 	FLASH_PAGE_SIZE - размер страницы флеш-памяти в байтах (смотрим RM0008 Reference manual раздел 3.3.3 Embedded Flash memory)
-//		FLASH_PAGE_NUM  - номер страници флеш-памяти, от 0 до FLASH_PAGES_NUM (зависит от размера флеш-памяти контроллера)
-#define MAIN_PROGRAM_FLASH_PAGE_NUM	(BOOT_KEY_FLASH_PAGE_NUM + 1)				  //Страница флеш-памяти приложения
-#define MAIN_PROGRAM_START_ADDR 	(FLASH_PAGE_ADDR(MAIN_PROGRAM_FLASH_PAGE_NUM))//0x08000000 + 1024 * 6 = 0x08001800
+//Праметры приложения:
+//Начальный адрес: 0х0800 0000 + 0х2800 = 0х0800 2800
+//Размер         : размер_флеш_памяти_МК - размер_загрузчика
+//Условие перехода из загрузчика в приложение: таймаут (1 сек.)
+//                                             по команде (команда Go загрузчика)
+#define APP_PROGRAM_START_ADDR	(FLASH_BASE + BOOT_SIZE + APP_CONDITION_SIZE)  //начальный адрес приложения
 //**********************************
 
-#define FLASH_BUF_SIZE	1024
-static uint8_t flashBuf[FLASH_BUF_SIZE] = {0};
+
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-//static void _initAll(void){
-//
-//	STM32_Clock_Init();
-//	GPIO_Init();
-//	DELAY_Init();
-//}
 //*******************************************************************************************
 // Function      SetAppState()
 // Description   Sets bootloader key
 // Parameters    None
 // RetVal        None
-//*******************************************************************************************
+//*****************************************
 void SetAppState(uint32_t state){
 
 	STM32_Flash_Unlock();
-	STM32_Flash_WriteWord(state, BOOT_KEY_START_ADDR);
+	STM32_Flash_WriteWord(state, APP_CONDITION_ADDR);
 	STM32_Flash_Lock();
 }
 //*******************************************************************************************
@@ -78,11 +65,11 @@ void SetAppState(uint32_t state){
 // Description   Resets bootloader key
 // Parameters    None
 // RetVal        None
-//*******************************************************************************************
+//*****************************************
 void ResetAppState(){
 
 	STM32_Flash_Unlock();
-	STM32_Flash_ErasePage(BOOT_KEY_START_ADDR);
+	STM32_Flash_ErasePage(APP_CONDITION_ADDR);
 	STM32_Flash_Lock();
 }
 //*******************************************************************************************
@@ -90,24 +77,45 @@ void ResetAppState(){
 // Description   Reads bootloader key value
 // Parameters    None
 // RetVal        None
-//*******************************************************************************************
+//*****************************************
 uint32_t GetAppState(){
 
-  return (*(__IO uint32_t*)BOOT_KEY_START_ADDR);
+  return STM32_Flash_ReadWord(APP_CONDITION_ADDR);
 }
 //*******************************************************************************************
+// Function   : AppAvailableCheck()
+// Description: по стартовому адресу приложения должно лежать значение вершины стека
+//			    приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
+//				приложение отсутсвует
+// Parameters : Нет
+// RetVal     : 1 - приложение есть; 0 - приложения нет.
+//*****************************************
+static uint32_t AppAvailableCheck(void){
 
-//************************************************************
-static void _goToApp(uint32_t appAddr){
+	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
+	return 1;
+}
+//*******************************************************************************************
+// Function      GoToApp
+// Description
+// Parameters
+// RetVal
+//*****************************************
+static void GoToApp(uint32_t appAddr){
 
 	void(*goToApp)(void);
+	uint32_t addrResetHandler;
 	//------------------
-	appAddr = *(volatile uint32_t*)(appAddr + 4); //Адрес перехода из вектора Reset
-	goToApp = (void(*)(void))appAddr;			  //Указатель на функцию перехода
+	//Дополнительная проверка:
+	//по стартовому адресу приложения должно лежать значение вершины стека приложения
+	//т.е. значение больше 0x2000 0000
+	if(!AppAvailableCheck()) return;
 
-	__disable_irq();						 //
-	__set_MSP(*(volatile uint32_t*)appAddr); //Устанавливаем указатель стека SP приложения
-	goToApp();								 //переход на приложение.
+	__disable_irq();
+	__set_MSP(*(volatile uint32_t*)appAddr);               	//Устанавливаем указатель стека SP приложения
+	addrResetHandler = *(volatile uint32_t*)(appAddr + 4); 	//Адрес функции Reset_Handler приложения
+	goToApp = (void(*)(void))addrResetHandler; 			  	//Указатель на функцию Reset_Handler приложения
+	goToApp();								   				//Переход на функцию Reset_Handler приложения
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -116,94 +124,33 @@ static void _goToApp(uint32_t appAddr){
 int main(void){
 
 	__disable_irq();
-//	SCB->VTOR = 0x08002800;
-	//***********************************************
-	//Если установлен признак, то запуск приложения
-	if(GetAppState() == APP_OK_AND_START) //BOOT_KEY_VALUE)
-	{
-		//Дополнительная проверка:
-		//по стартовому адресу приложения должно лежать значение вершины стека приложения
-		//т.е. значение больше 0x2000 0000
-		if((STM32_Flash_ReadWord(MAIN_PROGRAM_START_ADDR) & 0x2FFF0000) == 0x20000000)
-		{
-			_goToApp(MAIN_PROGRAM_START_ADDR);
-		}
-	}
-	//***********************************************
-	//Иниц-я нужной периферии.
 	STM32_Clock_Init();
 	GPIO_Init();
 	DELAY_Init();
-//	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
 	//***********************************************
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
 	{
+		DELAY_milliS(100);
 		LED_PC13_On();
-		DELAY_milliS(250);
+		DELAY_milliS(100);
 		LED_PC13_Off();
-		DELAY_milliS(250);
 	}
-	//DELAY_milliS(1000);
+//	DELAY_milliS(1000);
 	//***********************************************
-	//Очистка всех страниц пямяти приложения
-	STM32_Flash_Unlock();
-	for(uint32_t i=0; i < (FLASH_PAGES_NUM - MAIN_PROGRAM_FLASH_PAGE_NUM); i++)
-	{
-		STM32_Flash_ErasePage(MAIN_PROGRAM_START_ADDR + FLASH_PAGE_SIZE * i);
-	}
-	STM32_Flash_Lock();
+	BOOT_LOADER_I2CInit(); //Инициализация I2C Slave для работы по прерываниям.
+
+
+
+
+
+	__enable_irq();
 	//***********************************************
-	//
-
-
-
-
-
-
-
-
-
-
-
-	//-----------------------
-	//Тест1 - запись буфера в 1024 байта во шлэш. - Работает!!
-	for(uint32_t i=0; i < FLASH_BUF_SIZE; i++)//заполнение буфера числами от 0 до 1023
-	{
-		flashBuf[i] = i;
-	}
-
-	STM32_Flash_Unlock();
-
-	//Заполение всех страниц пямяти приложения
-	for(uint32_t i=0; i < (FLASH_PAGES_NUM - MAIN_PROGRAM_FLASH_PAGE_NUM); i++)
-	{
-		//STM32_Flash_Unlock();
-		//STM32_Flash_ErasePage(MAIN_PROGRAM_START_ADDR);
-		//STM32_Flash_WriteBuf(flashBuf, (uint32_t*)MAIN_PROGRAM_START_ADDR, FLASH_BUF_SIZE);
-		//STM32_Flash_Lock();
-
-		STM32_Flash_WriteBuf(flashBuf, (uint32_t*)(MAIN_PROGRAM_START_ADDR + FLASH_PAGE_SIZE * i), FLASH_BUF_SIZE);
-	}
-
-	//Очистка всех страниц пямяти приложения
-	for(uint32_t i=0; i < (FLASH_PAGES_NUM - MAIN_PROGRAM_FLASH_PAGE_NUM); i++)
-	{
-		STM32_Flash_ErasePage(MAIN_PROGRAM_START_ADDR + FLASH_PAGE_SIZE * i);
-	}
-
-	STM32_Flash_Lock();
-
-//	SYS_TICK_Control(SYS_TICK_ON);
-//	__enable_irq();
-	//**************************************************************
 	while(1)
 	{
-		LED_PC13_Toggel();
-		DELAY_milliS(50);
-		//__WFI();//Sleep
+//		LED_PC13_Toggel();
+//		DELAY_milliS(250);
 	}
-	//**************************************************************
 }
 //*******************************************************************************************
 //*******************************************************************************************

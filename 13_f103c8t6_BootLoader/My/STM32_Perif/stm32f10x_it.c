@@ -494,7 +494,7 @@ void TIM4_IRQHandler(void) {
 *******************************************************************************/
 void I2C1_EV_IRQHandler(void){
 
-//	I2C_IT_EV_Handler(I2C1);
+	I2C_IT_EV_Handler(I2C1);
 }
 /*******************************************************************************
 * Function Name  : I2C1_ER_IRQHandler
@@ -505,7 +505,7 @@ void I2C1_EV_IRQHandler(void){
 *******************************************************************************/
 void I2C1_ER_IRQHandler(void){
 
-//	I2C_IT_ER_Handler(I2C1);
+	I2C_IT_ER_Handler(I2C1);
 }
 /*******************************************************************************
 * Function Name  : I2C2_EV_IRQHandler
