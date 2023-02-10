@@ -92,6 +92,8 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_BootLoaderPtocolEmulator/My/Startup}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_BootLoaderPtocolEmulator/My/STM32_Perif}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_BootLoaderPtocolEmulator/I2CBootLoaderProtocol}&quot;"/>
                                     								
                                 </option>
                                 								

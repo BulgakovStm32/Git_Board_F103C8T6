@@ -33,7 +33,7 @@
 #define I2C_FM_TRISE		12 //(300U  / TPCLK1)
 
 //Таймаут ожидания сброса флага
-#define I2C_WAIT_TIMEOUT	1000//500//5000//50000U
+#define I2C_WAIT_TIMEOUT	1000//5000//50000U
 //--------------------------
 #define I2C_MODE_READ  		1
 #define I2C_MODE_WRITE 		0

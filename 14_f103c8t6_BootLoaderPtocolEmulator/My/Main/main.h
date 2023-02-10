@@ -31,6 +31,9 @@
 //-------------------------
 //Application
 #include "Delay.h"
+#include "i2cBootLoaderProtocol.h"
+
+
 //#include "LcdGraphic.h"
 //#include "Blink.h"
 //#include "DS18B20.h"
