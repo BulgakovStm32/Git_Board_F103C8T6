@@ -73,6 +73,14 @@ static void _i2c_ModeInit(I2C_TypeDef *i2c, uint32_t mode){
 	i2c->CR1 &= ~I2C_CR1_SWRST; //Это нужно для востановления работоспособноси после КЗ на линии.
 	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
 	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
+
+//	Bit 7 NOSTRETCH: Clock stretching disable (Slave mode)
+//	This bit is used to disable clock stretching in slave mode when ADDR or BTF flag is set, until
+//	it is reset by software.
+//	0: Clock stretching enabled
+//	1: Clock stretching disabled
+//	i2c->CR1 |= I2C_CR1_NOSTRETCH;
+
 	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
 
 	if(mode == I2C_MODE_MASTER) i2c->SR2 |=  I2C_SR2_MSL;//режим Master.
