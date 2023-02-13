@@ -19,56 +19,96 @@ static I2C_IT_t	bootLoaderI2c;
 //*******************************************************************************************
 //*******************************************************************************************
 //Обработчик принятых команда
-void _bootLoader_CmdParsing(void){
+static void _bootLoader_CmdParsing(void){
 
 	uint8_t *dataFrame = I2C_IT_GetpRxBuf(&bootLoaderI2c);
 	uint8_t *response  = I2C_IT_GetpTxBuf(&bootLoaderI2c);
-	uint8_t txSize;
-	uint8_t cmd = dataFrame[0];
-	//--------------------------
-	//Разбор принятой команды
+		   uint8_t txSize = 0;
+	static uint8_t cmd    = 0;
+	//----------------------------------------
+	//В начале приходит код команды и инверсия кода команды.
+	//После чего хост ждет ACK/NACK
+	if(cmd == 0)
+	{
+		cmd = ~dataFrame[0];	//0-й байт - код команды
+		if(cmd == dataFrame[1])	//1-й байт - инверсия кода команды
+		{
+			cmd = dataFrame[0];		//запоминаем принятую команду
+			response[0] = CMD_ACK;	//передаем ACK
+		}
+		else
+		{
+			cmd = 0;
+			response[0] = CMD_NACK;//передаем NACK
+		}
+		//Сброс приемного буфера
+		dataFrame[0] = 0;
+		dataFrame[1] = 0;
+		//Один байт ответа на команду
+		txSize = 1;
+		goto START_TX;
+	}
+	//----------------------------------------
+	//Выполнение принятой ранее команды
 	switch(cmd)
 	{
 		//-------------------
-		//Получает версию и разрешенные команды, поддерживаемые текущей версией загрузчика.
-		case(CMD_BOOT_Get):
-			cmd = ~cmd;
-			if(dataFrame[1] == cmd) response[0] = CMD_BOOT_ACK;
-			else					response[0] = CMD_BOOT_NACK;
-
-			txSize = 1;
-
-			LED_PC13_Toggel();
-		break;
-		//-------------------
 		//Получает версию загрузчика.
 		case(CMD_BOOT_GetVersion):
-			cmd = ~cmd;
-			if(dataFrame[1] == cmd) response[0] = CMD_BOOT_ACK;
-			else				    response[0] = CMD_BOOT_NACK;
-
-			txSize = 1;
-
+			response[0] = 0x1A;
+			txSize 		= 1;
+			cmd 		= CMD_ACK;//после передачи версии загрузчика передадим ACK
 			LED_PC13_Toggel();
 		break;
 		//-------------------
-		//Получает идентификатор чипа
-		case(CMD_BOOT_GetID):
-			cmd = ~cmd;
-			if(dataFrame[1] == cmd) response[0] = CMD_BOOT_ACK;
-			else				    response[0] = CMD_BOOT_NACK;
+		//Write Memory - Записывает в память до 256 байт, начиная с адреса, указанного приложением.
+		case(CMD_BOOT_WM):
+			//ReadoutProtection активна? - если да - передаем NACK
 
-			txSize = 1;
+			//----------
+			//Передаем ACK
 
-			LED_PC13_Toggel();
+			//----------
+			//Принимаем 4 байт адреса с контрольной суммой, куда будем записывать
+
+			//----------
+			//Проверка валидности принятого адреса, если нет - передаем NACK
+
+			//----------
+			//Передаем ACK
+
+
+		break;
+		//----------------------------------------
+		//----------------------------------------
+		//ACK - пакет принят (команда выполнена)
+		case(CMD_ACK):
+			response[0] = CMD_ACK;	//передаем ACK
+			txSize 		= 1;	  	//
+			cmd 		= 0;		//
 		break;
 		//-------------------
+		//NACK - пакет отброшен (команда не выполнена)
+		case(CMD_NACK):
+			response[0] = CMD_NACK;	//передаем NACK
+			txSize 		= 1;	  	//
+			cmd 		= 0;		//
+		break;
+		//-------------------
+		//BUSY - состояние занятости BUSY (команда в процессе выполнения)
+		case(CMD_BUSY):
+			response[0] = CMD_BUSY;	//передаем BUSY
+			txSize 		= 1;	  	//
+			cmd 		= 0;		//
+		break;
+		//----------------------------------------
+		//----------------------------------------
 		default:
-
+			LED_PC13_Toggel();
 		break;
 		//-------------------
 	}
-	//--------------------------
+	START_TX:
 	//Кол-во байтов в ответе(с полями COUNT и CRC).
 	I2C_IT_SetTxSize(&bootLoaderI2c, txSize);
 }
@@ -83,21 +123,32 @@ static void _bootLoader_TxParsing(void){
 void BOOT_LOADER_I2CInit(void){
 
 	//Инициализация I2C Slave для работы по прерываниям.
-	bootLoaderI2c.i2c		= BOOT_I2C;			//используемый порт I2C
-	bootLoaderI2c.i2cMode	= I2C_MODE_SLAVE;	//режим SLAVE
-	bootLoaderI2c.gpioRemap = I2C_GPIO_NOREMAP;	//нет ремапа ножек порта I2C
-	bootLoaderI2c.i2cSpeed  = BOOT_I2C_SPEED;	//скорость работы порта I2C
-	bootLoaderI2c.slaveAddr = BOOT_I2C_ADDR;	//адрес устройства на нине I2C
+//	bootLoaderI2c.i2c		= BOOT_I2C;			//используемый порт I2C
+//	bootLoaderI2c.i2cMode	= I2C_MODE_SLAVE;	//режим SLAVE
+//	bootLoaderI2c.gpioRemap = I2C_GPIO_NOREMAP;	//нет ремапа ножек порта I2C
+//	bootLoaderI2c.i2cSpeed  = BOOT_I2C_SPEED;	//скорость работы порта I2C
+//	bootLoaderI2c.slaveAddr = BOOT_I2C_ADDR;	//адрес устройства на нине I2C
+//
+//	bootLoaderI2c.rxBufSize = 2;	//Ждем приема 2 байтов
+//	bootLoaderI2c.txBufSize = I2C_IT_RX_BUF_SIZE_DEFAULT;
+//	bootLoaderI2c.i2cSlaveRxCpltCallback = _bootLoader_CmdParsing;
+//	bootLoaderI2c.i2cSlaveTxCpltCallback = _bootLoader_TxParsing;
+//	I2C_IT_Init(&bootLoaderI2c);
 
-	bootLoaderI2c.rxBufSize = 2;	//Ждем приема 2 байтов
-	bootLoaderI2c.txBufSize = I2C_IT_RX_BUF_SIZE_DEFAULT;
-	bootLoaderI2c.i2cSlaveRxCpltCallback = _bootLoader_CmdParsing;
-	bootLoaderI2c.i2cSlaveTxCpltCallback = _bootLoader_TxParsing;
-	I2C_IT_Init(&bootLoaderI2c);
+	I2C_Slave_Init(BOOT_I2C,			//используемый порт I2C
+				   I2C_GPIO_NOREMAP,	//нет ремапа ножек порта I2C
+				   BOOT_I2C_ADDR,		//адрес устройства на нине I2C
+				   BOOT_I2C_SPEED);		//скорость работы порта I2C
+	BOOT_I2C->CR1 |= I2C_CR1_PE;		//Включение модуля I2C.
+
 }
 //**********************************************************
+void BOOT_LOADER_Loop(void){
 
 
+
+
+}
 //**********************************************************
 
 

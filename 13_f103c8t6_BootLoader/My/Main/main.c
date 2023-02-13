@@ -101,22 +101,22 @@ static uint32_t AppAvailableCheck(void){
 // Parameters
 // RetVal
 //*****************************************
-static void GoToApp(uint32_t appAddr){
-
-	void(*goToApp)(void);
-	uint32_t addrResetHandler;
-	//------------------
-	//Дополнительная проверка:
-	//по стартовому адресу приложения должно лежать значение вершины стека приложения
-	//т.е. значение больше 0x2000 0000
-	if(!AppAvailableCheck()) return;
-
-	__disable_irq();
-	__set_MSP(*(volatile uint32_t*)appAddr);               	//Устанавливаем указатель стека SP приложения
-	addrResetHandler = *(volatile uint32_t*)(appAddr + 4); 	//Адрес функции Reset_Handler приложения
-	goToApp = (void(*)(void))addrResetHandler; 			  	//Указатель на функцию Reset_Handler приложения
-	goToApp();								   				//Переход на функцию Reset_Handler приложения
-}
+//static void GoToApp(uint32_t appAddr){
+//
+//	void(*goToApp)(void);
+//	uint32_t addrResetHandler;
+//	//------------------
+//	//Дополнительная проверка:
+//	//по стартовому адресу приложения должно лежать значение вершины стека приложения
+//	//т.е. значение больше 0x2000 0000
+//	if(!AppAvailableCheck()) return;
+//
+//	__disable_irq();
+//	__set_MSP(*(volatile uint32_t*)appAddr);               	//Устанавливаем указатель стека SP приложения
+//	addrResetHandler = *(volatile uint32_t*)(appAddr + 4); 	//Адрес функции Reset_Handler приложения
+//	goToApp = (void(*)(void))addrResetHandler; 			  	//Указатель на функцию Reset_Handler приложения
+//	goToApp();								   				//Переход на функцию Reset_Handler приложения
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -140,16 +140,15 @@ int main(void){
 	//***********************************************
 	BOOT_LOADER_I2CInit(); //Инициализация I2C Slave для работы по прерываниям.
 
-
-
-
-
-	__enable_irq();
+	//Прерывания I2C для работы протакола - приоритет = 2
+//	NVIC_SetPriority(I2C1_EV_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 2, 0));
+//	NVIC_SetPriority(I2C1_ER_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 2, 0));
+//	__enable_irq();
 	//***********************************************
 	while(1)
 	{
-//		LED_PC13_Toggel();
-//		DELAY_milliS(250);
+		BOOT_LOADER_Loop();
+		//DELAY_milliS(10);
 	}
 }
 //*******************************************************************************************
