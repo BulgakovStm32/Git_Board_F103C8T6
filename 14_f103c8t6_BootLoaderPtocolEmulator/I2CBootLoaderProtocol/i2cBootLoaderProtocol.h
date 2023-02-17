@@ -52,9 +52,9 @@
 #define BOOT_I2C_NO_DEVICE		0x00	//устройства нет на шине I2C
 
 //Состояния исполнения команад
-#define CMD_BOOT_ACK			0x79	//пакет принят   (команда выполнена)
-#define CMD_BOOT_NACK			0x1F	//пакет отброшен (команда не выполнена)
-#define CMD_BOOT_BUSY			0x76	//состояние занятости (команда в процессе выполнения)
+#define CMD_ACK					0x79	//пакет принят   (команда выполнена)
+#define CMD_NACK				0x1F	//пакет отброшен (команда не выполнена)
+#define CMD_BUSY				0x76	//состояние занятости (команда в процессе выполнения)
 
 //Команды загрузчика
 #define CMD_BOOT_Get			0x00	//Получает версию и разрешенные команды, поддерживаемые текущей версией загрузчика.
@@ -82,16 +82,23 @@
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-void 	BL_PROT_I2CInit(void);
+void 	BL_EMULATOR_I2CInit(void);
+uint8_t BL_EMULATOR_CheckDevice(void);
+uint8_t BL_EMULATOR_SendCmd(uint8_t cmd);
+uint8_t BL_EMULATOR_WaitACK(void);
+uint8_t BL_EMULATOR_ReceiveData(uint8_t *buf, uint32_t size);
+uint8_t BL_EMULATOR_SendData(uint8_t *buf, uint32_t size);
+uint8_t BL_EMULATOR_GetXorChecksum(uint8_t *buf, uint32_t size);
 
-uint8_t BL_PROT_CheckDevice(void);
-uint8_t BL_PROT_SendCmd(uint8_t cmd);
-uint8_t BL_PROT_WaitACK(void);
-uint8_t BL_PROT_ReceiveData(uint8_t *buf, uint32_t size);
-uint8_t BL_PROT_SendData(uint8_t *buf, uint32_t size);
-uint8_t BL_PROT_GetXorChecksum(uint8_t *buf, uint32_t size);
 
-void BL_PROT_BaseLoop(void);
+uint8_t  BL_EMULATOR_Cmd_Get(void);
+uint8_t  BL_EMULATOR_Cmd_GetVersion(void);
+uint16_t BL_EMULATOR_Cmd_GetID(void);
+uint8_t  BL_EMULATOR_Cmd_RM(uint32_t addr, uint32_t size);
+uint8_t  BL_EMULATOR_Cmd_Go(uint32_t appAddr);
+uint8_t  BL_EMULATOR_Cmd_WM(uint32_t addr, uint8_t* wrBuf, uint32_t size);
+
+void BL_EMULATOR_BaseLoop(void);
 
 //*******************************************************************************************
 //*******************************************************************************************

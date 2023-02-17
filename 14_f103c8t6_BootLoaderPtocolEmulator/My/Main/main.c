@@ -143,13 +143,14 @@ int main(void){
 	//appSize_Bytes = appSize_Bytes % 4; //проверка
 	//***********************************************
 	//Тут начинается работа протокола передачи прошивки.
-	BL_PROT_I2CInit();
+	BL_EMULATOR_I2CInit();
 	//Ждем ответа загрузчика
-	while(BL_PROT_CheckDevice() == BOOT_I2C_NO_DEVICE)
+	while(BL_EMULATOR_CheckDevice() == BOOT_I2C_NO_DEVICE)
 	{
 		LED_PC13_Toggel();
 		DELAY_milliS(100);
 	}
+	LED_PC13_Off();
 //	SYS_TICK_Control(SYS_TICK_ON);
 //	__enable_irq();
 
@@ -158,12 +159,9 @@ int main(void){
 	//**************************************************************
 	while(1)
 	{
-//		BL_PROT_SendCmd(CMD_BOOT_Get);
-//		if(BL_PROT_WaitACK() == CMD_BOOT_ACK) LED_PC13_Toggel();
-
-		BL_PROT_BaseLoop();
+		BL_EMULATOR_BaseLoop();
 		LED_PC13_Toggel();
-		DELAY_milliS(250);
+		DELAY_milliS(50);
 	}
 	//**************************************************************
 }

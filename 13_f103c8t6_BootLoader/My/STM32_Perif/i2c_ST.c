@@ -81,8 +81,8 @@ static void _i2c_ModeInit(I2C_TypeDef *i2c, uint32_t mode){
 //**********************************************************
 static void _i2c_SetSlaveAddress(I2C_TypeDef *i2c, uint8_t slaveAddr){
 
-	i2c->OAR1 = slaveAddr << 1; //адрес устройства на шине.
-	i2c->CR1 |= I2C_CR1_ACK;	//разрешаем отправлять ACK/NACK после приема байта адреса.
+	i2c->OAR1 = (slaveAddr << 1);//адрес устройства на шине.
+	i2c->CR1 |= I2C_CR1_ACK;	 //разрешаем отправлять ACK/NACK после приема байта адреса.
 }
 //**********************************************************
 static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
@@ -384,6 +384,7 @@ void I2C_IT_Init(I2C_IT_t *i2cIt){
 														  i2cIt->i2cSpeed);
 	//Инициализация прерывания.
 	i2cIt->i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
+					   I2C_CR2_ITBUFEN | //
 					   I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
 	if(i2cIt->i2c == I2C1)
 	{
@@ -461,14 +462,29 @@ uint8_t* I2C_IT_GetpRxBuf(I2C_IT_t *i2cIt){
 //*******************************************************************************************
 static void _i2c_IT_ReadByteToBuffer(I2C_IT_t *i2cIt){
 
-	//static uint8_t crc  = 0xff;
-	//	   uint8_t data = 0;
-	//---------------------
 	i2cIt->ITState = I2C_IT_STATE_BUSY_RX;
-
 	//Складываем принятый байт в приемный буфер.
 	*(i2cIt->pRxBuf + i2cIt->rxBufIndex) = (uint8_t)i2cIt->i2c->DR;
 	i2cIt->rxBufIndex++;
+
+
+	//Если есть что принимать то принимаем.
+//	IF(I2CIT->RXBUFINDEX < I2CIT->RXBUFSIZE)
+//	{
+//		//СКЛАДЫВАЕМ ПРИНЯТЫЙ БАЙТ В ПРИЕМНЫЙ БУФЕР.
+//		*(I2CIT->PRXBUF + I2CIT->RXBUFINDEX) = (UINT8_T)I2CIT->I2C->DR;
+//		I2CIT->RXBUFINDEX++;
+//		//ПРИНЯЛИ НУЖНОЕ КОЛ-ВО БАЙТОВ.
+//		IF(I2CIT->RXBUFINDEX >= I2CIT->RXBUFSIZE)
+//		{
+//			I2CIT->I2C->CR2 &= ~I2C_CR2_ITBUFEN;//ОТКЛ. ПРЕРЫВАНИЕ I2C_IT_BUF.
+//			I2CIT->I2CSLAVERXCPLTCALLBACK();    //РАЗБОР ПРИНЯТОГО ПАКЕТА.
+//		}
+//	}
+
+
+
+
 
 //	//Если есть что принимать то принимаем.
 //	if(i2cIt->rxBufIndex < i2cIt->rxBufSize)
@@ -493,18 +509,23 @@ static void _i2c_IT_ReadByteToBuffer(I2C_IT_t *i2cIt){
 static void _i2c_IT_WriteByteFromBuffer(I2C_IT_t *i2cIt){
 
 	i2cIt->ITState = I2C_IT_STATE_BUSY_TX;
+	//Передаем очередной байт
+	i2cIt->i2c->DR = (uint8_t)*(i2cIt->pTxBuf + i2cIt->txBufIndex);
+	i2cIt->txBufIndex++;
+
+
 	//Еcли есть что передавать то передаем
-	if(i2cIt->txBufSize > 0)
-	{
-		//Передаем очередной байт
-		i2cIt->i2c->DR = (uint8_t)*(i2cIt->pTxBuf + i2cIt->txBufIndex);
-		//Уменьшили кол-во передаваемых байтов на 1.
-		i2cIt->txBufSize--;
-		//Инкремент указателя буфера.
-		i2cIt->txBufIndex++;
-		//Вызов обработчика события передачи пакета.
-		if(i2cIt->txBufSize == 0) i2cIt->i2cSlaveTxCpltCallback();
-	}
+//	if(i2cIt->txBufSize > 0)
+//	{
+//		//Передаем очередной байт
+//		i2cIt->i2c->DR = (uint8_t)*(i2cIt->pTxBuf + i2cIt->txBufIndex);
+//		//Уменьшили кол-во передаваемых байтов на 1.
+//		i2cIt->txBufSize--;
+//		//Инкремент указателя буфера.
+//		i2cIt->txBufIndex++;
+//		//Вызов обработчика события передачи пакета.
+//		//if(i2cIt->txBufSize == 0) i2cIt->i2cSlaveTxCpltCallback();
+//	}
 }
 //*******************************************************************************************
 //***************************Обработчики прерывания******************************************
@@ -516,6 +537,14 @@ static void I2C_IT_Master(I2C_IT_t *i2cIt){
 //*******************************************************************************************
 static void I2C_IT_Slave(I2C_IT_t *i2cIt){
 
+//	После проверки содержимого регистра SR1 пользователь должен выполнить полную
+//	последовательность очистки для каждого найденного набора флагов.
+//	Таким образом, для флагов ADDR и STOPF внутри процедуры прерывания I2C требуется следующая последовательность:
+//	READ SR1
+//	if (ADDR == 1) {READ SR1; READ SR2}
+//	if (STOPF == 1) {READ SR1; WRITE CR1}
+//	Цель состоит в том, чтобы убедиться, что оба флага ADDR и STOPF сброшены, если они оба установлены.
+
 	I2C_TypeDef *i2c = i2cIt->i2c;
 	//---------------------
 	(void)i2c->SR1;//рекомендация из даташита
@@ -523,12 +552,10 @@ static void I2C_IT_Slave(I2C_IT_t *i2cIt){
 	/* ADDR set --------------------------------------------------------------*/
 	if((i2c->SR1 & I2C_SR1_ADDR) && (i2c->CR2 & I2C_CR2_ITEVTEN))
 	{
-		(void)i2c->SR2;             //сбрасываем I2C_IT_ADDR чтением SR1 и SR2
+		//Рекомендация из RM0008: if (ADDR == 1) {READ SR1; READ SR2}
+		(void)i2c->SR1;				//сбрасываем I2C_IT_ADDR чтением SR1 и SR2
+		(void)i2c->SR2;
 		i2c->CR2 |= I2C_CR2_ITBUFEN;//включаем прерывание I2C_IT_BUF - вначале было отключено
-
-		//Это нужно для работы через DMA
-		//if(!(i2c->SR2 & I2C_SR2_TRA)) i2c->CR2 |=  I2C_CR2_ITBUFEN;//вкл. прерывание I2C_IT_BUF
-		//else						  i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
 
 		i2cIt->rxBufIndex = 0;		//Сброс счетчиков байтов RX
 		i2cIt->txBufIndex = 0;		//и TX.
@@ -538,10 +565,12 @@ static void I2C_IT_Slave(I2C_IT_t *i2cIt){
 	/* STOPF set -------------------------------------------------------------*/
 	else if((i2c->SR1 & I2C_SR1_STOPF) && (i2c->CR2 & I2C_CR2_ITEVTEN))
 	{
+		//Рекомендация из RM0008: if (STOPF == 1) {READ SR1; WRITE CR1}
+		(void)i2c->SR1;					//сбрасываем STOPF чтением SR1 и записью в CR1
 		i2c->CR1 &= ~I2C_CR1_STOP;
 		i2c->CR2 &= ~I2C_CR2_ITBUFEN;	//Откл. прерывание I2C_IT_BUF.
 
-		_i2c_IT_ReadByteToBuffer(i2cIt);//Складываем принятый байт в приемный буфер.
+		_i2c_IT_ReadByteToBuffer(i2cIt);//Складываем последний принятый байт в приемный буфер.
 		(void)i2c->SR1;					//рекомендация по сбросу бита BTF из даташита
 		(void)i2c->DR;
 
@@ -589,10 +618,149 @@ static void I2C_IT_Slave(I2C_IT_t *i2cIt){
 }
 //*******************************************************************************************
 //*******************************************************************************************
-static void _i2c_ClearErrFlagAndStop(I2C_TypeDef *i2c, uint32_t flag){
+//*******************************************************************************************
+//*******************************************************************************************
+
+/* --EV1 */
+/* 1) Case of One Single Address managed by the slave */
+#define  I2C_EVENT_SLAVE_RECEIVER_ADDRESS_MATCHED          ((uint32_t)0x00020002) /* BUSY and ADDR flags */
+#define  I2C_EVENT_SLAVE_TRANSMITTER_ADDRESS_MATCHED       ((uint32_t)0x00060082) /* TRA, BUSY, TXE and ADDR flags */
+
+/* Slave RECEIVER mode --------------------------*/
+/* --EV2 */
+#define  I2C_EVENT_SLAVE_BYTE_RECEIVED                     ((uint32_t)0x00020040)  /* BUSY and RXNE flags */
+/* --EV4  */
+#define  I2C_EVENT_SLAVE_STOP_DETECTED                     ((uint32_t)0x00000010)  /* STOPF flag */
+
+/* Slave TRANSMITTER mode -----------------------*/
+/* --EV3 */
+#define  I2C_EVENT_SLAVE_BYTE_TRANSMITTED                  ((uint32_t)0x00060084)  /* TRA, BUSY, TXE and BTF flags */
+/* --EV3_1 */
+#define  I2C_EVENT_SLAVE_BYTE_TRANSMITTING                 ((uint32_t)0x00060080)  /* TRA, BUSY and TXE flags */
+/* --EV3_2 */
+#define  I2C_EVENT_SLAVE_ACK_FAILURE                       ((uint32_t)0x00000400)  /* AF flag */
+
+
+//события I2C
+#define I2C1_MODE_WAITING		0    // Waiting for commands
+#define I2C1_MODE_SLAVE_ADR_WR	1	 // Received slave address (writing)
+#define I2C1_MODE_ADR_BYTE		2    // Received ADR byte
+#define I2C1_MODE_DATA_BYTE_WR	3    // Data byte (writing)
+#define I2C1_MODE_SLAVE_ADR_RD	4 	 // Received slave address (to read)
+#define I2C1_MODE_DATA_BYTE_RD	5    // Data byte (to read)
+
+
+//static uint32_t i2cITEvent = I2C1_MODE_WAITING;
+
+//**************************************************
+//**************************************************
+static void _i2c_ClearADDRFlag(I2C_TypeDef *i2c){
+
+//	// ADDR-Flag clear
+//	while(i2c->SR1 & I2C_SR1_ADDR)
+//	{
+//		(void)i2c->SR1;
+//		(void)i2c->SR2;
+//	}
+
+	(void)i2c->SR1;
+	(void)i2c->SR2;
+}
+//**************************************************
+static void _i2c_ClearSTOPFlag(I2C_TypeDef *i2c){
+
+	// STOPF Flag clear
+	while(i2c->SR1 & I2C_SR1_STOPF)
+	{
+		(void)i2c->SR1;
+		i2c->CR1 |= 0x1;
+	}
+}
+//**************************************************
+//**************************************************
+static void I2C_IT_Slave2(I2C_IT_t *i2cIt){
+
+	I2C_TypeDef *i2c = i2cIt->i2c;
+	volatile uint32_t flag1 = i2c->SR1;
+	volatile uint32_t flag2 = i2c->SR2;
+	volatile uint32_t event = 0;
+	//---------------------
+	//flag1 = i2c->SR1;
+	//flag2 = i2c->SR2;
+	flag2 = flag2 << 16;
+	event = (flag1 | flag2) & 0x00FFFFFF;
+	/*------------------------------------------------------------------------*/
+	/* I2C in mode Receiver --------------------------------------------------*/
+	if(event == I2C_EVENT_SLAVE_RECEIVER_ADDRESS_MATCHED)//От Мастера пришла команда на запись - SLA+Wr
+	{
+		_i2c_ClearADDRFlag(i2c);	//EV1: ADDR = 1, сбрасывается чтением регистров SR1 и SR2
+		//i2c->CR2 |= I2C_CR2_ITBUFEN;//включаем прерывание I2C_IT_BUF - вначале было отключено
+		i2cIt->rxBufIndex = 0;		//Сброс счетчика байтов RX
+	}
+	//От Мастера принят байт данных.
+	else if(event == I2C_EVENT_SLAVE_BYTE_RECEIVED)
+	{
+		//EV2: RxNE = 1, сбрасывается чтением регистра DR
+		_i2c_IT_ReadByteToBuffer(i2cIt);	//Складываем принятый байт в приемный буфер.
+	}
+	/*------------------------------------------------------------------------*/
+	/* I2C in mode Transmitter -----------------------------------------------*/
+	else if(event == I2C_EVENT_SLAVE_TRANSMITTER_ADDRESS_MATCHED) //От Мастера пришла команда на чтение - SLA+Rd
+	{
+		_i2c_ClearADDRFlag(i2c);			//EV1: ADDR = 1, сбрасывается чтением регистров SR1 и SR2
+		//i2c->CR2 |= I2C_CR2_ITBUFEN;		//включаем прерывание I2C_IT_BUF - вначале было отключено
+		i2cIt->txBufIndex = 0;				//Сброс счетчика байтов TX
+		_i2c_IT_WriteByteFromBuffer(i2cIt);	//EV3-1: TxE = 1 ... - Передадим первый байт
+	}
+	//Слайв передал байт
+	else if(event == I2C_EVENT_SLAVE_BYTE_TRANSMITTED)
+	{
+		_i2c_IT_WriteByteFromBuffer(i2cIt);	//Передаем очередной байт
+	}
+	//Слайв передает байт
+	else if(event == I2C_EVENT_SLAVE_BYTE_TRANSMITTING)
+	{
+		_i2c_IT_WriteByteFromBuffer(i2cIt);	//Передаем очередной байт
+	}
+	/*------------------------------------------------------------------------*/
+	/* Мастер передал СТОП-----------------------------------------------------*/
+	else if(event==I2C_EVENT_SLAVE_STOP_DETECTED)
+	{
+		//EV2: RxNE = 1, сбрасывается чтением регистра DR
+		//_i2c_IT_ReadByteToBuffer(i2cIt);	//Складываем последний принятый байт в приемный буфер.
+
+		//EV4: STOPF = 1, сбрасывается чтением регистра SR1 и записью в регистр CR1
+		_i2c_ClearSTOPFlag(i2c);
+
+		//i2c->CR2 &= ~I2C_CR2_ITBUFEN;	//Откл. прерывание I2C_IT_BUF.
+		i2cIt->i2cSlaveRxCpltCallback();//Обрабатываем принятые данные
+	}
+	/*------------------------------------------------------------------------*/
+	/*------------------------------------------------------------------------*/
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+static void _i2c_ClearFlag(I2C_TypeDef *i2c, uint32_t flag){
 
 	i2c->SR1 &= ~(flag); 	   //Сброс флага ошибки.
-	i2c->CR1 |=	I2C_CR1_ACK;   //to be ready for another reception
+
+	//Bit 10 ACK: Acknowledge enable
+	//This bit is set and cleared by software and cleared by hardware when PE=0.
+	//	0: No acknowledge returned
+	//	1: Acknowledge returned after a byte is received (matched address or data)
+	//i2c->CR1 |=	I2C_CR1_ACK;   //to be ready for another reception
+
+	//Bit 9 STOP: Stop generation
+	//The bit is set and cleared by software, cleared by hardware when a Stop condition is
+	//detected, set by hardware when a timeout error is detected.
+	//In Master Mode:
+	//	0: No Stop generation.
+	//	1: Stop generation after the current byte transfer or after the current Start condition is sent.
+	//In Slave mode:
+	//	0: No Stop generation.
+	//	1: Release the SCL and SDA lines after the current byte transfer.
 	//i2c->CR1 |= I2C_CR1_STOP; //Формируем Stop
 }
 
@@ -605,31 +773,37 @@ static void I2C_IT_Error(I2C_IT_t *i2cIt){
 	//этот флаг устанавливается когда от Мастера приходит NACK при завершении чтения байтов.
 	if(i2c->SR1 & I2C_SR1_AF)
 	{
-		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_AF);//Сброс флага ошибки.
-		i2c->CR2 &= ~I2C_CR2_ITBUFEN;			  //Откл. прерывание I2C_IT_BUF.
-		i2cIt->i2cSlaveRxCpltCallback();          //Разбор принятого пакета.
-		i2cIt->ITState = I2C_IT_STATE_STOP;
+		_i2c_ClearFlag(i2c, I2C_SR1_AF);//Сброс флага ошибки.
+
+		//Bit 10 ACK: Acknowledge enable
+		//This bit is set and cleared by software and cleared by hardware when PE=0.
+		//	0: No acknowledge returned
+		//	1: Acknowledge returned after a byte is received (matched address or data)
+		i2c->CR1 |=	 I2C_CR1_ACK;		//без этого не работает!!!!
+
+		//i2c->CR2 &= ~I2C_CR2_ITBUFEN;	//Откл. прерывание I2C_IT_BUF.
+		i2cIt->i2cSlaveTxCpltCallback();//Что нибудь делаем по окончению передачи данных.
 	}
 	//------------------------------
 	//Bus error
 	if(i2c->SR1 & I2C_SR1_BERR)
 	{
 		//i2c->SR1 &= ~I2C_SR1_BERR; //Сброс BERR.
-		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_BERR);
+		_i2c_ClearFlag(i2c, I2C_SR1_BERR);
 	}
 	//------------------------------
 	//Arbitration loss (Master)
 	if(i2c->SR1 & I2C_SR1_ARLO)
 	{
 		//i2c->SR1 &= ~I2C_SR1_ARLO; //Сброс ARLO.
-		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_ARLO);
+		_i2c_ClearFlag(i2c, I2C_SR1_ARLO);
 	}
 	//------------------------------
 	//Overrun/Underrun
 	if(i2c->SR1 & I2C_SR1_OVR)
 	{
 		//i2c->SR1 &= ~I2C_SR1_OVR; //Сброс OVR.
-		_i2c_ClearErrFlagAndStop(i2c, I2C_SR1_OVR);
+		_i2c_ClearFlag(i2c, I2C_SR1_OVR);
 	}
 	//------------------------------
 	//PEC error
@@ -664,7 +838,7 @@ void I2C_IT_EV_Handler(I2C_TypeDef *i2c){
 	else return;
 	//Мастер или Слейв
 	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_IT_Master(i2cIt);
-	else								  I2C_IT_Slave(i2cIt);
+	else								  I2C_IT_Slave2(i2cIt); //I2C_IT_Slave(i2cIt);
 }
 //**********************************************************
 //Обработчик прерывания ошибок I2C

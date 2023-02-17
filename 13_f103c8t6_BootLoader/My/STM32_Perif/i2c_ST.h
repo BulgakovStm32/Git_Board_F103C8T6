@@ -79,8 +79,8 @@ void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32
 //*******************************************************************************************
 //*******************************************************************************************
 //Работа по прерываниям.
-#define I2C_IT_RX_BUF_LEN_MAX		64
-#define I2C_IT_TX_BUF_LEN_MAX		64
+#define I2C_IT_RX_BUF_LEN_MAX		1024
+#define I2C_IT_TX_BUF_LEN_MAX		1024
 
 #define I2C_IT_RX_BUF_SIZE_DEFAULT	32
 #define I2C_IT_TX_BUF_SIZE_DEFAULT	32
