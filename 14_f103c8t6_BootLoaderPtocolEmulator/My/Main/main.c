@@ -114,12 +114,11 @@ int main(void){
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
 	{
-		DELAY_milliS(100);
+		DELAY_milliS(250);
 		LED_PC13_On();
-		DELAY_milliS(100);
+		DELAY_milliS(250);
 		LED_PC13_Off();
 	}
-//	DELAY_milliS(1000);
 	//***********************************************
 	//Проверка наличия приложения. Если приложения нет - бесконечно мигаем.
 //	if(!AppAvailableCheck())
@@ -144,24 +143,24 @@ int main(void){
 	//***********************************************
 	//Тут начинается работа протокола передачи прошивки.
 	BL_EMULATOR_I2CInit();
-	//Ждем ответа загрузчика
-	while(BL_EMULATOR_CheckDevice() == BOOT_I2C_NO_DEVICE)
+
+	uint8_t blVersion = BL_EMULATOR_Cmd_GetVersion();//Прочитаем версию загрузчика.
+	//Ждем ответа загрузчика.
+	while(blVersion == CMD_NACK)
 	{
 		LED_PC13_Toggel();
-		DELAY_milliS(100);
+		DELAY_milliS(1000);
+		blVersion = BL_EMULATOR_Cmd_GetVersion();//Прочитаем версию загрузчика.
 	}
 	LED_PC13_Off();
-//	SYS_TICK_Control(SYS_TICK_ON);
-//	__enable_irq();
-
-	//Переход на основное приложение.
-//	GoToApp(APP_PROGRAM_START_ADDR);
 	//**************************************************************
 	while(1)
 	{
-		BL_EMULATOR_BaseLoop();
+		if(BL_EMULATOR_BaseLoop() != CMD_NACK) DELAY_milliS(50);
+		else 								   DELAY_milliS(500);
+
+		//Мигаем ...
 		LED_PC13_Toggel();
-		DELAY_milliS(50);
 	}
 	//**************************************************************
 }
