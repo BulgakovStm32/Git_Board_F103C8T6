@@ -43,7 +43,8 @@
 //**********************************
 #define BOOT_I2C				I2C1
 #define BOOT_I2C_SPEED			400000
-#define BOOT_I2C_ADDR			(0b0111000 << 1) //такой адрес у встроенных I2C загрузчиков STM32
+#define BOOT_I2C_ADDR			(0b0111001 << 1) //адрес встроенных I2C загрузчиков STM32F411
+//#define BOOT_I2C_ADDR			(0b0111000 << 1) //адрес самописного I2C загрузчика для STM32
 
 #define BOOT_I2C_WRITE			I2C_MODE_WRITE
 #define BOOT_I2C_READ			I2C_MODE_READ
@@ -98,7 +99,7 @@ uint8_t  BL_EMULATOR_Cmd_RM(uint32_t addr, uint32_t size);
 uint8_t  BL_EMULATOR_Cmd_Go(uint32_t appAddr);
 uint8_t  BL_EMULATOR_Cmd_WM(uint32_t addr, uint8_t* wrBuf, uint32_t size);
 
-void BL_EMULATOR_BaseLoop(void);
+uint32_t BL_EMULATOR_BaseLoop(void);
 
 //*******************************************************************************************
 //*******************************************************************************************

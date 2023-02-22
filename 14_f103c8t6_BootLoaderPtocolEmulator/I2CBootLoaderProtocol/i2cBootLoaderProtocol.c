@@ -31,9 +31,7 @@ static uint8_t _bl_emulator_StartAndSendDeviceAddr(uint8_t rw){
 	while(I2C_StartAndSendDeviceAddr(BOOT_I2C, BOOT_I2C_ADDR|rw) != I2C_OK)
 	{
 		I2C_Stop(BOOT_I2C);
-		//DELAY_microS(10);
-		//Если через 3 попытки не находим устройство на шине то выходим
-		if(++count >= 3) return BOOT_I2C_NO_DEVICE;
+		if(++count >= 3) return BOOT_I2C_NO_DEVICE;//Если через 3 попытки нет ответа от устройства, то выходим
 	}
 	return BOOT_I2C_DEVICE_OK;
 }
@@ -59,16 +57,6 @@ static void _bl_emulator_SendBuf(uint8_t *buf, uint32_t size){
 static void _bl_emulator_ReadBuf(uint8_t *buf, uint32_t size){
 
 	I2C_ReadData(BOOT_I2C, buf, size);
-}
-//*******************************************************************
-// Function    : _bl_emulator_Stop()
-// Description : Формируем Stop на шине I2C
-// Parameters  :
-// RetVal      :
-//*****************************************
-static void _bl_emulator_Stop(void){
-
-	I2C_Stop(BOOT_I2C);
 }
 //*******************************************************************
 // Function    : _bl_emulator_FillBuf()
@@ -102,7 +90,8 @@ void BL_EMULATOR_I2CInit(void){
 // Function    : BL_EMULATOR_CheckDevice()
 // Description : проверка присутсвия загрузчика на шине I2C
 // Parameters  :
-// RetVal      : 1 - загрузчик ответил, 0 - загрузчика нет на шине.
+// RetVal      : BOOT_I2C_DEVICE_OK - загрузчик ответил,
+//				 BOOT_I2C_NO_DEVICE - загрузчика нет на шине.
 //*****************************************
 uint8_t BL_EMULATOR_CheckDevice(void){
 
@@ -110,9 +99,8 @@ uint8_t BL_EMULATOR_CheckDevice(void){
 	//---------------------
 	while(!I2C_Master_CheckSlave(BOOT_I2C, BOOT_I2C_ADDR))
 	{
-		//если через 100 мс нет ответа от Slave, то выходим.
-		DELAY_milliS(10);
-		if(++count >= 10) return BOOT_I2C_NO_DEVICE;
+		DELAY_microS(10);
+		if(++count >= 3) return BOOT_I2C_NO_DEVICE;
 	}
 	return BOOT_I2C_DEVICE_OK;
 }
@@ -128,10 +116,9 @@ uint8_t BL_EMULATOR_SendCmd(uint8_t cmd){
 
 	uint8_t buf[2] = {cmd, ~cmd};
 	//---------------------
-	//Передаем команда и ее инверсию
+	//Передаем команду и ее инверсию
 	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_WRITE) == BOOT_I2C_NO_DEVICE)
 	{
-		_bl_emulator_Stop();
 		return BOOT_I2C_NO_DEVICE;
 	}
 	_bl_emulator_SendBuf(buf, 2);
@@ -206,11 +193,12 @@ uint8_t BL_EMULATOR_SendData(uint8_t *buf, uint32_t size){
 //*****************************************
 uint8_t BL_EMULATOR_GetXorChecksum(uint8_t *buf, uint32_t size){
 
-	uint8_t xor = 0;
+	//Проверено - работает!!!
+	uint8_t xor = buf[0];
 	//---------------------
 	//Checksum: XOR (byte 0, byte 1, byte 2, byte 3)
 	//bootBuf[4] = bootBuf[0] ^ bootBuf[1] ^ bootBuf[2] ^ bootBuf[3];
-	for(uint32_t i=0; i < size; i++)
+	for(uint32_t i=1; i < size; i++)
 	{
 		xor ^= buf[i];
 	}
@@ -220,7 +208,7 @@ uint8_t BL_EMULATOR_GetXorChecksum(uint8_t *buf, uint32_t size){
 //*******************************************************************************************
 //*******************************************************************************************
 //****************************КОМАНДЫ ЭМУЛЯТОРА ЗАГРУЗЧИКА***********************************
-// Function    : BL_EMULATOR_Cmd_Get()
+// Function    : BL_EMULATOR_Cmd_Get() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Получает версию и разрешенные команды, поддерживаемые текущей версией загрузчика.
 // Parameters  :
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
@@ -228,10 +216,22 @@ uint8_t BL_EMULATOR_GetXorChecksum(uint8_t *buf, uint32_t size){
 //*****************************************
 uint8_t BL_EMULATOR_Cmd_Get(void){
 
+	//Передача команды
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_Get) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+
+	//Проверим ответ.
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+
+	//Чтение списка поддерживаемых команд. 19 команд для версии загрузчика 1.1(такой в STM32F411)
+	if(BL_EMULATOR_ReceiveData(bootBuf, 19) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+
+	//Проверим ответ.
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+
 	return CMD_ACK;
 }
 //*******************************************************************
-// Function    : BL_EMULATOR_Cmd_GetVersion()
+// Function    : BL_EMULATOR_Cmd_GetVersion() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Получает версию загрузчика.
 // Parameters  :
 // RetVal      : bootLoaderVersion - версию загрузчика
@@ -239,45 +239,28 @@ uint8_t BL_EMULATOR_Cmd_Get(void){
 //*****************************************
 uint8_t BL_EMULATOR_Cmd_GetVersion(void){
 
-	volatile uint8_t bootLoaderVersion = 0;
+	uint8_t version = 0;
 	//---------------------
-	//	STM32 отправляет байты следующим образом: - Byte 1: ACK
-	//	- Byte 2: Bootloader version (0 < Version <= 255) (for example, 0x10 = Version 1.0)
-	//	- Byte 3: ACK
+	//STM32 отправляет байты следующим образом: - Byte 1: ACK
+	//- Byte 2: Bootloader version (0 < Version <= 255) (for example, 0x10 = Version 1.0)
+	//- Byte 3: ACK
 
 	//Передача команды
-	if(BL_EMULATOR_SendCmd(CMD_BOOT_GetVersion) == BOOT_I2C_NO_DEVICE)
-	{
-		return CMD_NACK; //нет устройства на шине
-	}
-
-	DELAY_microS(20);
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_GetVersion) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		return CMD_NACK;
-	}
-
-	DELAY_microS(10);
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
 	//Чтение версии загрузчика
-	if(BL_EMULATOR_ReceiveData((uint8_t*)&bootLoaderVersion, 1) == BOOT_I2C_NO_DEVICE)
-	{
-		return CMD_NACK; //нет устройства на шине
-	}
-
-	DELAY_microS(10);
+	if(BL_EMULATOR_ReceiveData(&version, 1) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		return CMD_NACK;
-	}
-	return bootLoaderVersion;
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+
+	return version;
 }
 //*******************************************************************
-// Function    : BL_EMULATOR_Cmd_GetID()
+// Function    : BL_EMULATOR_Cmd_GetID() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Получает идентификатор чипа
 // Parameters  :
 // RetVal      : PID - идентификатор чипа
@@ -285,52 +268,31 @@ uint8_t BL_EMULATOR_Cmd_GetVersion(void){
 //*****************************************
 uint16_t BL_EMULATOR_Cmd_GetID(void){
 
-//	uint8_t  numBute;
-	//---------------------
-	//	Устройство STM32 отправляет байты следующим образом: - Byte 1: ACK
-	//	- Byte 2: N = the number of bytes-1 (for STM32, N = 1), except for current byte and ACKs
-	//	- Bytes 3-4: PID (product ID)
-	//	- Byte 3 = MSB
-	//	- Byte 4 = LSB
-	//	- Byte 5: ACK
+	//Устройство STM32 отправляет байты следующим образом: - Byte 1: ACK
+	//- Byte 2: N = the number of bytes-1 (for STM32, N = 1), except for current byte and ACKs
+	//- Bytes 3-4: PID (product ID)
+	//- Byte 3 = MSB
+	//- Byte 4 = LSB
+	//- Byte 5: ACK
 
 	//Передача команды
-	if(BL_EMULATOR_SendCmd(CMD_BOOT_GetID) == BOOT_I2C_NO_DEVICE)
-	{
-		return CMD_NACK; //нет устройства на шине
-	}
-
-	DELAY_microS(20);
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_GetID) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		return CMD_NACK;
-	}
-
-	DELAY_microS(20);
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
 	//Чтение данных
-	if(BL_EMULATOR_ReceiveData(bootBuf, 3) == BOOT_I2C_NO_DEVICE)
-	{
-		return CMD_NACK; //нет устройства на шине
-	}
-
-	DELAY_microS(20);
+	if(BL_EMULATOR_ReceiveData(bootBuf, 3) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		//Обработка NACK
-		return CMD_NACK;
-	}
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
 	//Вернем PID (product ID)
 	return (uint16_t)((bootBuf[1] << 8) |	//MSB
 			   	   	  (bootBuf[2] << 0));	//LSB;
 }
 //*******************************************************************
-// Function    : BL_EMULATOR_Cmd_RM()
+// Function    : BL_EMULATOR_Cmd_RM() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Read Memory - Читает до 256 байт памяти, начиная с адреса, указанного приложением.
 // Parameters  : addr - адрес, с которого начинаем чтение
 //				 size - сколько байт нужно прочитать
@@ -350,51 +312,39 @@ uint8_t BL_EMULATOR_Cmd_RM(uint32_t addr, uint32_t size){
 	//- Byte 9: Checksum: XOR byte 8 (complement of byte 8)
 
 	//Передача команды
-	if(BL_EMULATOR_SendCmd(CMD_BOOT_RM) == BOOT_I2C_NO_DEVICE)
-	{
-		return CMD_NACK; //нет устройства на шине
-	}
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_RM) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		return CMD_NACK;
-	}
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
-	//Предадим Start address откуда хотим прочитать данные
+	//Предадим адрес (Start address) откуда хотим прочитать данные
 	bootBuf[0] = (uint8_t)(addr >> 24);
 	bootBuf[1] = (uint8_t)(addr >> 16);
 	bootBuf[2] = (uint8_t)(addr >> 8);
 	bootBuf[3] = (uint8_t)(addr >> 0);
-	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);	//Checksum: XOR (byte 0, byte 1, byte 2, byte 3)
-	BL_EMULATOR_SendData(bootBuf, 5);						//Передаим данные
+	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);//Checksum
+	//Передаим данные
+	if(BL_EMULATOR_SendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		//_bl_emulator_FillBuf(bootBuf, 5, 0); //Очистка буфера.
-		return CMD_NACK;
-	}
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
 	//Send data frame: number of bytes to be read (1 byte) and a checksum (1 byte)
-	bootBuf[0] = size;
-	bootBuf[1] = BL_EMULATOR_GetXorChecksum(bootBuf, 1);
-	BL_EMULATOR_SendData(bootBuf, 2);		//Передадим данные
+	bootBuf[0] = (uint8_t)(size - 1);		//The number of bytes to be read-1
+	bootBuf[1] = (uint8_t)(size - 1) ^ 0xFF;//Checksum
+	//Передадим данные
+	if(BL_EMULATOR_SendData(bootBuf, 2) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		//_bl_emulator_FillBuf(bootBuf, 2, 0); //Очистка буфера.
-		return CMD_NACK;
-	}
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
-	//Receive data frame: needed data from the BL
-	BL_EMULATOR_ReceiveData(bootBuf, size);	//Читаем данные
+	//Чтение данных - Receive data frame: needed data from the BL
+	if(BL_EMULATOR_ReceiveData(bootBuf, size) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	return CMD_ACK;
 }
 //*******************************************************************
-// Function    : BL_EMULATOR_Cmd_Go()
+// Function    : BL_EMULATOR_Cmd_Go() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Переходит к коду пользовательского приложения, расположенному во внутренней флэш-памяти.
 // Parameters  : appAddr - адрес приложения
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
@@ -402,34 +352,32 @@ uint8_t BL_EMULATOR_Cmd_RM(uint32_t addr, uint32_t size){
 //*****************************************
 uint8_t BL_EMULATOR_Cmd_Go(uint32_t appAddr){
 
-	//	Хост отправляет байты на STM32 следующим образом:
-	//	- Byte 1: 0x21
-	//	- Byte 2: 0xDE
-	//	Wait for ACK
-	//	- Byte 3 to byte 6: start address (Byte 3 - MSB; Byte 6 - LSB)
-	//	- Byte 7: checksum: XOR (byte 3, byte 4, byte 5, byte 6)
-	//	Wait for ACK
+	//Хост отправляет байты на STM32 следующим образом:
+	//- Byte 1: 0x21
+	//- Byte 2: 0xDE
+	//Wait for ACK
+	//- Byte 3 to byte 6: start address (Byte 3 - MSB; Byte 6 - LSB)
+	//- Byte 7: checksum: XOR (byte 3, byte 4, byte 5, byte 6)
+	//Wait for ACK
 
 	//Передача команды
-	BL_EMULATOR_SendCmd(CMD_BOOT_Go);
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_Go) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
 	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
-	//Предадим Start address откуда хотим прочитать данные
+	//Предадим Start address приложения
 	bootBuf[0] = (uint8_t)(appAddr >> 24);
 	bootBuf[1] = (uint8_t)(appAddr >> 16);
 	bootBuf[2] = (uint8_t)(appAddr >> 8);
 	bootBuf[3] = (uint8_t)(appAddr >> 0);
-	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);	//Checksum: XOR (byte 0, byte 1, byte 2, byte 3)
-	BL_EMULATOR_SendData(bootBuf, 5);						//Передаим данные
+	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);//Checksum
+	//Передаим данные
+	if(BL_EMULATOR_SendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		//_bl_emulator_FillBuf(bootBuf, 5, 0); //Очистка буфера.
-		return CMD_NACK;
-	}
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+
 	return CMD_ACK;
 }
 //*******************************************************************
@@ -501,38 +449,49 @@ uint8_t BL_EMULATOR_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 //*******************************************************************************************
 //*******************************************************************
 // Function    : BL_EMULATOR_Loop()
-// Description : Оснеовной цикл эмулятора протокола загрузчика.
+// Description : Основной цикл эмулятора протокола загрузчика.
 //				 Тут генерируются команды для передачи прошивки загрузчику.
 // Parameters  :
 // RetVal      :
 //*****************************************
-void BL_EMULATOR_BaseLoop(void){
+uint32_t BL_EMULATOR_BaseLoop(void){
 
-	//Машина состояний эмулятора для загрузчика
-	static uint32_t bootState = CMD_BOOT_GetVersion;//Начнем с команды CMD_BOOT_GetVersion
+	//Машина состояний эмулятора хоста загрузчика
+	static uint32_t bootState = CMD_BOOT_Get;//Начнем с команды CMD_BOOT_Get
+	uint32_t ack = CMD_NACK;
 	//---------------------
 	switch(bootState){
 		//------------------
+		case(CMD_BOOT_Get):
+			ack = BL_EMULATOR_Cmd_Get();
+			bootState = CMD_BOOT_GetVersion;
+		break;
+		//------------------
 		case(CMD_BOOT_GetVersion):
-			//BL_EMULATOR_ReceiveData(bootBuf, 4);	//Читаем данные
-
-			BL_EMULATOR_Cmd_GetVersion();
+			ack = BL_EMULATOR_Cmd_GetVersion();
 			bootState = CMD_BOOT_GetID;
 		break;
 		//------------------
 		case(CMD_BOOT_GetID):
-			BL_EMULATOR_Cmd_GetID();
+			ack = BL_EMULATOR_Cmd_GetID();
 			bootState = CMD_BOOT_RM;
 		break;
 		//------------------
 		case(CMD_BOOT_RM):
-//			BL_EMULATOR_Cmd_RM(APP_PROGRAM_START_ADDR, 8);
-			bootState = CMD_BOOT_WM;
+			ack = BL_EMULATOR_Cmd_RM(0x08000000, 8);
+			bootState = CMD_BOOT_Go;
+		break;
+		//------------------
+		case(CMD_BOOT_Go):
+			//ack = BL_EMULATOR_Cmd_Go(0x08000000);
+			//bootState = CMD_BOOT_WM;
+
+			bootState = CMD_BOOT_Get;
 		break;
 		//------------------
 		case(CMD_BOOT_WM):
 //			BL_EMULATOR_Cmd_WM(APP_PROGRAM_START_ADDR, (uint8_t*)APP_PROGRAM_START_ADDR, 8);
-			bootState = CMD_BOOT_GetVersion;
+			bootState = CMD_BOOT_Get;
 		break;
 		//------------------
 		default:
@@ -541,6 +500,7 @@ void BL_EMULATOR_BaseLoop(void){
 		//------------------
 	}
 	//***********************************************
+	return ack;
 }
 //*******************************************************************************************
 //*******************************************************************************************
