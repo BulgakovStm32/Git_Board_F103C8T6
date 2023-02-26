@@ -778,7 +778,7 @@ void I2C_IT_EV_Handler(I2C_TypeDef *i2c){
 	else return;
 	//Мастер или Слейв
 	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_IT_Master(i2cIt);
-	else								  I2C_IT_Slave2(i2cIt); //I2C_IT_Slave(i2cIt);//
+	else								  I2C_IT_Slave(i2cIt);//I2C_IT_Slave2(i2cIt); //
 }
 //**********************************************************
 //Обработчик прерывания ошибок I2C
