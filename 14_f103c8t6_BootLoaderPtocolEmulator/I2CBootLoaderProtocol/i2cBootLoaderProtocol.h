@@ -43,8 +43,8 @@
 //**********************************
 #define BOOT_I2C				I2C1
 #define BOOT_I2C_SPEED			400000
-#define BOOT_I2C_ADDR			(0b0111001 << 1) //адрес встроенных I2C загрузчиков STM32F411
-//#define BOOT_I2C_ADDR			(0b0111000 << 1) //адрес самописного I2C загрузчика для STM32
+//#define BOOT_I2C_ADDR			(0b0111001 << 1) //адрес встроенных I2C загрузчиков STM32F411
+#define BOOT_I2C_ADDR			(0b0111000 << 1) //адрес самописного I2C загрузчика для STM32
 
 #define BOOT_I2C_Wr				I2C_Wr	//
 #define BOOT_I2C_Rd				I2C_Rd	//
