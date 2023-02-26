@@ -124,10 +124,13 @@ void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32
 typedef enum{
   I2C_IT_STATE_RESET = 0,   	/*!< Peripheral is not yet Initialized         */
   I2C_IT_STATE_READY,  			/*!< Peripheral Initialized and ready for use  */
-  I2C_IT_STATE_ADDR_MATCH,
+  I2C_IT_STATE_ADDR_MATCH,		//Принят адрес
+  I2C_IT_STATE_ADDR_WR,			//Принят адрес+Wr - мастер записывает данные
+  I2C_IT_STATE_ADDR_RD,			//Принят адрес+Rd - мастер читает данные
   I2C_IT_STATE_BUSY_TX,   		/*!< Data Transmission process is ongoing      */
   I2C_IT_STATE_BUSY_RX,   		/*!< Data Reception process is ongoing         */
-  I2C_IT_STATE_STOP,
+  I2C_IT_STATE_STOP,			//От Мастера принят STOP
+  I2C_IT_STATE_NAC,				//от Мастера принят NACK -признак завершения чтения байтов.
 }I2C_IT_State_t;
 //****************************************************
 //Структура контекста для работы с портом I2C по прерываниям.

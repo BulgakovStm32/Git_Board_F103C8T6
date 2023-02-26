@@ -306,54 +306,13 @@ void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32
 	_i2c_SetSlaveAddress(i2c, (uint8_t)slaveAddr);//адрес устройства на шине.
 	_i2c_SetSpeed(i2c, speed);					  //Скорость работы.
 
-
-
-//	//Инициализация портов.
-//	_i2c_GPIO_Init(i2c, remap);
-//	//Включение тактирования.
-//	if(i2c == I2C1) RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
-//	else		    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
-//	//Инициализация I2C в режиме Slave.
-//	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
-//	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
-//	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
-//	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
-//	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
-//	i2c->SR2 &= ~I2C_SR2_MSL;   //режим Slave.
-//	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
-//
-//	i2c->OAR1 = slaveAddr << 1; //адрес устройства на шине.
-//	i2c->CR1 |= I2C_CR1_ACK;	//разрешаем отправлять ACK/NACK после приема байта адреса.
-//
-//	//Скорость работы.
-//	i2c->CR2  = 0;
-//	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
-//	i2c->CCR  = 0;
-//
-//	//FastMode(400kHz)
-//	if(speed >= 400000)
-//	{
-//		i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz).
-//		i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
-//		i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
-//	}
-//	//StandartMode(100kHz).
-//	else
-//	{
-//		i2c->CCR   &= ~I2C_CCR_FS; //0 - режим STANDART(100kHz).
-//		i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-//		i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
-//	}
-//	//StandartMode(100kHz).
-////	i2c->CCR   &= ~I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
-////	i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-////	i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
-
 	//Включение модуля I2C.
-//	i2c->CR1 |= I2C_CR1_PE;
+	i2c->CR1 |= I2C_CR1_PE;
 }
 //**********************************************************
 uint8_t I2C_Slave_AddrMatch(I2C_TypeDef *i2c){
+
+
 
 }
 //*******************************************************************************************
@@ -468,19 +427,6 @@ static void _i2c_IT_ReadByteToBuffer(I2C_IT_t *i2cIt){
 	i2cIt->rxBufIndex++;
 
 
-	//Если есть что принимать то принимаем.
-//	IF(I2CIT->RXBUFINDEX < I2CIT->RXBUFSIZE)
-//	{
-//		//СКЛАДЫВАЕМ ПРИНЯТЫЙ БАЙТ В ПРИЕМНЫЙ БУФЕР.
-//		*(I2CIT->PRXBUF + I2CIT->RXBUFINDEX) = (UINT8_T)I2CIT->I2C->DR;
-//		I2CIT->RXBUFINDEX++;
-//		//ПРИНЯЛИ НУЖНОЕ КОЛ-ВО БАЙТОВ.
-//		IF(I2CIT->RXBUFINDEX >= I2CIT->RXBUFSIZE)
-//		{
-//			I2CIT->I2C->CR2 &= ~I2C_CR2_ITBUFEN;//ОТКЛ. ПРЕРЫВАНИЕ I2C_IT_BUF.
-//			I2CIT->I2CSLAVERXCPLTCALLBACK();    //РАЗБОР ПРИНЯТОГО ПАКЕТА.
-//		}
-//	}
 
 
 
@@ -570,12 +516,12 @@ static void I2C_IT_Slave(I2C_IT_t *i2cIt){
 		i2c->CR1 &= ~I2C_CR1_STOP;
 		i2c->CR2 &= ~I2C_CR2_ITBUFEN;	//Откл. прерывание I2C_IT_BUF.
 
-		_i2c_IT_ReadByteToBuffer(i2cIt);//Складываем последний принятый байт в приемный буфер.
-		(void)i2c->SR1;					//рекомендация по сбросу бита BTF из даташита
-		(void)i2c->DR;
+		//_i2c_IT_ReadByteToBuffer(i2cIt);//Складываем последний принятый байт в приемный буфер.
+		//(void)i2c->SR1;					//рекомендация по сбросу бита BTF из даташита
+		//(void)i2c->DR;
 
-		i2cIt->i2cSlaveRxCpltCallback();//Разбор принятого пакета.
 		i2cIt->ITState = I2C_IT_STATE_STOP;
+		i2cIt->i2cSlaveRxCpltCallback();//Разбор принятого пакета.
 	}
 	/*------------------------------------------------------------------------*/
 	/* I2C in mode Transmitter -----------------------------------------------*/
@@ -693,24 +639,24 @@ static void I2C_IT_Slave2(I2C_IT_t *i2cIt){
 	/* I2C in mode Receiver --------------------------------------------------*/
 	if(event == I2C_EVENT_SLAVE_RECEIVER_ADDRESS_MATCHED)//От Мастера пришла команда на запись - SLA+Wr
 	{
-		_i2c_ClearADDRFlag(i2c);	//EV1: ADDR = 1, сбрасывается чтением регистров SR1 и SR2
-		//i2c->CR2 |= I2C_CR2_ITBUFEN;//включаем прерывание I2C_IT_BUF - вначале было отключено
-		i2cIt->rxBufIndex = 0;		//Сброс счетчика байтов RX
+		_i2c_ClearADDRFlag(i2c);				//EV1: ADDR = 1, сбрасывается чтением регистров SR1 и SR2
+		i2cIt->ITState = I2C_IT_STATE_ADDR_WR;	//Принят адрес+Wr - мастер записывает данные
+		i2cIt->rxBufIndex = 0;					//Сброс счетчика байтов RX
 	}
 	//От Мастера принят байт данных.
 	else if(event == I2C_EVENT_SLAVE_BYTE_RECEIVED)
 	{
 		//EV2: RxNE = 1, сбрасывается чтением регистра DR
-		_i2c_IT_ReadByteToBuffer(i2cIt);	//Складываем принятый байт в приемный буфер.
+		_i2c_IT_ReadByteToBuffer(i2cIt);		//Складываем принятый байт в приемный буфер.
 	}
 	/*------------------------------------------------------------------------*/
 	/* I2C in mode Transmitter -----------------------------------------------*/
 	else if(event == I2C_EVENT_SLAVE_TRANSMITTER_ADDRESS_MATCHED) //От Мастера пришла команда на чтение - SLA+Rd
 	{
-		_i2c_ClearADDRFlag(i2c);			//EV1: ADDR = 1, сбрасывается чтением регистров SR1 и SR2
-		//i2c->CR2 |= I2C_CR2_ITBUFEN;		//включаем прерывание I2C_IT_BUF - вначале было отключено
-		i2cIt->txBufIndex = 0;				//Сброс счетчика байтов TX
-		_i2c_IT_WriteByteFromBuffer(i2cIt);	//EV3-1: TxE = 1 ... - Передадим первый байт
+		_i2c_ClearADDRFlag(i2c);				//EV1: ADDR = 1, сбрасывается чтением регистров SR1 и SR2
+		i2cIt->ITState = I2C_IT_STATE_ADDR_RD;	//Принят адрес+Rd - мастер читает данные
+		i2cIt->txBufIndex = 0;					//Сброс счетчика байтов TX
+		_i2c_IT_WriteByteFromBuffer(i2cIt);		//EV3-1: TxE = 1 ... - Передадим первый байт
 	}
 	//Слайв передал байт
 	else if(event == I2C_EVENT_SLAVE_BYTE_TRANSMITTED)
@@ -726,14 +672,9 @@ static void I2C_IT_Slave2(I2C_IT_t *i2cIt){
 	/* Мастер передал СТОП-----------------------------------------------------*/
 	else if(event==I2C_EVENT_SLAVE_STOP_DETECTED)
 	{
-		//EV2: RxNE = 1, сбрасывается чтением регистра DR
-		//_i2c_IT_ReadByteToBuffer(i2cIt);	//Складываем последний принятый байт в приемный буфер.
-
-		//EV4: STOPF = 1, сбрасывается чтением регистра SR1 и записью в регистр CR1
-		_i2c_ClearSTOPFlag(i2c);
-
-		//i2c->CR2 &= ~I2C_CR2_ITBUFEN;	//Откл. прерывание I2C_IT_BUF.
-		i2cIt->i2cSlaveRxCpltCallback();//Обрабатываем принятые данные
+		_i2c_ClearSTOPFlag(i2c);			//EV4: STOPF = 1, сбрасывается чтением регистра SR1 и записью в регистр CR1
+		i2cIt->ITState = I2C_IT_STATE_STOP;	//От Мастери принят STOP
+		i2cIt->i2cSlaveRxCpltCallback();	//Обрабатываем принятые данные
 	}
 	/*------------------------------------------------------------------------*/
 	/*------------------------------------------------------------------------*/
@@ -779,10 +720,9 @@ static void I2C_IT_Error(I2C_IT_t *i2cIt){
 		//This bit is set and cleared by software and cleared by hardware when PE=0.
 		//	0: No acknowledge returned
 		//	1: Acknowledge returned after a byte is received (matched address or data)
-		i2c->CR1 |=	 I2C_CR1_ACK;		//без этого не работает!!!!
-
-		//i2c->CR2 &= ~I2C_CR2_ITBUFEN;	//Откл. прерывание I2C_IT_BUF.
-		i2cIt->i2cSlaveTxCpltCallback();//Что нибудь делаем по окончению передачи данных.
+		i2c->CR1 |= I2C_CR1_ACK;			//без этого не работает!!!!
+		i2cIt->ITState = I2C_IT_STATE_NAC;	//от Мастера принят NACK -признак завершения чтения байтов.
+		i2cIt->i2cSlaveTxCpltCallback();	//Что нибудь делаем по окончению передачи данных.
 	}
 	//------------------------------
 	//Bus error
@@ -838,7 +778,7 @@ void I2C_IT_EV_Handler(I2C_TypeDef *i2c){
 	else return;
 	//Мастер или Слейв
 	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_IT_Master(i2cIt);
-	else								  I2C_IT_Slave2(i2cIt); //I2C_IT_Slave(i2cIt);
+	else								  I2C_IT_Slave2(i2cIt); //I2C_IT_Slave(i2cIt);//
 }
 //**********************************************************
 //Обработчик прерывания ошибок I2C
