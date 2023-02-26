@@ -149,14 +149,14 @@ int main(void){
 	while(blVersion == CMD_NACK)
 	{
 		LED_PC13_Toggel();
-		DELAY_milliS(1000);
+		DELAY_milliS(500);
 		blVersion = BL_EMULATOR_Cmd_GetVersion();//Прочитаем версию загрузчика.
 	}
 	LED_PC13_Off();
 	//**************************************************************
 	while(1)
 	{
-		if(BL_EMULATOR_BaseLoop() != CMD_NACK) DELAY_milliS(50);
+		if(BL_EMULATOR_BaseLoop() != CMD_NACK) DELAY_milliS(25);
 		else 								   DELAY_milliS(500);
 
 		//Мигаем ...

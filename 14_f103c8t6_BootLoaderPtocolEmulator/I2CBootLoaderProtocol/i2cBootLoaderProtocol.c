@@ -117,7 +117,7 @@ uint8_t BL_EMULATOR_SendCmd(uint8_t cmd){
 	uint8_t buf[2] = {cmd, ~cmd};
 	//---------------------
 	//Передаем команду и ее инверсию
-	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_WRITE) == BOOT_I2C_NO_DEVICE)
+	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_Wr) == BOOT_I2C_NO_DEVICE)
 	{
 		return BOOT_I2C_NO_DEVICE;
 	}
@@ -138,7 +138,7 @@ uint8_t BL_EMULATOR_WaitACK(void){
 	uint8_t byte = 0;
 	//---------------------
 	//ждем ответа
-	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_READ) == BOOT_I2C_NO_DEVICE)
+	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_Rd) == BOOT_I2C_NO_DEVICE)
 	{
 		return BOOT_I2C_NO_DEVICE;
 	}
@@ -156,7 +156,7 @@ uint8_t BL_EMULATOR_WaitACK(void){
 //*****************************************
 uint8_t BL_EMULATOR_ReceiveData(uint8_t *buf, uint32_t size){
 
-	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_READ) == BOOT_I2C_NO_DEVICE)
+	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_Rd) == BOOT_I2C_NO_DEVICE)
 	{
 		return BOOT_I2C_NO_DEVICE;
 	}
@@ -174,7 +174,7 @@ uint8_t BL_EMULATOR_ReceiveData(uint8_t *buf, uint32_t size){
 //*****************************************
 uint8_t BL_EMULATOR_SendData(uint8_t *buf, uint32_t size){
 
-	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_WRITE) == BOOT_I2C_NO_DEVICE)
+	if(_bl_emulator_StartAndSendDeviceAddr(BOOT_I2C_Wr) == BOOT_I2C_NO_DEVICE)
 	{
 		return BOOT_I2C_NO_DEVICE;
 	}

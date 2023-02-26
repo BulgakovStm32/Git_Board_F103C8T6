@@ -11,8 +11,8 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-static uint32_t I2C1NacCount = 0;
-static uint32_t I2C2NacCount = 0;
+static uint32_t i2c1NacCount = 0;
+static uint32_t i2c2NacCount = 0;
 //*******************************************************************************************
 //*******************************************************************************************
 static uint32_t _i2c_LongWait(I2C_TypeDef *i2c, uint32_t flag){
@@ -83,8 +83,8 @@ static void _i2c_ModeInit(I2C_TypeDef *i2c, uint32_t mode){
 
 	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
 
-	if(mode == I2C_MODE_MASTER) i2c->SR2 |=  I2C_SR2_MSL;//режим Master.
-	else						i2c->SR2 &= ~I2C_SR2_MSL;//режим Slave
+	if(mode == I2C_MASTER) i2c->SR2 |=  I2C_SR2_MSL;//режим Master.
+	else			 	   i2c->SR2 &= ~I2C_SR2_MSL;//режим Slave
 }
 //**********************************************************
 static void _i2c_SetSlaveAddress(I2C_TypeDef *i2c, uint8_t slaveAddr){
@@ -127,41 +127,30 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 	}
 	(void)i2c->SR1;	//Для сброса флага SB необходимо прочитать SR1
 
-	//Передаем адрес.
-	i2c->DR = deviceAddr;
-
-	//ADDR(Address sent (master mode)/matched (slave mode)) — в режиме master
+	//Передаем адрес. ADDR(Address sent (master mode)/matched (slave mode)) — в режиме master
 	//устанавливается после передачи адреса, в режиме slave устанавливается при
 	//совпадении адреса. Для сброса нужно прочитать регистр SR1, а затем SR2.
-	_i2c_LongWait(i2c, I2C_SR1_ADDR);
-	(void)i2c->SR1;	//сбрасываем бит ADDR (чтением SR1 и SR2):
+	i2c->DR = deviceAddr;				//Передаем адрес.
+	_i2c_LongWait(i2c, I2C_SR1_ADDR);	//ждем пердачу адреса и установку ADDR
+	(void)i2c->SR1;						//сбрасываем бит ADDR (чтением SR1 и SR2):
 	(void)i2c->SR2;
 
 	//Если получили NAC то выходим
 	if(i2c->SR1 & I2C_SR1_AF)
 	{
 		i2c->SR1 &= ~I2C_SR1_AF;	//Сброс флага NAC.
-		if(i2c == I2C1) I2C1NacCount++;
-		else			I2C2NacCount++;
+		if(i2c == I2C1) i2c1NacCount++;
+		else			i2c2NacCount++;
 		return I2C_ERR_NAC;
 	}
-
-//	if(_i2c_LongWait(i2c, I2C_SR1_ADDR))//Ожидаем окончания передачи адреса
-//	{
-//		i2c->SR1 &= ~I2C_SR1_AF;	//Сброс флагов ошибок.
-//		if(i2c == I2C1) I2C1NacCount++;
-//		else			I2C2NacCount++;
-//		return I2C_ERR_ADDR;
-//	}
-
 	return I2C_OK;
 }
 //**********************************************************
-I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
+void I2C_Stop(I2C_TypeDef *i2c){
 
-	if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения буфера
-	i2c->DR = byte;
-	return I2C_OK;
+	//_i2c_LongWait(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
+	//_i2c_LongWait(i2c, I2C_SR1_BTF);//ждем окончания передачи байта
+	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
 }
 //**********************************************************
 I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
@@ -195,8 +184,8 @@ I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 		uint32_t i;
 		for(i=0; i < (len-2); i++)
 		{
-			_i2c_LongWait(i2c, I2C_SR1_RXNE);	//Wait for RXNE = 1
-			*(pBuf + i) = i2c->DR;				//Read Data
+			_i2c_LongWait(i2c, I2C_SR1_RXNE);//Wait for RXNE = 1
+			*(pBuf + i) = i2c->DR;			 //Read Data
 		}
 		//Вычитываем оставшиеся 2 байта.
 		_i2c_LongWait(i2c, I2C_SR1_BTF);	//Wait for BTF = 1
@@ -211,22 +200,23 @@ I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 	return I2C_OK;
 }
 //**********************************************************
-void I2C_Stop(I2C_TypeDef *i2c){
+I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
 
-	//_i2c_LongWait(i2c, I2C_SR1_TXE); //Ждем окончания передачи байта
-	//_i2c_LongWait(i2c, I2C_SR1_BTF);
-	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
+	//if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения регистра DR
+	_i2c_LongWait(i2c, I2C_SR1_TXE);	//Ждем освобождения регистра DR
+	i2c->DR = byte;
+	return I2C_OK;
 }
 //**********************************************************
 I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 
 	for(uint32_t i = 0; i < len; i++)
 	{
-		_i2c_LongWait(i2c, I2C_SR1_TXE);
-		i2c->DR = *(pBuf + i);
+		_i2c_LongWait(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
+		i2c->DR = *(pBuf + i);			//передаем байт
 	}
-	_i2c_LongWait(i2c, I2C_SR1_BTF);
-	I2C_Stop(i2c);	 //Формируем Stop
+	_i2c_LongWait(i2c, I2C_SR1_BTF);	//ждем окончания передачи байта
+	I2C_Stop(i2c);	 					//Формируем Stop
 	return I2C_OK;
 }
 //**********************************************************
@@ -234,8 +224,8 @@ I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t le
 
 	for(uint32_t i = 0; i < len; i++)
 	{
-		if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения буфера
-		i2c->DR = *(pBuf + i);
+		_i2c_LongWait(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
+		i2c->DR = *(pBuf + i);			//передаем байт
 	}
 	//if(_i2c_LongWait(i2c, I2C_SR1_BTF)) return I2C_ERR_BTF;
 	return I2C_OK;
@@ -246,10 +236,10 @@ I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t le
 //**************************Функции для работы в режиме Master*******************************
 void I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed){
 
-	_i2c_GPIO_Init(i2c, remap);		    //Инициализация портов
-	_i2c_ClockEnable(i2c);			    //Вкл. тактирования модуля I2C
-	_i2c_ModeInit(i2c, I2C_MODE_MASTER);//Инициализация I2C в режиме Master.
-	_i2c_SetSpeed(i2c, speed);			//Скорость работы.
+	_i2c_GPIO_Init(i2c, remap);		//Инициализация портов
+	_i2c_ClockEnable(i2c);			//Вкл. тактирования модуля I2C
+	_i2c_ModeInit(i2c, I2C_MASTER);	//Инициализация I2C в режиме Master.
+	_i2c_SetSpeed(i2c, speed);		//Скорость работы.
 
 	//Включение модуля I2C.
 	i2c->CR1 |= I2C_CR1_PE;
@@ -257,17 +247,15 @@ void I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed){
 //**********************************************************
 uint32_t I2C_Master_GetNacCount(I2C_TypeDef *i2c){
 
-	if(i2c == I2C1) return I2C1NacCount;
-					return I2C2NacCount;
+	if(i2c == I2C1) return i2c1NacCount;
+					return i2c2NacCount;
 }
 //**********************************************************
-uint32_t I2C_Master_CheckSlave(I2C_TypeDef *i2c, uint8_t deviceAddr){
+I2C_State_t I2C_Master_CheckSlave(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
-	uint32_t err = I2C_StartAndSendDeviceAddr(i2c, deviceAddr);
+	I2C_State_t err = I2C_StartAndSendDeviceAddr(i2c, deviceAddr);
 	i2c->CR1 |= I2C_CR1_STOP; //Формируем Stop
-
-	if(err == I2C_OK) return 1;
-					  return 0;
+	return err;
 }
 //**********************************************************
 /*  Ф-ия передачи массива данных в Slave-устройство.
@@ -283,11 +271,13 @@ uint32_t I2C_Master_CheckSlave(I2C_TypeDef *i2c, uint8_t deviceAddr){
 I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len){
 
 	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK) return I2C_ERR_ADDR;
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_Wr) != I2C_OK) return I2C_ERR_NAC;
 
 	//Передача адреса в который хотим записать.
-	i2c->DR = regAddr;
-	if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;
+	//i2c->DR = regAddr;
+	//if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;
+	I2C_SendByte(i2c, regAddr);
+	_i2c_LongWait(i2c, I2C_SR1_TXE);	//Ждем освобождения регистра DR
 
 	//передача данных на запись.
 	return(I2C_SendDataWithStop(i2c, pBuf, len));
@@ -305,20 +295,20 @@ I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAd
  */
 I2C_State_t I2C_Master_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len){
 
-	//if(I2C_DMA_State() != I2C_DMA_READY) return I2C_BUSY;
-
 	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_WRITE) != I2C_OK) return I2C_ERR_ADDR;
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_Wr) != I2C_OK) return I2C_ERR_NAC;
 
 	//Передача адреса с которого начинаем чтение.
-	i2c->DR = regAddr;
-	if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;
-	//---------------------
+	//i2c->DR = regAddr;
+	//if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;
+	I2C_SendByte(i2c, regAddr);
+	_i2c_LongWait(i2c, I2C_SR1_TXE);	//Ждем освобождения регистра DR
+
 	//Формирование reStart condition.
-	i2c->CR1 |= I2C_CR1_STOP; //Это команда нужна для работы с DS2782. Без нее не работает
+	//i2c->CR1 |= I2C_CR1_STOP; //Это команда нужна для работы с DS2782. Без нее не работает
 
 	//Формирование Start + AddrSlave|Read.
-	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_MODE_READ) != I2C_OK) return I2C_ERR_ADDR;
+	if(I2C_StartAndSendDeviceAddr(i2c, deviceAddr|I2C_Rd) != I2C_OK) return I2C_ERR_NAC;
 
 	//прием даннных
 	return(I2C_ReadData(i2c, pBuf, len));
@@ -329,54 +319,11 @@ I2C_State_t I2C_Master_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAdd
 //*******************************************************************************************
 void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32_t speed){
 
-	_i2c_GPIO_Init(i2c, remap);		    		  //Инициализация портов
-	_i2c_ClockEnable(i2c);			    		  //Вкл. тактирования модуля I2C
-	_i2c_ModeInit(i2c, I2C_MODE_SLAVE); 		  //I2C в режиме Slave.
-	_i2c_SetSlaveAddress(i2c, (uint8_t)slaveAddr);//адрес устройства на шине.
-	_i2c_SetSpeed(i2c, speed);					  //Скорость работы.
-
-
-
-//	//Инициализация портов.
-//	_i2c_GPIO_Init(i2c, remap);
-//	//Включение тактирования.
-//	if(i2c == I2C1) RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
-//	else		    RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
-//	//Инициализация I2C в режиме Slave.
-//	i2c->CR1 &= ~I2C_CR1_PE;   //Откл. модуля I2C.
-//	i2c->CR1 |=  I2C_CR1_SWRST;//Программный сброс модуля I2C
-//	i2c->CR1 &= ~I2C_CR1_SWRST;//Это нужно для востановления работоспособноси после КЗ на линии.
-//	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
-//	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
-//	i2c->SR2 &= ~I2C_SR2_MSL;   //режим Slave.
-//	i2c->SR1  = 0; 			    //Сброс флагов ошибок.
-//
-//	i2c->OAR1 = slaveAddr << 1; //адрес устройства на шине.
-//	i2c->CR1 |= I2C_CR1_ACK;	//разрешаем отправлять ACK/NACK после приема байта адреса.
-//
-//	//Скорость работы.
-//	i2c->CR2  = 0;
-//	i2c->CR2 |= (I2C_FREQ << I2C_CR2_FREQ_Pos);//APB1 = 36MHz
-//	i2c->CCR  = 0;
-//
-//	//FastMode(400kHz)
-//	if(speed >= 400000)
-//	{
-//		i2c->CCR   |=  I2C_CCR_FS; //1 - режим FastMode(400kHz).
-//		i2c->CCR   |= (I2C_FM_CCR << I2C_CCR_CCR_Pos);
-//		i2c->TRISE |= (I2C_FM_TRISE << I2C_TRISE_TRISE_Pos);
-//	}
-//	//StandartMode(100kHz).
-//	else
-//	{
-//		i2c->CCR   &= ~I2C_CCR_FS; //0 - режим STANDART(100kHz).
-//		i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-//		i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
-//	}
-//	//StandartMode(100kHz).
-////	i2c->CCR   &= ~I2C_CCR_FS; //1 - режим FastMode(400kHz), 0 - режим STANDART(100kHz).
-////	i2c->CCR   |= (I2C_SM_CCR << I2C_CCR_CCR_Pos);
-////	i2c->TRISE |= (I2C_SM_TRISE << I2C_TRISE_TRISE_Pos);
+	_i2c_GPIO_Init(i2c, remap);		    		  	//Инициализация портов
+	_i2c_ClockEnable(i2c);			    		  	//Вкл. тактирования модуля I2C
+	_i2c_ModeInit(i2c, I2C_SLAVE); 		  			//I2C в режиме Slave.
+	_i2c_SetSlaveAddress(i2c, (uint8_t)slaveAddr);	//адрес устройства на шине.
+	_i2c_SetSpeed(i2c, speed);					  	//Скорость работы.
 
 	//Включение модуля I2C.
 //	i2c->CR1 |= I2C_CR1_PE;
@@ -393,7 +340,6 @@ void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32
 static I2C_IT_t	*i2c1_IT_Define;
 static I2C_IT_t	*i2c2_IT_Define;
 
-//static uint8_t crc = 0xff;
 //*******************************************************************************************
 //*******************************************************************************************
 void I2C_IT_Init(I2C_IT_t *i2cIt){
@@ -402,13 +348,8 @@ void I2C_IT_Init(I2C_IT_t *i2cIt){
 	else if(i2cIt->i2c == I2C2)  i2c2_IT_Define = i2cIt;
 	else return;
 	//Инициализация I2C
-	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_Master_Init(i2cIt->i2c,
-														  i2cIt->gpioRemap,
-														  i2cIt->i2cSpeed);
-	else								  I2C_Slave_Init (i2cIt->i2c,
-														  i2cIt->gpioRemap,
-														  i2cIt->slaveAddr,
-														  i2cIt->i2cSpeed);
+	if(i2cIt->i2cMode == I2C_MASTER) I2C_Master_Init(i2cIt->i2c, i2cIt->gpioRemap, i2cIt->i2cSpeed);				  //режим Master.
+	else 							 I2C_Slave_Init (i2cIt->i2c, i2cIt->gpioRemap, i2cIt->slaveAddr, i2cIt->i2cSpeed);//режим Slave
 	//Инициализация прерывания.
 	i2cIt->i2c->CR2 |= I2C_CR2_ITEVTEN | //Разрешение прерывания по событию.
 					   I2C_CR2_ITERREN;  //Разрешение прерывания по ошибкам.
@@ -510,31 +451,6 @@ static void I2C_IT_ReadByteToBuffer(I2C_IT_t *i2cIt){
 			i2cIt->i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
 			i2cIt->i2cSlaveRxCpltCallback();    //Разбор принятого пакета.
 		}
-
-
-//		data = (uint8_t)i2cIt->i2c->DR;
-//		//Складываем принятый байт в приемный буфер.
-//		*(i2cIt->pRxBuf + i2cIt->rxBufIndex) = data;
-//		i2cIt->rxBufIndex++;
-//		//if(i2cIt->rxBufIndex < I2C_IT_RX_BUF_LEN_MAX) i2cIt->rxBufIndex++;
-//		//смотрим сколько байт нужно принять.
-//		//второй байт пакета - это размер принимаемого пакета. подробности в описании протокола.
-//		if(i2cIt->rxBufIndex == 2 &&
-//		   i2cIt->pRxBuf[1]	 != 0) i2cIt->rxBufSize = i2cIt->pRxBuf[1] + 2;
-//		if(i2cIt->rxBufSize > I2C_IT_RX_BUF_LEN_MAX) i2cIt->rxBufSize = I2C_IT_RX_BUF_LEN_MAX;
-//		//Считаем CRC при приеме каждого байта.
-//		crc = CRC8_ForEachByte(data, crc);
-//		//приняли нужное кол-во байтов.
-//		if(i2cIt->rxBufIndex >= i2cIt->rxBufSize)
-//		{
-//			i2cIt->i2c->CR2 &= ~I2C_CR2_ITBUFEN;//Откл. прерывание I2C_IT_BUF.
-//
-//			if(crc == *(i2cIt->pRxBuf + i2cIt->rxBufIndex - 1))
-//			{
-//				i2cIt->i2cSlaveRxCpltCallback();    //Разбор принятого пакета.
-//			}
-//			crc = 0xff;
-//		}
 	}
 }
 //**********************************************************
@@ -781,8 +697,8 @@ void I2C_IT_EV_Handler(I2C_TypeDef *i2c){
 	else if(i2c == I2C2) i2cIt = i2c2_IT_Define;
 	else return;
 	//Мастер или Слейв
-	if(i2cIt->i2cMode == I2C_MODE_MASTER) I2C_IT_Master(i2cIt);
-	else								  I2C_IT_Slave(i2cIt);
+	if(i2cIt->i2cMode == I2C_MASTER) I2C_IT_Master(i2cIt);
+	else					         I2C_IT_Slave(i2cIt);
 }
 //**********************************************************
 //Обработчик прерывания ошибок I2C
@@ -903,8 +819,8 @@ uint32_t I2C_DMA_Read(I2C_IT_t *i2cIt){
 
 	i2c->CR2 |= I2C_CR2_DMAEN | //DMA Requests Enable.
 				I2C_CR2_LAST;	//DMA Last Transfer.
-	//Формирование Start + AddrSlave|Write.
-	if(I2C_StartAndSendDeviceAddr(i2c, (i2cIt->slaveAddr<<1)|I2C_MODE_READ) != I2C_OK)
+	//Формирование Start + AddrSlave|Read.
+	if(I2C_StartAndSendDeviceAddr(i2c, (i2cIt->slaveAddr<<1)|I2C_Rd) != I2C_OK)
 	{
 		__enable_irq();
 		return I2C_DMA_NAC;

@@ -36,22 +36,21 @@
 //Меньше 70 не делать, т.е. пауза будет меньше чем время передачи байта адреса
 #define I2C_WAIT_TIMEOUT	100//1000//5000//50000U
 //--------------------------
-#define I2C_MODE_READ  		1
-#define I2C_MODE_WRITE 		0
-#define I2C_ADDRESS(addr, mode) ((addr<<1) | mode)
-//--------------------------
-#define I2C_GPIO_NOREMAP	0
-#define I2C_GPIO_REMAP		1
+#define I2C_MASTER			0	//режим Master.
+#define I2C_SLAVE			1	//режим Slave
 
-#define I2C_MODE_MASTER		0
-#define I2C_MODE_SLAVE		1
+#define I2C_GPIO_NOREMAP	0	//
+#define I2C_GPIO_REMAP		1	//Ремап выводов для I2C1, для I2C2 ремапа нет.
+//--------------------------
+#define I2C_Rd  			1	//
+#define I2C_Wr 				0	//
+#define I2C_ADDRESS(addr, mode) ((addr<<1) | mode)
 //--------------------------
 typedef enum{
 	I2C_OK = 0,
 	I2C_BUSY,		//Шина I2C занята (передача/прием данных)
 	I2C_ERR_START,	//Ошибка при фоормировании Старт-последовательности
 	I2C_ERR_NAC,	//Отсутствие Slave на шине
-	I2C_ERR_ADDR,	//Ошибка адреса, Slave не отвечает.
 	I2C_ERR_TX_BYTE,//Вышел таймаут передачи байта.
 	I2C_ERR_RX_BYTE,//Вышел таймаут приема байта.
 	I2C_ERR_BTF		//Вышел таймаут Byte transfer finished
@@ -60,9 +59,9 @@ typedef enum{
 //*******************************************************************************************
 //Общие функции.
 I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr);
-I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte);
-I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 void		I2C_Stop(I2C_TypeDef *i2c);
+I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
+I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte);
 I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 
@@ -70,7 +69,7 @@ I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t le
 //Функции для работы в режиме Master
 void 		I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed);
 uint32_t 	I2C_Master_GetNacCount(I2C_TypeDef *i2c);
-uint32_t    I2C_Master_CheckSlave(I2C_TypeDef *i2c, uint8_t deviceAddr);
+I2C_State_t I2C_Master_CheckSlave(I2C_TypeDef *i2c, uint8_t deviceAddr);
 I2C_State_t I2C_Master_Write(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
 I2C_State_t I2C_Master_Read (I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAddr, uint8_t *pBuf, uint32_t len);
 
