@@ -156,10 +156,11 @@ int main(void){
 	//**************************************************************
 	while(1)
 	{
-		if(BL_EMULATOR_BaseLoop() != CMD_NACK) DELAY_milliS(25);
-		else 								   DELAY_milliS(500);
+		uint32_t state = BL_EMULATOR_BaseLoop();//Эмулятор протокола I2C-загрузчика.
 
 		//Мигаем ...
+		if(state != CMD_NACK) DELAY_milliS(25);
+		else 				  DELAY_milliS(500);
 		LED_PC13_Toggel();
 	}
 	//**************************************************************

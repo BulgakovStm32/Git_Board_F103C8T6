@@ -216,14 +216,20 @@ uint8_t BL_EMULATOR_GetXorChecksum(uint8_t *buf, uint32_t size){
 //*****************************************
 uint8_t BL_EMULATOR_Cmd_Get(void){
 
+	//uint8_t num;
+	//---------------------
 	//Передача команды
 	if(BL_EMULATOR_SendCmd(CMD_BOOT_Get) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
 	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
 
+	//Примем байт с количеством вычитываемых байтов.
+	//if(BL_EMULATOR_ReceiveData(&num, 1) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+
 	//Чтение списка поддерживаемых команд. 19 команд для версии загрузчика 1.1(такой в STM32F411)
 	if(BL_EMULATOR_ReceiveData(bootBuf, 19) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	//if(BL_EMULATOR_ReceiveData(bootBuf, num) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
 	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
@@ -382,7 +388,7 @@ uint8_t BL_EMULATOR_Cmd_Go(uint32_t appAddr){
 }
 //*******************************************************************
 // Function    : BL_EMULATOR_Cmd_WM()
-// Description : Write Memory - Записывает в память до 256 байт, начиная с адреса addr
+// Description : Write Memory - Записывает в память до 256 байт, начиная с адреса wrAddr
 // Parameters  : wrAddr - адрес куда пишем
 //				 wrBuf  - буфер с данными на запись
 //				 swSize - кол-во байтов на запись (от 1 до 256)
@@ -391,56 +397,58 @@ uint8_t BL_EMULATOR_Cmd_Go(uint32_t appAddr){
 //*****************************************
 uint8_t BL_EMULATOR_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 
-	//Хост отправляет байты на STM32 следующим образом: - Byte 1: 0x31
+	//Хост отправляет байты на STM32 следующим образом:
+	//- Byte 1: 0x31
 	//- Byte 2: 0xCE
 	//Wait for ACK
+
 	//- Byte 3 to byte 6: Start address (Byte 3: MSB, Byte 6: LSB)
 	//- Byte 7: Checksum: XOR (byte 3, byte 4, byte 5, byte 6)
 	//Wait for ACK
+
 	//- Byte 8: Number of bytes to be received (0 < N <= 255)
 	//- N+1 data bytes: (max 256 bytes)
 	//- Checksum byte: XOR (N, N+1 data bytes)
 	//Wait for ACK
 
+	//---------------------
 	//Передача команды
-	BL_EMULATOR_SendCmd(CMD_BOOT_WM);
-
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_WM) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 	//Проверим ответ.
 	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
-
+	//---------------------
 	//Предадим Start address куда хотим писать данные
 	bootBuf[0] = (uint8_t)(wrAddr >> 24);
 	bootBuf[1] = (uint8_t)(wrAddr >> 16);
 	bootBuf[2] = (uint8_t)(wrAddr >> 8);
 	bootBuf[3] = (uint8_t)(wrAddr >> 0);
-	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);	//Checksum: XOR (byte 0, byte 1, byte 2, byte 3)
-	BL_EMULATOR_SendData(bootBuf, 5);						//Передаим данные
-
+	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);	//Checksum
+	//Передаим данные
+	if(BL_EMULATOR_SendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		//_bl_emulator_FillBuf(bootBuf, 5, 0); //Очистка буфера.
-		return CMD_NACK;
-	}
-
-	//Кол-во байтов N на передачу Слейву (0 < N <= 255)
-	bootBuf[0] = wrSize - 1;//-1 для того чтобы можно было передать число от 1 до 256
+	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+	//---------------------
+	//Передача кол-ва байтов N, которое нужно записать, минус 1(0 < N <= 255)
+	bootBuf[0] = (uint8_t)(wrSize-1);//-1 для того чтобы можно было передать число от 1 до 256
 
 	//N+1 байтов на запись (max 256 bytes)
-	STM32_Flash_ReadBuf((void*)wrAddr, (void*)&bootBuf[1], wrSize);
+	//STM32_Flash_ReadBufU8((void*)wrAddr, (void*)&bootBuf[1], wrSize);
+	STM32_Flash_ReadBufU32((void*)wrAddr, (void*)&bootBuf[1], wrSize);
 
-	//Контрольная сумма - Checksum byte: XOR (N, N+1 data bytes)
+	//Контрольная сумма
 	bootBuf[wrSize+1] = BL_EMULATOR_GetXorChecksum(bootBuf, wrSize+1);//+1 байт потому что + байт wrSize
 
-	//Передадим данные
-	BL_EMULATOR_SendData(bootBuf, wrSize+2);//+2 байта потому что байт wrSize + байт Checksum
+	//Передаим данные. +2 байта потому что + байт wrSize и + байт Checksum
+	if(BL_EMULATOR_SendData(bootBuf, wrSize+2) == BOOT_I2C_NO_DEVICE)
+		return CMD_NACK; //нет устройства на шине
+
+	//Подождем окончания записи (~2мс)
+	DELAY_milliS(2);
 
 	//Проверим ответ.
 	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-	{
-		//_bl_emulator_FillBuf(bootBuf, 2, 0); //Очистка буфера.
 		return CMD_NACK;
-	}
+	//---------------------
 	return CMD_ACK;
 }
 //*******************************************************************************************
@@ -478,19 +486,30 @@ uint32_t BL_EMULATOR_BaseLoop(void){
 		break;
 		//------------------
 		case(CMD_BOOT_RM):
-			ack = BL_EMULATOR_Cmd_RM(0x08000000, 8);
+			ack = BL_EMULATOR_Cmd_RM(APP_PROGRAM_START_ADDR, 16);
 			bootState = CMD_BOOT_Go;
 		break;
 		//------------------
 		case(CMD_BOOT_Go):
 			//ack = BL_EMULATOR_Cmd_Go(0x08000000);
-			//bootState = CMD_BOOT_WM;
-
-			bootState = CMD_BOOT_Get;
+			bootState = CMD_BOOT_WM;
 		break;
 		//------------------
 		case(CMD_BOOT_WM):
-//			BL_EMULATOR_Cmd_WM(APP_PROGRAM_START_ADDR, (uint8_t*)APP_PROGRAM_START_ADDR, 8);
+
+		//Запишем страницу (1024 байта)
+		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*0), 0, 256);
+		DELAY_milliS(5);
+
+		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*1), 0, 256);
+		DELAY_milliS(5);
+
+		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*2), 0, 256);
+		DELAY_milliS(5);
+
+		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*4), 0, 256);
+		DELAY_milliS(5);
+
 			bootState = CMD_BOOT_Get;
 		break;
 		//------------------
