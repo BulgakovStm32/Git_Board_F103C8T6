@@ -64,46 +64,49 @@ uint32_t GetAppState(){
 // Parameters : Нет
 // RetVal     : 1 - приложение есть; 0 - приложения нет.
 //*****************************************
-//static uint32_t AppAvailableCheck(void){
-//
-//	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
-//	return 1;
-//}
+static uint32_t _appAvailableCheck(void){
+
+	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
+	return 1;
+}
 //*******************************************************************************************
 // Function      GoToApp
 // Description
 // Parameters
 // RetVal
 //*****************************************
-//static void GoToApp(uint32_t appAddr){
-//
-//	void(*goToApp)(void);
-//	uint32_t addrResetHandler;
-//	//------------------
-//	//Дополнительная проверка:
-//	//по стартовому адресу приложения должно лежать значение вершины стека приложения
-//	//т.е. значение больше 0x2000 0000
-//	if(!AppAvailableCheck()) return;
-//
-//	__disable_irq();
-//	__set_MSP(*(volatile uint32_t*)appAddr);               	//Устанавливаем указатель стека SP приложения
-//	addrResetHandler = *(volatile uint32_t*)(appAddr + 4); 	//Адрес функции Reset_Handler приложения
-//	goToApp = (void(*)(void))addrResetHandler; 			  	//Указатель на функцию Reset_Handler приложения
-//	goToApp();								   				//Переход на функцию Reset_Handler приложения
-//}
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
+static void _goToApp(uint32_t appAddr){
 
-//static uint8_t flashBuf[64] = {0};
+	void(*goToApp)(void);
+	uint32_t addrResetHandler;
+	//------------------
+	//Дополнительная проверка:
+	//по стартовому адресу приложения должно лежать значение вершины стека приложения
+	//т.е. значение больше 0x2000 0000
+	//if(!AppAvailableCheck()) return;
 
+	__disable_irq();
+	__set_MSP(*(volatile uint32_t*)appAddr);               	//Устанавливаем указатель стека SP приложения
+	addrResetHandler = *(volatile uint32_t*)(appAddr + 4); 	//Адрес функции Reset_Handler приложения
+	goToApp = (void(*)(void))addrResetHandler; 			  	//Указатель на функцию Reset_Handler приложения
+	goToApp();								   				//Переход на функцию Reset_Handler приложения
+}
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 int main(void){
 
 	__disable_irq();
 	STM32_Clock_Init();
 	GPIO_Init();
 	DELAY_Init();
+	//***********************************************
+	//Если есть признак запуска приложения то перход на приложение
+//	if(_appAvailableCheck())
+//	{
+//		_goToApp(APP_PROGRAM_START_ADDR);
+//	}
 	//***********************************************
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
@@ -113,23 +116,13 @@ int main(void){
 		DELAY_milliS(100);
 		LED_PC13_Off();
 	}
-//	DELAY_milliS(1000);
 	//***********************************************
 	BOOT_LOADER_I2CInit(); //Инициализация I2C Slave для работы по прерываниям.
-
-//	STM32_Flash_ReadBufU32((void*)APP_PROGRAM_START_ADDR, (void*)flashBuf, 6);
-//	STM32_Flash_ReadBufU8 ((void*)APP_PROGRAM_START_ADDR, (void*)&flashBuf[10], 6);
-//
-//	flashBuf[20] = *(__IO uint8_t*)(APP_PROGRAM_START_ADDR+0);
-//	flashBuf[21] = *(__IO uint8_t*)(APP_PROGRAM_START_ADDR+1);
-//	flashBuf[22] = *(__IO uint8_t*)(APP_PROGRAM_START_ADDR+2);
-//	flashBuf[23] = *(__IO uint8_t*)(APP_PROGRAM_START_ADDR+3);
-
 	__enable_irq();
 	//***********************************************
 	while(1)
 	{
-		BOOT_LOADER_Loop();
+		BOOT_LOADER_Loop(); //Загрузчик
 	}
 }
 //*******************************************************************************************

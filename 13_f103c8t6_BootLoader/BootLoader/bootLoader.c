@@ -18,19 +18,6 @@ static uint8_t *responseBuf = I2c.txBuf;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-// Function    : _clear_RxFrame()
-// Description : очистка первых двух принятых байтов
-//				 это нужно для корректного приема комманд после передачи NACK
-// Parameters  :
-// RetVal      :
-//*****************************************
-//static void _clear_RxFrame(void){
-//
-//	rxFrame[0] = 0;	   	 	//Сброс приемного буфера
-//	rxFrame[1] = 0;
-//}
-
-//*******************************************************************************************
 // Function    :
 // Description :
 // Parameters  :
@@ -55,7 +42,17 @@ static void _goToApp(uint32_t appAddr){
 //*****************************************
 static void _waitEndRx(void){
 
-	while(I2c.itState != I2C_IT_STATE_STOP);//Ждем завершения чтения ответа
+	uint32_t ms = DELAY_microSecCount();
+	//------------------
+	while(I2c.itState != I2C_IT_STATE_STOP)//Ждем завершения чтения ответа
+	{
+		//Мигаем...
+		if((DELAY_microSecCount() - ms) >= 500000)
+		{
+			ms = DELAY_microSecCount();
+			LED_PC13_Toggel();
+		}
+	}
 	I2c.itState = I2C_IT_STATE_READY;
 }
 //*******************************************************************************************
@@ -151,37 +148,30 @@ uint8_t _cmd_BOOT_Get(void){
 	//Передача ACK
 	_sendByte(CMD_ACK);
 
-	//Передача кадра данных
-	responseBuf[0] = 19;//N = Number of bytes to follow - 1, except current and ACKs
-	_setTxSize(1);		//кол-во байт на передачу
-	_waitEndTx();		//Ждем завершения передачи ответа
+	//Сборка кадра данных
+	responseBuf[0]	= 19;			//N = Number of bytes to follow - 1, except current and ACKs
+	responseBuf[1]	= 0x01;			//bootloader version
+	responseBuf[2] 	= CMD_BOOT_Get;	//list of supported commands
+	responseBuf[3] 	= CMD_BOOT_GetVersion;
+	responseBuf[4] 	= CMD_BOOT_GetID;
+	responseBuf[5] 	= CMD_BOOT_RM;
+	responseBuf[6] 	= CMD_BOOT_Go;
+	responseBuf[7] 	= CMD_BOOT_WM;
+	responseBuf[8] 	= CMD_BOOT_NS_WM;
+	responseBuf[9] 	= CMD_BOOT_Erase;
+	responseBuf[10] = CMD_BOOT_NS_Erase;
+	responseBuf[11] = CMD_BOOT_WP;
+	responseBuf[12] = CMD_BOOT_NS_WP;
+	responseBuf[13] = CMD_BOOT_WUP;
+	responseBuf[14] = CMD_BOOT_NS_WUP;
+	responseBuf[15] = CMD_BOOT_RP;
+	responseBuf[16] = CMD_BOOT_NS_RP;
+	responseBuf[17] = CMD_BOOT_RUP;
+	responseBuf[18] = CMD_BOOT_NS_RUP;
+	responseBuf[19] = CMD_BOOT_NS_GetMemCs;
 
-	//__disable_irq();
-
-	responseBuf[0]	= 0x01;					//bootloader version
-	responseBuf[1] 	= CMD_BOOT_Get;			//list of supported commands
-	responseBuf[2] 	= CMD_BOOT_GetVersion;
-	responseBuf[3] 	= CMD_BOOT_GetID;
-	responseBuf[4] 	= CMD_BOOT_RM;
-	responseBuf[5] 	= CMD_BOOT_Go;
-	responseBuf[6] 	= CMD_BOOT_WM;
-	responseBuf[7] 	= CMD_BOOT_NS_WM;
-	responseBuf[8] 	= CMD_BOOT_Erase;
-	responseBuf[9]  = CMD_BOOT_NS_Erase;
-	responseBuf[10] = CMD_BOOT_WP;
-	responseBuf[11] = CMD_BOOT_NS_WP;
-	responseBuf[12] = CMD_BOOT_WUP;
-	responseBuf[13] = CMD_BOOT_NS_WUP;
-	responseBuf[14] = CMD_BOOT_RP;
-	responseBuf[15] = CMD_BOOT_NS_RP;
-	responseBuf[16] = CMD_BOOT_RUP;
-	responseBuf[17] = CMD_BOOT_NS_RUP;
-	responseBuf[18] = CMD_BOOT_NS_GetMemCs;
-
-	_setTxSize(19);	//кол-во байт на передачу
-	_waitEndTx();	//Ждем завершения передачи ответа
-
-	//__enable_irq();
+	_setTxSize(20);	//кол-во байт на передачу
+	_waitEndTx();	//Ждем завершения передачи кадра данных
 
 	//Передача ACK
 	_sendByte(CMD_ACK);
@@ -314,8 +304,8 @@ uint8_t _cmd_BOOT_Go(void){
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
 	if(_get_ROPState() == 1)//ROP активна
 	{
-		_sendByte(CMD_NACK);	//Передача NACK
-		return 0; 				//команда не выполнена.
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
 	}
 	//ROP отключена
 	_sendByte(CMD_ACK);		//Передача ACK
@@ -338,11 +328,11 @@ uint8_t _cmd_BOOT_Go(void){
 		//по стартовому адресу приложения должно лежать значение вершины стека
 		//приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
 		//приложение отсутсвует
-		if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000)
+		uint32_t var = STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR);
+		if((var ^ 0x2000000) > 0)
 		{
 			_sendByte(CMD_ACK);//Передача ACK
 			_goToApp(appAddr);	//Переход на функцию Reset_Handler приложения
-			return 1; 			//команда выполнена.
 		}
 	}
 	//-----------------------
@@ -378,8 +368,8 @@ uint8_t _cmd_BOOT_WM(void){
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
 	if(_get_ROPState() == 1)//ROP активна
 	{
-		_sendByte(CMD_NACK);	//Передача NACK
-		return 0; 				//команда не выполнена.
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
 	}
 	//ROP отключена
 	_sendByte(CMD_ACK);		//Передача ACK
@@ -390,8 +380,8 @@ uint8_t _cmd_BOOT_WM(void){
 	//Контрольная сумма не совпала
 	if(_getXorChecksum(rxFrame, 5) != 0)
 	{
-		_sendByte(CMD_NACK);	//Передача NACK
-		return 0; 				//команда не выполнена.
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
 	}
 	//Контрольная сумма OK. Соберам принятый адрес. Bytes 3-6: Start address (byte 3: MSB, byte 6: LSB)
 	startAddr = _get_StartAddress(rxFrame);
@@ -411,8 +401,8 @@ uint8_t _cmd_BOOT_WM(void){
 	//байт Сhecksum
 	if(_getXorChecksum(rxFrame, (nBytesMinusOne+1+1+1)) != 0)//+3 т.к.+(N+1)байтов_данных +байт_N и +байт Сhecksum
 	{
-		_sendByte(CMD_NACK);	//Передача NACK
-		return 0; 				//команда не выполнена.
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
 	}
 	//Контрольная сумма OK. Проверка принятого адреса на валидность.
 	//Адреса могут быть:
@@ -427,7 +417,7 @@ uint8_t _cmd_BOOT_WM(void){
 	{
 		//Записываем полученные данные во флэш-память со стартового адреса
 		STM32_Flash_Unlock();
-		//STM32_Flash_WriteBuf((void*)&rxFrame[1], (void*)startAddr, nBytesMinusOne+1);
+		STM32_Flash_WriteBuf((void*)&rxFrame[1], (void*)startAddr, nBytesMinusOne+1);
 		STM32_Flash_Lock();
 	}
 	//Option Bytes
@@ -440,14 +430,14 @@ uint8_t _cmd_BOOT_WM(void){
 		//команды загрузчик генерирует системный сброс, чтобы установки
 		//новых значений байт опций вступили в силу.
 
-		//_sendByte(CMD_ACK);	//Передача ACK
-		//NVIC_SystemReset();		//Cистемный сброс!!!
+		//_sendByte(CMD_ACK);//Передача ACK
+		//NVIC_SystemReset();//Cистемный сброс!!!
 	}
 	//Неверный адрес
 	else
 	{
-		_sendByte(CMD_NACK);	//Передача NACK
-		return 0; 				//команда не выполнена.
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
 	}
 	//Передача ACK
 	_sendByte(CMD_ACK);
@@ -517,7 +507,7 @@ void BOOT_LOADER_Loop(void){
 		}
 	}
 	//----------------------------------------
-	//Выполнение принятой ранее команды
+	//Выполнение принятой команды
 	switch(currentCmd)
 	{
 		//-------------------
@@ -527,7 +517,7 @@ void BOOT_LOADER_Loop(void){
 			currentCmd = 0;	//команда отработана.
 		break;
 		//-------------------
-		//Получает версию загрузчика.
+		//Передача версии загрузчика.
 		case(CMD_BOOT_GetVersion):
 			_cmd_BOOT_GetVersion();
 			currentCmd = 0;	//команда отработана.
@@ -535,7 +525,7 @@ void BOOT_LOADER_Loop(void){
 			//if(_cmd_BOOT_GetVersion()) currentCmd = 0;//0 - команда отработана.
 		break;
 		//-------------------
-		//Получает идентификатор чипа
+		//Передача идентификатора чипа
 		case(CMD_BOOT_GetID):
 			_cmd_BOOT_GetID();
 			currentCmd = 0;	//команда отработана.
@@ -555,7 +545,6 @@ void BOOT_LOADER_Loop(void){
 		case(CMD_BOOT_Go):
 			_cmd_BOOT_Go();
 			currentCmd = 0;	//команда отработана.
-
 		break;
 		//-------------------
 		//Write Memory - Записывает в память до 256 байт, начиная с адреса, указанного приложением.
