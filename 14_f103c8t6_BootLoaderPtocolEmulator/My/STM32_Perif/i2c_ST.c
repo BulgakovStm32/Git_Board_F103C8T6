@@ -213,7 +213,7 @@ I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 	for(uint32_t i = 0; i < len; i++)
 	{
 		_i2c_LongWait(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
-		i2c->DR = *(pBuf + i);			//передаем байт
+		i2c->DR = *(pBuf + i);			 //передаем байт
 	}
 	_i2c_LongWait(i2c, I2C_SR1_BTF);	//ждем окончания передачи байта
 	I2C_Stop(i2c);	 					//Формируем Stop

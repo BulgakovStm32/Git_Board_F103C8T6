@@ -413,41 +413,44 @@ uint8_t BL_EMULATOR_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 
 	//---------------------
 	//Передача команды
-	if(BL_EMULATOR_SendCmd(CMD_BOOT_WM) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	if(BL_EMULATOR_SendCmd(CMD_BOOT_WM) == BOOT_I2C_NO_DEVICE)
+		return CMD_NACK; 	//нет устройства на шине
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+	if(BL_EMULATOR_WaitACK() != CMD_ACK)
+		return CMD_NACK;	//команда не принята.
 	//---------------------
-	//Предадим Start address куда хотим писать данные
+	//Передадим Start address куда хотим писать данные
 	bootBuf[0] = (uint8_t)(wrAddr >> 24);
 	bootBuf[1] = (uint8_t)(wrAddr >> 16);
 	bootBuf[2] = (uint8_t)(wrAddr >> 8);
 	bootBuf[3] = (uint8_t)(wrAddr >> 0);
 	bootBuf[4] = BL_EMULATOR_GetXorChecksum(bootBuf, 4);	//Checksum
 	//Передаим данные
-	if(BL_EMULATOR_SendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	if(BL_EMULATOR_SendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE)
+		return CMD_NACK; 	//нет устройства на шине
 	//Проверим ответ.
-	if(BL_EMULATOR_WaitACK() != CMD_ACK) return CMD_NACK;
+	if(BL_EMULATOR_WaitACK() != CMD_ACK)
+		return CMD_NACK;	//неверный Start address
 	//---------------------
 	//Передача кол-ва байтов N, которое нужно записать, минус 1(0 < N <= 255)
 	bootBuf[0] = (uint8_t)(wrSize-1);//-1 для того чтобы можно было передать число от 1 до 256
 
-	//N+1 байтов на запись (max 256 bytes)
-	//STM32_Flash_ReadBufU8((void*)wrAddr, (void*)&bootBuf[1], wrSize);
-	STM32_Flash_ReadBufU32((void*)wrAddr, (void*)&bootBuf[1], wrSize);
+	//Перепишем N+1 байтов в буфер передачи
+	STM32_Flash_ReadBufU8((void*)wrAddr, (void*)&bootBuf[1], wrSize);
 
 	//Контрольная сумма
-	bootBuf[wrSize+1] = BL_EMULATOR_GetXorChecksum(bootBuf, wrSize+1);//+1 байт потому что + байт wrSize
+	bootBuf[wrSize+1] = BL_EMULATOR_GetXorChecksum(bootBuf, wrSize+1);//+1 байт потому что +байт N
 
-	//Передаим данные. +2 байта потому что + байт wrSize и + байт Checksum
+	//Передаим данные. +2 байта потому что +байт N и +байт Checksum
 	if(BL_EMULATOR_SendData(bootBuf, wrSize+2) == BOOT_I2C_NO_DEVICE)
-		return CMD_NACK; //нет устройства на шине
+		return CMD_NACK;	//нет устройства на шине
 
 	//Подождем окончания записи (~2мс)
 	DELAY_milliS(2);
 
 	//Проверим ответ.
 	if(BL_EMULATOR_WaitACK() != CMD_ACK)
-		return CMD_NACK;
+		return CMD_NACK;	//ошибка при записи
 	//---------------------
 	return CMD_ACK;
 }
@@ -466,7 +469,8 @@ uint32_t BL_EMULATOR_BaseLoop(void){
 
 	//Машина состояний эмулятора хоста загрузчика
 	static uint32_t bootState = CMD_BOOT_Get;//Начнем с команды CMD_BOOT_Get
-	uint32_t ack = CMD_NACK;
+	uint32_t ack  = CMD_NACK;
+	uint32_t addr = 0;
 	//---------------------
 	switch(bootState){
 		//------------------
@@ -497,20 +501,28 @@ uint32_t BL_EMULATOR_BaseLoop(void){
 		//------------------
 		case(CMD_BOOT_WM):
 
-		//Запишем страницу (1024 байта)
-		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*0), 0, 256);
-		DELAY_milliS(5);
+			//Всего 128 страниц флэш-памяти по 1024 байта каждая.
+			//Размер загрузчика 10КБ (10240 байт = 0х2800)
+			//(9КБ - это сам загрузчик, 1КБ - это обасть хранения состояния приложения).
+			for(uint32_t i=0; i < (128-10); i++)
+			{
+				addr = APP_PROGRAM_START_ADDR + 1024*i; //шагаем по 1024 байта
+				//Запишем страницу флэш-памяти (1024 байта)
+				ack = BL_EMULATOR_Cmd_WM((addr+256*0), 0, 256);
+				ack = BL_EMULATOR_Cmd_WM((addr+256*1), 0, 256);
+				ack = BL_EMULATOR_Cmd_WM((addr+256*2), 0, 256);
+				ack = BL_EMULATOR_Cmd_WM((addr+256*3), 0, 256);
 
-		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*1), 0, 256);
-		DELAY_milliS(5);
+				DELAY_milliS(30);
+				LED_PC13_Toggel();
+			}
+			//запишем признак запуска приложения после ресета
+			//....
 
-		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*2), 0, 256);
-		DELAY_milliS(5);
-
-		ack = BL_EMULATOR_Cmd_WM((APP_PROGRAM_START_ADDR+256*4), 0, 256);
-		DELAY_milliS(5);
-
-			bootState = CMD_BOOT_Get;
+			//Переход на приложение после записи его в память
+			BL_EMULATOR_Cmd_Go(APP_PROGRAM_START_ADDR);
+			while(1);
+			//bootState = CMD_BOOT_Get;
 		break;
 		//------------------
 		default:

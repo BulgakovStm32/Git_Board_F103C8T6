@@ -114,31 +114,21 @@ int main(void){
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
 	{
-		DELAY_milliS(250);
+		DELAY_milliS(100);
 		LED_PC13_On();
-		DELAY_milliS(250);
+		DELAY_milliS(100);
 		LED_PC13_Off();
 	}
 	//***********************************************
-	//Проверка наличия приложения. Если приложения нет - бесконечно мигаем.
-//	if(!AppAvailableCheck())
-//	{
-//		while(1)
-//		{
-//			LED_PC13_Toggel();
-//			DELAY_milliS(50);
-//		}
-//	}
-	//***********************************************
 	//Подсчитаем сколько байт занимает приложение.
-	appSize_Bytes = 0;
-	while(STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR + appSize_Bytes) != 0xFFFFFFFF)
-	{
-		appSize_Bytes += 4; //шагаем по 4 байта
-	}
+//	appSize_Bytes = 0;
+//	while(STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR + appSize_Bytes) != 0xFFFFFFFF)
+//	{
+//		appSize_Bytes += 4; //шагаем по 4 байта
+//	}
 	//в appSize_Bytes лежит размер приложения в байтах.
 	//Округлим в большую сторону и сделаем кратным 4м
-	while((appSize_Bytes % 4) != 0) { appSize_Bytes++; }
+//	while((appSize_Bytes % 4) != 0) { appSize_Bytes++; }
 	//appSize_Bytes = appSize_Bytes % 4; //проверка
 	//***********************************************
 	//Тут начинается работа протокола передачи прошивки.
@@ -149,7 +139,7 @@ int main(void){
 	while(blVersion == CMD_NACK)
 	{
 		LED_PC13_Toggel();
-		DELAY_milliS(500);
+		DELAY_milliS(250);
 		blVersion = BL_EMULATOR_Cmd_GetVersion();//Прочитаем версию загрузчика.
 	}
 	LED_PC13_Off();
@@ -160,7 +150,7 @@ int main(void){
 
 		//Мигаем ...
 		if(state != CMD_NACK) DELAY_milliS(25);
-		else 				  DELAY_milliS(500);
+		else 				  DELAY_milliS(2000);
 		LED_PC13_Toggel();
 	}
 	//**************************************************************

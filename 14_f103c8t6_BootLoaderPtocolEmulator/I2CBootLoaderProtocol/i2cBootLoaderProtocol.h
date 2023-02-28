@@ -102,7 +102,6 @@ uint8_t  BL_EMULATOR_Cmd_Go(uint32_t appAddr);
 uint8_t  BL_EMULATOR_Cmd_WM(uint32_t addr, uint8_t* wrBuf, uint32_t size);
 
 uint32_t BL_EMULATOR_BaseLoop(void);
-
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* _I2C_BOOTLOADERP_ROTOCOL_H_ */
