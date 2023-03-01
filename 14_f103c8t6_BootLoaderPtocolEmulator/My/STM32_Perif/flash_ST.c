@@ -24,7 +24,6 @@ static uint32_t _flash_Ready(void){
 
 	return !(FLASH->SR & FLASH_SR_BSY);
 }
-
 //*****************************************************************************
 // Function    : _flash_CheckEOP()
 // Description : EOP(End of operation) — устанавливается аппаратно,
@@ -89,6 +88,42 @@ void STM32_Flash_ErasePage(uint32_t pageAddress){
 	while(!_flash_CheckEOP());	//Ждем завершения стирания
 
 	FLASH->CR &= ~FLASH_CR_PER;	//Сбрасываем бит стирания одной страницы
+}
+//*****************************************************************************
+// Function    : STM32_Flash_EraseAllPage()
+// Description : Стирание всех страницы flash (вся страница заполняется 0xFF)
+// Parameters  :
+// RetVal      :
+//*****************************************
+void STM32_Flash_EraseAllPage(void){
+
+	/* Wait for last operation to be completed */
+//	  status = FLASH_WaitForLastOperation(EraseTimeout);
+//	  if(status == FLASH_COMPLETE)
+//	  {
+//	    /* if the previous operation is completed, proceed to erase all pages */
+//	     FLASH->CR |= CR_MER_Set;
+//	     FLASH->CR |= CR_STRT_Set;
+//
+//	    /* Wait for last operation to be completed */
+//	    status = FLASH_WaitForLastOperation(EraseTimeout);
+//
+//	    /* Disable the MER Bit */
+//	    FLASH->CR &= CR_MER_Reset;
+//	  }
+
+	while(!_flash_Ready()); 	//Ожидаем готовности флеша к записи
+	_flash_CheckEOP();	    	//Сбрасывается бит EOP записью в него единицы.
+
+	/* if the previous operation is completed, proceed to erase all pages */
+	FLASH->CR |= FLASH_CR_MER;
+	FLASH->CR |= FLASH_CR_STRT;
+
+	/* Wait for last operation to be completed */
+	while(!_flash_CheckEOP());	//Ждем завершения стирания
+
+	/* Disable the MER Bit */
+	FLASH->CR &= FLASH_CR_MER;
 }
 //*****************************************************************************
 // Function    : STM32_Flash_WriteWord()

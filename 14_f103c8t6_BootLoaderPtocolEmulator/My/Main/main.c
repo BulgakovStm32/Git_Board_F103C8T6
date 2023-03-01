@@ -132,21 +132,21 @@ int main(void){
 	//appSize_Bytes = appSize_Bytes % 4; //проверка
 	//***********************************************
 	//Тут начинается работа протокола передачи прошивки.
-	BL_EMULATOR_I2CInit();
+	BL_HOST_Init();
 
-	uint8_t blVersion = BL_EMULATOR_Cmd_GetVersion();//Прочитаем версию загрузчика.
+	uint8_t blVersion = BL_HOST_Cmd_GetVersion();//Прочитаем версию загрузчика.
 	//Ждем ответа загрузчика.
 	while(blVersion == CMD_NACK)
 	{
 		LED_PC13_Toggel();
 		DELAY_milliS(250);
-		blVersion = BL_EMULATOR_Cmd_GetVersion();//Прочитаем версию загрузчика.
+		blVersion = BL_HOST_Cmd_GetVersion();//Прочитаем версию загрузчика.
 	}
 	LED_PC13_Off();
 	//**************************************************************
 	while(1)
 	{
-		uint32_t state = BL_EMULATOR_BaseLoop();//Эмулятор протокола I2C-загрузчика.
+		uint32_t state = BL_HOST_BaseLoop();//Эмулятор протокола I2C-загрузчика.
 
 		//Мигаем ...
 		if(state != CMD_NACK) DELAY_milliS(25);
