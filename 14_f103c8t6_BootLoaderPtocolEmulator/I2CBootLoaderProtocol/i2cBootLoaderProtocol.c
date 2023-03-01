@@ -444,8 +444,10 @@ uint8_t BL_HOST_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 	//Передаим данные. +2 байта потому что +байт N и +байт Checksum
 	if(_host_sendData(bootBuf, wrSize+2) == BOOT_I2C_NO_DEVICE)	return CMD_NACK; //нет устройства на шине
 
-	//Подождем окончания записи (~2мс)
-	DELAY_milliS(2);
+	//Подождем окончания записи
+	//tprog - 16-bit programming time = 70μs МАКС
+	//1024 байта запишется за ~4.5мс
+	DELAY_milliS(5);
 
 	//Проверим ответ.
 	if(_host_waitACK() != CMD_ACK) return CMD_NACK;	//ошибка при записи
