@@ -100,41 +100,68 @@ typedef enum{
 //Структура контекста для работы с портом I2C по прерываниям.
 //#pragma pack(push, 1)//размер выравнивания в 1 байт
 typedef struct{
+	//Конфигурация I2C
 	I2C_TypeDef 	*i2c;			//
 	uint32_t 	 	i2cMode	 : 1;	//Master или Slave
 	uint32_t 		gpioRemap: 1;	//Ремап выводов для I2C1, для I2C2 ремапа нет.
 	uint32_t 	 	i2cSpeed : 30;	//Скорость работы I2C
-
-	I2C_IT_State_t 	itState;		//Состояние I2C (работа по прерываниям)
-	uint32_t		timeOut;		//таймаут между запросами. Нужно для периициализации I2C в случае зависания.
-//	uint32_t    	resetCount;		//Счетчик переинициализация i2c. Нужен для отладки.
-
 	uint8_t			slaveAddr;		// В режиме Master - адрес Slave-устройства к которому идет обращение,
-									// в режиме Slave  - адрес устройста на шине.
-
+									// В режиме Slave  - адрес устройста на шине.
 	uint8_t 		slaveRegAddr;	// В режиме Master - адрес регистра Slave-устройства куда хотим писать/читать данные.
-									// в режиме Slave  - ???
-
-	// буфер передачи.
-	uint8_t  txBuf[I2C_IT_TX_BUF_LEN_MAX];
-	uint32_t txBufIndex;	//индекс буфера передачи.
-	uint32_t txBufSize;		//размер буфера передачи
-	// буфер приема.
-	uint8_t  rxBuf[I2C_IT_RX_BUF_LEN_MAX];
-	uint32_t rxBufIndex;	//индекс буфера приема.
-	uint32_t rxBufSize;		//размер буфера приема.
-
-	void(*i2cSlaveRxCpltCallback)(void); 	//
-	void(*i2cSlaveTxCpltCallback)(void); 	//
+									// В режиме Slave  - не используется
+	//Переменные для работы в прерываниях
+	I2C_IT_State_t 	state;			//Состояние I2C (работа по прерываниям)
+	uint32_t		timeOut;		//Таймаут между запросами. Нужно для периициализации I2C в случае зависания.
+	uint32_t    	resetCount;		//Счетчик переинициализации i2c. Нужен для отладки.
+	//Рабочий буфер приема/передачи
+	uint8_t 	 *pBuf;				//Указатель на рабочий буфер приема/передачи
+	__IO uint32_t bufCount;			//Счетчик принятых/переданных байтов.
+	__IO uint32_t bufSize;			//Размер данных на прием/передачу
+//	// буфер передачи.
+//	uint8_t  txBuf[I2C_IT_TX_BUF_LEN_MAX];
+//	uint32_t txBufIndex;	//индекс буфера передачи.
+//	uint32_t txBufSize;		//размер буфера передачи
+//	// буфер приема.
+//	uint8_t  rxBuf[I2C_IT_RX_BUF_LEN_MAX];
+//	uint32_t rxBufIndex;	//индекс буфера приема.
+//	uint32_t rxBufSize;		//размер буфера приема.
+//	//Функции обратного вызова
+//	void(*i2cSlaveRxCpltCallback)(void); 	//
+//	void(*i2cSlaveTxCpltCallback)(void); 	//
 }I2C_IT_t;
 //#pragma pack(pop)//вернули предыдущую настройку.
+//****************************************************
+//События для обработки прерываний.
+/* --EV1 */
+/* 1) Case of One Single Address managed by the slave */
+#define  I2C_EVENT_SLAVE_RECEIVER_ADDRESS_MATCHED          ((uint32_t)0x00020002) /* BUSY and ADDR flags */
+#define  I2C_EVENT_SLAVE_TRANSMITTER_ADDRESS_MATCHED       ((uint32_t)0x00060082) /* TRA, BUSY, TXE and ADDR flags */
+
+/* Slave RECEIVER mode --------------------------*/
+/* --EV2 */
+#define  I2C_EVENT_SLAVE_BYTE_RECEIVED                     ((uint32_t)0x00020040)  /* BUSY and RXNE flags */
+/* --EV4  */
+#define  I2C_EVENT_SLAVE_STOP_DETECTED                     ((uint32_t)0x00000010)  /* STOPF flag */
+
+/* Slave TRANSMITTER mode -----------------------*/
+/* --EV3 */
+#define  I2C_EVENT_SLAVE_BYTE_TRANSMITTED                  ((uint32_t)0x00060084)  /* TRA, BUSY, TXE and BTF flags */
+/* --EV3_1 */
+#define  I2C_EVENT_SLAVE_BYTE_TRANSMITTING                 ((uint32_t)0x00060080)  /* TRA, BUSY and TXE flags */
+/* --EV3_2 */
+#define  I2C_EVENT_SLAVE_ACK_FAILURE                       ((uint32_t)0x00000400)  /* AF flag */
 //*******************************************************************************************
 //*******************************************************************************************
 void 	 I2C_IT_Init(I2C_IT_t *i2c);
+void 	 I2C_IT_DeInit(I2C_IT_t *i2cIt);
 void 	 I2C_IT_SetTxSize(I2C_IT_t *i2cIt, uint32_t size);
-uint8_t* I2C_IT_GetpTxBuf(I2C_IT_t *i2cIt);
-uint8_t* I2C_IT_GetpRxBuf(I2C_IT_t *i2cIt);
-uint32_t I2C_IT_GetLastEvent(I2C_TypeDef* I2Cx);
+void 	 I2C_IT_SetpBuf(I2C_IT_t *i2cIt, uint8_t *pBuf);
+void 	 I2C_IT_SetDataSize(I2C_IT_t *i2cIt, uint32_t size);
+uint32_t I2C_IT_GetDataCount(I2C_IT_t *i2cIt);
+
+//Функции обратного вызова
+void I2C_IT_SlaveTxCpltCallback(I2C_IT_t *i2cIt);
+void I2C_IT_SlaveRxCpltCallback(I2C_IT_t *i2cIt);
 
 //Обработчики прерывания
 void I2C_IT_EV_Handler(I2C_TypeDef *i2c);

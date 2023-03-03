@@ -24,7 +24,6 @@ static uint32_t _flash_Ready(void){
 
 	return !(FLASH->SR & FLASH_SR_BSY);
 }
-
 //*****************************************************************************
 // Function    : _flash_CheckEOP()
 // Description : EOP(End of operation) — устанавливается аппаратно,
@@ -70,12 +69,12 @@ void STM32_Flash_Unlock(void){
 // Description : Стирание одной страницы flash (вся страница заполняется 0xFF)
 // Parameters  : pageAddress - адрес стираемой страницы. Адрес и размер страницы
 //				 необходимо уточнить в документации на МК.
-// RetVal      :
+// RetVal      : 1 - идет стирание страницы; 0 - стирание страницы завершено
 //*****************************************
 void STM32_Flash_ErasePage(uint32_t pageAddress){
 
-//	while(FLASH->SR & FLASH_SR_BSY){};                     //Ждем окончания работы с памятю.
-//	if(FLASH->SR & FLASH_SR_EOP) FLASH->SR = FLASH_SR_EOP; //Сбрасывается бит EOP записью в него единицы.
+//	while(FLASH->SR & FLASH_SR_BSY);                      //Ждем окончания работы с памятю.
+//	if(FLASH->SR & FLASH_SR_EOP) FLASH->SR = FLASH_SR_EOP;//Сбрасывается бит EOP записью в него единицы.
 
 	while(!_flash_Ready()); 	//Ожидаем готовности флеша к записи
 	_flash_CheckEOP();	    	//Сбрасывается бит EOP записью в него единицы.
@@ -85,7 +84,7 @@ void STM32_Flash_ErasePage(uint32_t pageAddress){
 	FLASH->CR |= FLASH_CR_STRT; //Запускаем стирание
 
 //	while (!(FLASH->SR & FLASH_SR_EOP));
-//	FLASH->SR  =  FLASH_SR_EOP;
+//	FLASH->SR = FLASH_SR_EOP;
 	while(!_flash_CheckEOP());	//Ждем завершения стирания
 
 	FLASH->CR &= ~FLASH_CR_PER;	//Сбрасываем бит стирания одной страницы
@@ -174,10 +173,10 @@ void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size){
 	{
 		*dst = *src;			//пишем во флэш
 		while(!_flash_Ready());	//Ждем завершения записи
-		//while((FLASH->SR & FLASH_SR_BSY) != 0); //Ждем завершения записи
+		while((FLASH->SR & FLASH_SR_BSY) != 0); //Ждем завершения записи
 
 		//Проверка: если не совпадает то что записываем и то что записаловь, то выходим.
-		if(*dst != *src) goto EndPrg;
+		//if(*dst != *src) goto EndPrg;
 
 		dst++;
 		src++;

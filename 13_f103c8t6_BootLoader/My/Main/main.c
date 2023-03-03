@@ -23,74 +23,7 @@
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-// Function      SetAppState()
-// Description   Sets bootloader key
-// Parameters    None
-// RetVal        None
-//*****************************************
-void SetAppState(uint32_t state){
 
-	STM32_Flash_Unlock();
-	STM32_Flash_WriteWord(state, APP_CONDITION_ADDR);
-	STM32_Flash_Lock();
-}
-//*******************************************************************************************
-// Function      ResetKey()
-// Description   Resets bootloader key
-// Parameters    None
-// RetVal        None
-//*****************************************
-void ResetAppState(){
-
-	STM32_Flash_Unlock();
-	STM32_Flash_ErasePage(APP_CONDITION_ADDR);
-	STM32_Flash_Lock();
-}
-//*******************************************************************************************
-// Function      GetAppState()
-// Description   Reads bootloader key value
-// Parameters    None
-// RetVal        None
-//*****************************************
-uint32_t GetAppState(){
-
-  return STM32_Flash_ReadWord(APP_CONDITION_ADDR);
-}
-//*******************************************************************************************
-// Function   : AppAvailableCheck()
-// Description: по стартовому адресу приложения должно лежать значение вершины стека
-//			    приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
-//				приложение отсутсвует
-// Parameters : Нет
-// RetVal     : 1 - приложение есть; 0 - приложения нет.
-//*****************************************
-static uint32_t _appAvailableCheck(void){
-
-	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
-	return 1;
-}
-//*******************************************************************************************
-// Function      GoToApp
-// Description
-// Parameters
-// RetVal
-//*****************************************
-static void _goToApp(uint32_t appAddr){
-
-	void(*goToApp)(void);
-	uint32_t addrResetHandler;
-	//------------------
-	//Дополнительная проверка:
-	//по стартовому адресу приложения должно лежать значение вершины стека приложения
-	//т.е. значение больше 0x2000 0000
-	//if(!AppAvailableCheck()) return;
-
-	__disable_irq();
-	__set_MSP(*(volatile uint32_t*)appAddr);               	//Устанавливаем указатель стека SP приложения
-	addrResetHandler = *(volatile uint32_t*)(appAddr + 4); 	//Адрес функции Reset_Handler приложения
-	goToApp = (void(*)(void))addrResetHandler; 			  	//Указатель на функцию Reset_Handler приложения
-	goToApp();								   				//Переход на функцию Reset_Handler приложения
-}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -102,27 +35,34 @@ int main(void){
 	GPIO_Init();
 	DELAY_Init();
 	//***********************************************
-	//Если есть признак запуска приложения то перход на приложение
-//	if(_appAvailableCheck())
-//	{
-//		_goToApp(APP_PROGRAM_START_ADDR);
-//	}
-	//***********************************************
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
 	{
-		DELAY_milliS(100);
+		DELAY_milliS(50);
 		LED_PC13_On();
-		DELAY_milliS(100);
+		DELAY_milliS(50);
 		LED_PC13_Off();
 	}
 	//***********************************************
-	BOOT_LOADER_I2CInit(); //Инициализация I2C Slave для работы по прерываниям.
+	BOOTLOADER_Init(); //Инициализация I2C Slave для работы по прерываниям.
 	__enable_irq();
+	//***********************************************
+	uint32_t micros = DELAY_microSecCount();
+	//По истечени таймаута переходим в приложение.
+	while(BOOTLOADER_GetStateI2C() != I2C_IT_STATE_ADDR_WR &&	//нет запросов от хоста по I2C
+		  BOOTLOADER_GetAppState() == APP_OK_AND_START)		 	//есть признак запуска приложения
+	{
+		//Отсчет таймаута
+		if((DELAY_microSecCount() - micros) >= (BOOT_I2C_TIMEOUT_MS*1000))
+		{
+			//Переход на приложение
+			BOOTLOADER_GoToApp(APP_PROGRAM_START_ADDR);
+		}
+	}
 	//***********************************************
 	while(1)
 	{
-		BOOT_LOADER_Loop(); //Загрузчик
+		BOOTLOADER_Loop(); //Загрузчик
 	}
 }
 //*******************************************************************************************
