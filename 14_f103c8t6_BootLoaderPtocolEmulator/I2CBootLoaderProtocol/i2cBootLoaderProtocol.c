@@ -136,6 +136,7 @@ static uint8_t _host_receiveData(uint8_t *buf, uint32_t size){
 		return BOOT_I2C_NO_DEVICE;
 	}
 	_readBuf(buf, size);
+	//DELAY_microS(25);
 	return BOOT_I2C_DEVICE_OK;
 }
 //*******************************************************************
@@ -465,29 +466,6 @@ uint8_t BL_HOST_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 //*****************************************
 uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 
-	//Хост отправляет байты на STM32 следующим образом:
-	//- Byte 1: 0x44
-	//- Byte 2: 0xBB
-	//Wait for ACK
-
-	//For Special erase:
-	//- Bytes 3-4: Special erase (0xFFFx)
-	//- Bytes 5: Checksum of Bytes 3-4
-	//Wait for ACK
-
-	//For Page erase:
-	//- Bytes 3-4: Number of pages or sectors to be erased - 1
-	//- Bytes 5: Checksum of Bytes 3-4
-	//Wait for ACK
-
-	//- (2 x N) bytes (page numbers or sectors coded on two bytes MSB first) and then the checksum for these bytes.
-	//Wait for ACK
-
-	//Example of I2C frame:
-	//– erase page 1: 0x44 0xBB Wait ACK 0x00 0x00 0x00 Wait ACK 0x00 0x01 0x01 Wait ACK
-	//– erase page 1 and page 2:
-	//0x44 0xBB Wait ACK 0x00 0x01 0x01 Wait ACK 0x00 0x01 0x00 0x02 0x03 Wait ACK
-
 	uint16_t numMinusOne = numErasePages - 1;
 	uint8_t  checksum = 0;
 	//---------------------
@@ -525,15 +503,16 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 	if(_host_sendData(bootBuf, numErasePages*2+1) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
 
 	//Подождем, пока производится стирание
-	DELAY_milliS(500); 	//STM32F411:
+	//DELAY_milliS(500); 	//STM32F411:
 						// tERASE16KB  - Sector(16 KB)  erase time = 800ms  MAX
 						// tERASE64KB  - Sector(64 KB)  erase time = 2400ms MAX
 						// tERASE128KB - Sector(128 KB) erase time = 2.6sec MAX
 						// tME         - Mass           erase time = 16sec  MAX
 
-	//DELAY_milliS(45); 	//STM32F103:
-						//tERASE - Page(1KB) erase time = 40ms MAX
-						//tME    - Mass      erase time = 40ms MAX
+	//STM32F103:
+	//tERASE - Page(1KB) erase time = 40ms MAX
+	//tME    - Mass      erase time = 40ms MAX
+	DELAY_milliS(numErasePages * 45);
 
 	//Проверим ответ.
 	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;
@@ -611,8 +590,8 @@ uint32_t BL_HOST_BaseLoop(void){
 		break;
 		//------------------
 		case(CMD_BOOT_ERASE):
-			ack = BL_HOST_Cmd_ERASE(1, 0);
-			DELAY_milliS(100);
+			//сотрем 13 страниц, начиная со страницы 10
+			ack = BL_HOST_Cmd_ERASE(13, 10);
 		break;
 		//------------------
 		default:
