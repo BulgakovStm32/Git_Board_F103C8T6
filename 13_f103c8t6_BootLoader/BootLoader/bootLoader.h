@@ -23,29 +23,45 @@
 //Размер	         		: 10КБ(10240 байт = 0х2800)
 //							  из них 9КБ - это сам загрузчик,
 //      						     1КБ - это обасть хранения состояния приложения.
+#define BOOT_SIZE					(9 * 1024) 					//размер загрузчика, в байтах
+#define APP_STATE_SIZE				(1 * 1024) 					//размер области хранения условий запуска основного приложения, в байтах
+#define APP_STATE_ADDR  			(FLASH_BASE + BOOT_SIZE) 	//адрес обасти хранения доп. информации о пилложении
+#define APP_LAUNCH_CONDITIONS_ADDR	(APP_STATE_ADDR + 0)		//Условие запуска приложения
+#define APP_CRC_ADDR				(APP_STATE_ADDR + 4)		//Контрольная сумма приложения
 
-#define BOOT_SIZE				(9 * 1024) 					//размер загрузчика, в байтах
-#define APP_CONDITION_SIZE		(1 * 1024) 					//размер области хранения условий запуска основного приложения, в байтах
-#define APP_CONDITION_ADDR  	(FLASH_BASE + BOOT_SIZE) 	//адрес обасти хранения состояния приложения
+//Праметры приложения:
+//Начальный адрес: 0х0800 0000 + 0х2800 = 0х0800 2800
+//Размер         : размер_флеш_памяти_МК - размер_загрузчика
+//Условие перехода из загрузчика в приложение: таймаут (1 сек.)(если есть приложение)
+//                                             по команде (команда Go загрузчика)
+#define APP_PROGRAM_START_ADDR	(FLASH_BASE + BOOT_SIZE + APP_STATE_SIZE)  //начальный адрес приложения
 
-//Состояния основного приложения
+//**********************************
+//Условие запуска приложения
+//typedef enum{
+//	APP_NO			 = 0xFFFFFFFF,	//приложение отсутствует
+//	APP_OK_AND_START = 0xAAAA0001,	//CRC в норме, можно запускать
+//	APP_REWRITE_ME	 = 0xAAAA0002,	//была команда на переход в загрузчик после ресета
+//	APP_CRC_ERR		 = 0xAAAA001F,	//ошибка CRC
+//}AppLaunchConditions_t;
+
 #define APP_NO					0xFFFFFFFF	//приложение отсутствует
 #define APP_OK_AND_START 		0xAAAA0001	//CRC в норме, можно запускать
 #define APP_REWRITE_ME			0xAAAA0002	//была команда на переход в загрузчик после ресета
 #define APP_CRC_ERR 			0xAAAA001F	//ошибка CRC
 
-//Праметры приложения:
-//Начальный адрес: 0х0800 0000 + 0х2800 = 0х0800 2800
-//Размер         : размер_флеш_памяти_МК - размер_загрузчика
-//Условие перехода из загрузчика в приложение: таймаут (1 сек.)
-//                                             по команде (команда Go загрузчика)
+//**********************************
+//Структура состояния приложения
+//typedef struct{
+//	AppLaunchConditions_t	appState;	//Условие запуска приложения
+//	uint32_t				appCrc;		//Контрольная сумма приложения
+//}App_State_t;
 
-#define APP_PROGRAM_START_ADDR	(FLASH_BASE + BOOT_SIZE + APP_CONDITION_SIZE)  //начальный адрес приложения
 //**********************************
 #define BOOT_I2C				I2C2 //I2C1
 #define BOOT_I2C_SPEED			400000
 #define BOOT_I2C_ADDR			0b0111000 //такой адрес у встроенных I2C загрузчиков STM32
-#define BOOT_I2C_VERSION		0xAC
+#define BOOT_I2C_VERSION		0x01
 
 #define BOOT_I2C_DEVICE_OK		0x01	//устройство ответило на свой адрес
 #define BOOT_I2C_NO_DEVICE		0x00	//устройства нет на шине I2C
@@ -67,9 +83,10 @@
 #define CMD_BOOT_GetVersion		0x01	//Получает версию загрузчика.
 #define CMD_BOOT_GetID			0x02	//Получает идентификатор чипа
 #define CMD_BOOT_RM				0x11	//Read Memory - Читает до 256 байт памяти, начиная с адреса, указанного приложением.
-#define CMD_BOOT_Go				0x21	//Переходит к коду пользовательского приложения, расположенному во внутренней флэш-памяти.
+#define CMD_BOOT_GO				0x21	//Переходит к коду пользовательского приложения, расположенному во внутренней флэш-памяти.
 #define CMD_BOOT_WM				0x31	//Write Memory - Записывает в память до 256 байт, начиная с адреса, указанного приложением.
 #define CMD_BOOT_ERASE			0x44	//Стирает от одной до всех страниц или секторов флэш-памяти, используя режим двухбайтовой адресации.
+#define CMD_BOOT_NS_GetCheckSum	0xA1	//No-Stretch Get Memory Checksum - Получает значение контрольной суммы CRC для области памяти.
 
 //Нереализованные
 #define CMD_BOOT_NS_WM			0x32	//No-Stretch Write Memory - Записывает в память до 256 байт, начиная с адреса, указанного приложением, и возвращает состояние занятости во время выполнения операции.
@@ -84,21 +101,26 @@
 #define CMD_BOOT_NS_RP			0x83	//No-Stretch Readout Protect - Включает защиту от чтения и возвращает состояние занятости во время выполнения операции.
 #define CMD_BOOT_RUP			0x92	//Readout Unprotect - Отключает защиту от чтения.
 #define CMD_BOOT_NS_RUP			0x93	//No-Stretch Readout Unprotect - Отключает защиту от чтения и возвращает состояние занятости во время выполнения операции.
-#define CMD_BOOT_NS_GetMemCs	0xA1	//No-Stretch Get Memory Checksum - Получает значение контрольной суммы CRC для области памяти на основе ее смещения и длины.
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-void 	 BOOTLOADER_Init(void);
-uint32_t BOOTLOADER_GetStateI2C(void);
-void 	 BOOTLOADER_GoToApp(uint32_t appAddr);
-uint32_t BOOTLOADER_AppAvailableCheck(uint32_t appAddr);
+void 	 BOOT_Init(void);
+uint32_t BOOT_AppAvailableCheck(uint32_t appAddr);
+uint32_t BOOT_GetAppSize(void);
+uint32_t BOOT_GetStateI2C(void);
+void 	 BOOT_GoToApp(uint32_t appAddr);
 
-void 	 BOOTLOADER_SetAppState(uint32_t appState);
-uint32_t BOOTLOADER_GetAppState(void);
-void 	 BOOTLOADER_ResetAppState(void);
+void 	 BOOT_SetAppLaunch(uint32_t launch);
+uint32_t BOOT_GetAppLaunch(void);
 
-uint32_t BOOTLOADER_Loop(void);
+uint32_t BOOT_CalcCrc(uint32_t *addr, uint32_t size);
+uint32_t BOOT_ReadAppCrc(void);
+void 	 BOOT_CalcAndWriteAppCrc(void);
+
+void 	 BOOT_ErasePageAppState(void);
+
+uint32_t BOOT_Loop(void);
 
 //*******************************************************************************************
 //*******************************************************************************************

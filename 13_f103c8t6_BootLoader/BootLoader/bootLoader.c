@@ -12,7 +12,7 @@
 //*******************************************************************************************
 //*******************************************************************************************
 static uint8_t 	bootBuf[1024+16] = {0};	//Рабочий буфер загрузчика
-static I2C_IT_t I2c;					//Рабочий I2C
+static I2C_IT_t	I2c;					//Рабочий I2C
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -139,28 +139,29 @@ uint8_t _cmd_Get(void){
 	_sendByte(CMD_ACK);
 
 	//Сборка кадра данных
-	bootBuf[0]	= 19;			//N = Number of bytes to follow - 1, except current and ACKs
-	bootBuf[1]	= 0x01;			//bootloader version
-	bootBuf[2] 	= CMD_BOOT_Get;	//list of supported commands
+	bootBuf[0]	= (9 - 1);			//N = Number of bytes to follow - 1, except current and ACKs
+	bootBuf[1]	= BOOT_I2C_VERSION;	//bootloader version
+	//list of supported commands
+	bootBuf[2] 	= CMD_BOOT_Get;
 	bootBuf[3] 	= CMD_BOOT_GetVersion;
 	bootBuf[4] 	= CMD_BOOT_GetID;
 	bootBuf[5] 	= CMD_BOOT_RM;
-	bootBuf[6] 	= CMD_BOOT_Go;
+	bootBuf[6] 	= CMD_BOOT_GO;
 	bootBuf[7] 	= CMD_BOOT_WM;
-	bootBuf[8] 	= CMD_BOOT_NS_WM;
-	bootBuf[9] 	= CMD_BOOT_ERASE;
-	bootBuf[10] = CMD_BOOT_NS_Erase;
-	bootBuf[11] = CMD_BOOT_WP;
-	bootBuf[12] = CMD_BOOT_NS_WP;
-	bootBuf[13] = CMD_BOOT_WUP;
-	bootBuf[14] = CMD_BOOT_NS_WUP;
-	bootBuf[15] = CMD_BOOT_RP;
-	bootBuf[16] = CMD_BOOT_NS_RP;
-	bootBuf[17] = CMD_BOOT_RUP;
-	bootBuf[18] = CMD_BOOT_NS_RUP;
-	bootBuf[19] = CMD_BOOT_NS_GetMemCs;
+	bootBuf[8] 	= CMD_BOOT_ERASE;
+	bootBuf[9] 	= CMD_BOOT_NS_GetCheckSum;
 
-	_sendBuf(20); //передадим 20 байт
+//	bootBuf[10] = CMD_BOOT_NS_Erase;
+//	bootBuf[11] = CMD_BOOT_WP;
+//	bootBuf[12] = CMD_BOOT_NS_WP;
+//	bootBuf[13] = CMD_BOOT_WUP;
+//	bootBuf[14] = CMD_BOOT_NS_WUP;
+//	bootBuf[15] = CMD_BOOT_RP;
+//	bootBuf[16] = CMD_BOOT_NS_RP;
+//	bootBuf[17] = CMD_BOOT_RUP;
+//	bootBuf[18] = CMD_BOOT_NS_RUP;
+//	bootBuf[19] = CMD_BOOT_NS_GetCheckSum;
+	_sendBuf(10); //передадим ... байт
 
 	//Передача ACK
 	_sendByte(CMD_ACK);
@@ -273,19 +274,7 @@ uint8_t _cmd_RM(void){
 // Parameters  : None
 // RetVal      :1 - команда выполнена; 0 - команда не выполнена.
 //*****************************************
-uint8_t _cmd_Go(void){
-
-	//Хост отправляет байты на STM32 следующим образом:
-
-	//- Byte 1: 0x21
-	//- Byte 2: 0xDE
-	//Wait for ACK
-
-	//- Byte 3 to byte 6: start address
-	//- Byte 3: MSB
-	//- Byte 6: LSB
-	//- Byte 7: checksum: XOR (byte 3, byte 4, byte 5, byte 6)
-	//Wait for ACK
+uint8_t _cmd_GO(void){
 
 	uint32_t appAddr;
 	//-----------------------
@@ -318,14 +307,12 @@ uint8_t _cmd_Go(void){
 		//приложение отсутсвует
 		if((STM32_Flash_ReadWord(appAddr) & 0x2FFC0000) == 0x20000000)
 		{
-			_sendByte(CMD_ACK);			//Передача ACK
-
-			//TODO... Сделать провреку CRC приложения
-
+			_sendByte(CMD_ACK);	//Передача ACK
 			//---------------
-			BOOTLOADER_ResetAppState();				 //Сбросим признак запуска основного приложения
-			BOOTLOADER_SetAppState(APP_OK_AND_START);//Установим признак запуска приложения после ресета
-			BOOTLOADER_GoToApp(appAddr);			 //Переход на функцию Reset_Handler приложения
+			BOOT_ErasePageAppState();				//Сбросим признак запуска основного приложения
+			BOOT_SetAppLaunch(APP_OK_AND_START);	//Установим признак запуска приложения после ресета
+			BOOT_CalcAndWriteAppCrc();				//Расчет и запись во флеш CRC приложения
+			BOOT_GoToApp(appAddr);			 		//Переход на функцию Reset_Handler приложения
 		}
 	}
 	//-----------------------
@@ -481,11 +468,88 @@ uint8_t _cmd_ERASE(void){
 		pageAddr = pageAddr & 0x000000FF;							//Маска
 		pageAddr = pageAddr * 1024;									//смещение страницы относительно базового адреса
 		pageAddr = pageAddr + FLASH_BASE;							//адрес стираемой страницы
-		//STM32_Flash_ErasePage(pageAddr);							//Стирание одной страницы flash
+		STM32_Flash_ErasePage(pageAddr);							//Стирание одной страницы flash
 	}
 	STM32_Flash_Lock();
 	//Передача ACK
 	_sendByte(CMD_ACK);
+	//-----------------------
+	return 1; //команда выполнена.
+}
+//*******************************************************************************************
+// Function    : _cmd_NS_GetMemCs --- не отлажена!!!!!!
+// Description : Получает значение контрольной суммы CRC для области памяти.
+// Parameters  : None
+// RetVal      : 1 - команда выполнена; 0 - команда выполняется.
+//*****************************************
+uint8_t _cmd_NS_GetCheckSum(void){
+
+	uint32_t addr;
+	uint32_t size;
+	//-----------------------
+	//Проверка ROP (Readout Protect) и передача ACK/NACK
+	if(_getROPState() == 1)//ROP активна
+	{
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
+	}
+	//ROP отключена. Передача ACK
+	_sendByte(CMD_ACK);
+	//-----------------------
+	//Receive address (4 bytes, MSB first) and its XOR
+	_waitEndRx();	//Ждем завершения приема фрейма данных от хоста.
+
+	addr = _getStartAddress(bootBuf);	//Соберем принятый адрес.
+
+	//Address valid, within the memory, and XOR OK?
+	if(_getChecksum(bootBuf, 5) != 0 ||	//Контрольная сумма не совпала
+	   addr < FLASH_BASE)				//Неверный адрес
+	{
+		_sendByte(CMD_NACK);	//Передача NACK
+		return 0; 				//команда не выполнена.
+	}
+	//Контрольная сумма OK и верный адрес
+	_sendByte(CMD_ACK);				  	//Передача ACK
+	//-----------------------
+	//Receive memory size to check (4 bytes, MSB first) and its XOR
+	_waitEndRx();	//Ждем завершения приема фрейма данных от хоста.
+
+	size = _getStartAddress(bootBuf);	//Соберем размер.
+
+	//XOR OK, Size != 0 and multiple of 4, (Address + Size) valid ?
+	if(_getChecksum(bootBuf, 5) != 0 ||			//Контрольная сумма не совпала
+	    size == 0					 || 		//размер = 0
+	   (size % 4) != 0				 || 		//некратно 4м
+	   (addr + size) > (FLASH_BASE+128*1024)) 	//Address+Size больше размера флеш памяти
+	{
+		_sendByte(CMD_NACK);	//Передача NACK
+		return 0; 				//команда не выполнена.
+	}
+	//Все ОК!
+	_sendByte(CMD_ACK);	//Передача ACK
+	//-----------------------
+	//Calculate checksum. Operation completed?
+	_sendByte(CMD_BUSY);
+
+	//Считаем CRC
+	uint32_t crc= BOOT_CalcCrc((uint32_t*)addr, size);
+
+	//Operation completed?
+	//TODO ... Сделать передачу BUSY при длительном расчете CRC
+	//_sendByte(CMD_BUSY);
+
+
+
+	//Send ACK byte
+	//_sendByte(CMD_ACK);	//Передача ACK
+	//-----------------------
+	//Send calculated memory checksum (4 bytes, MSB first) + XOR byte
+	bootBuf[0] = (uint8_t)(crc >> 24);
+	bootBuf[1] = (uint8_t)(crc >> 16);
+	bootBuf[2] = (uint8_t)(crc >> 8);
+	bootBuf[3] = (uint8_t)(crc >> 0);
+	bootBuf[4] = _getChecksum(bootBuf, 4);
+	_sendBuf(5);	//4 байта на передачу
 	//-----------------------
 	return 1; //команда выполнена.
 }
@@ -505,7 +569,12 @@ void I2C_IT_SlaveTxCpltCallback(I2C_IT_t *i2cIt){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-void BOOTLOADER_Init(void){
+// Function   : BOOT_Init()
+// Description: инициализация загрузчика
+// Parameters :
+// RetVal     :
+//*****************************************
+void BOOT_Init(void){
 
 	//Инициализация I2C Slave для работы по прерываниям.
 	I2c.i2c		  = BOOT_I2C;			//используемый порт I2C
@@ -514,46 +583,10 @@ void BOOTLOADER_Init(void){
 	I2c.i2cSpeed  = BOOT_I2C_SPEED;		//скорость работы порта I2C
 	I2c.slaveAddr = BOOT_I2C_ADDR;		//адрес устройства на нине I2C
 	I2C_IT_Init(&I2c);
+	I2C_IT_SetpBuf(&I2c, bootBuf);		//Прикрепим буфер загрузчика к обработчику прерываний I2C
 
-	//Прикрепим буфер загрузчика к обработчику прерываний I2C
-	I2C_IT_SetpBuf(&I2c, bootBuf);
-}
-//**********************************************************
-// Function    :
-// Description :
-// Parameters  :
-// RetVal      :
-//*****************************************
-uint32_t BOOTLOADER_GetStateI2C(void){
-
-	return I2c.state;
-}
-//**********************************************************
-// Function    :
-// Description :
-// Parameters  :
-// RetVal      :
-//*****************************************
-void BOOTLOADER_GoToApp(uint32_t appAddr){
-
-	//Проверка наличия приложения.
-	//По стартовому адресу приложения должно лежать значение вершины стека
-	//приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
-	//приложение отсутсвует
-	if((STM32_Flash_ReadWord(appAddr) & 0x2FFC0000) != 0x20000000) return;
-
-	//Глобальное отключение прерываний.
-	__disable_irq();
-
-	//Отключение периферии.
-	I2C_IT_DeInit(&I2c);
-
-	//Переход на приложение
-	uint32_t addrResetHandler = *(__IO uint32_t*)(appAddr + 4);	//Адрес функции Reset_Handler приложения
-	void(*app)(void) = (void(*)(void))addrResetHandler; 		//Указатель на функцию Reset_Handler приложения
-	SCB->VTOR = appAddr; 										//Адрес таблицы прерываний
-	__set_MSP(*(__IO uint32_t*)appAddr);            			//Устанавливаем указатель стека SP приложения
-	app();								   						//Переход на функцию Reset_Handler приложения
+	//Включаем модуль CRC
+	RCC->AHBENR |= RCC_AHBENR_CRCEN;
 }
 //**********************************************************
 // Function   : AppAvailableCheck()
@@ -563,47 +596,188 @@ void BOOTLOADER_GoToApp(uint32_t appAddr){
 // Parameters : Нет
 // RetVal     : 1 - приложение есть; 0 - приложения нет.
 //*****************************************
-uint32_t BOOTLOADER_AppAvailableCheck(uint32_t appAddr){
+uint32_t BOOT_AppAvailableCheck(uint32_t appAddr){
 
 	if((STM32_Flash_ReadWord(appAddr) & 0x2FFC0000) != 0x20000000) return 0;
 	return 1;
 }
 //**********************************************************
-// Function      BOOTLOADER_SetAppState()
-// Description   Sets bootloader key
+// Function   : BOOT_GetAppSize()
+// Description: подсчет размера приложения, в байтах
+// Parameters : Нет
+// RetVal     : рахмер приложения в байтах
+//*****************************************
+uint32_t BOOT_GetAppSize(void){
+
+	//Проверка наличия приложения. По стартовому адресу приложения должно
+	//лежать значение вершины стека приложения, т.е. значение больше 0x2000 0000.
+	//Если это не так, значит приложение отсутсвует
+	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
+
+	//Подсчитаем сколько байт занимает приложение.
+	uint32_t appSize_Bytes = 0;
+	while(STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR + appSize_Bytes) != 0xFFFFFFFF)
+	{
+		appSize_Bytes += 4; //шагаем по 4 байта
+	}
+
+	//в appSize_Bytes лежит размер приложения в байтах.
+	//Округлим в большую сторону и сделаем кратным 4м
+	//while((appSize_Bytes % 4) != 0) { appSize_Bytes++; }
+	//appSize_Bytes = appSize_Bytes % 4; //проверка
+
+	return appSize_Bytes;
+}
+//**********************************************************
+// Function    :
+// Description :
+// Parameters  :
+// RetVal      :
+//*****************************************
+uint32_t BOOT_GetStateI2C(void){
+
+	return I2c.state;
+}
+//**********************************************************
+// Function    :
+// Description :
+// Parameters  :
+// RetVal      :
+//*****************************************
+void BOOT_GoToApp(uint32_t appAddr){
+
+	//Проверка наличия приложения. По стартовому адресу приложения должно
+	//лежать значение вершины стека приложения, т.е. значение больше 0x2000 0000.
+	//Если это не так, значит приложение отсутсвует
+	if((STM32_Flash_ReadWord(appAddr) & 0x2FFC0000) != 0x20000000) return;
+
+	//Глобальное отключение прерываний.
+	__disable_irq();
+
+	//Отключение периферии.
+	//I2C_IT_DeInit(&I2c);
+
+	//Reset the RCC clock configuration to the default reset state(for debug purpose).
+	RCC->CR	  |= (uint32_t)0x00000001;	/* Set HSION bit */
+	RCC->CFGR &= (uint32_t)0xF0FF0000;	/* Reset SW, HPRE, PPRE1, PPRE2, ADCPRE and MCO bits */
+	RCC->CR   &= (uint32_t)0xFEF6FFFF;	/* Reset HSEON, CSSON and PLLON bits */
+	RCC->CR   &= (uint32_t)0xFFFBFFFF;	/* Reset HSEBYP bit */
+	RCC->CFGR &= (uint32_t)0xFF80FFFF;	/* Reset PLLSRC, PLLXTPRE, PLLMUL and USBPRE/OTGFSPRE bits */
+	RCC->CIR   = 0x009F0000;  			/* Disable all interrupts and clear pending bits  */
+
+	RCC->APB1RSTR = 0xFFFFFFFF;	//Сбрасываем всю периферию на APB1
+	RCC->APB1RSTR = 0x0;
+
+	RCC->APB2RSTR = 0xFFFFFFFF;	//Сбрасываем всю периферию на APB2
+	RCC->APB2RSTR = 0x0;
+
+	RCC->APB1ENR  = 0x0; 		//Выключаем всю периферию на APB1
+	RCC->APB2ENR  = 0x0; 		//Выключаем всю периферию на APB2
+	RCC->AHBENR   = 0x0; 		//Выключаем всю периферию на AHB
+
+	//Переход на приложение
+	uint32_t addrResetHandler = *(__IO uint32_t*)(appAddr + 4);	//Адрес функции Reset_Handler приложения
+	void(*app)(void) = (void(*)(void))addrResetHandler; 		//Указатель на функцию Reset_Handler приложения
+	SCB->VTOR = appAddr; 										//Адрес таблицы прерываний
+	__set_MSP(*(__IO uint32_t*)appAddr);            			//Устанавливаем указатель стека SP приложения
+	app();								   						//Переход на функцию Reset_Handler приложения
+}
+//**********************************************************
+// Function      BOOTLOADER_SetAppLaunch()
+// Description   установить условие запуска приложения
 // Parameters    None
 // RetVal        None
 //*****************************************
-void BOOTLOADER_SetAppState(uint32_t state){
+void BOOT_SetAppLaunch(uint32_t launch){
 
 	STM32_Flash_Unlock();
-	STM32_Flash_WriteWord(APP_CONDITION_ADDR, state);
+	STM32_Flash_WriteWord(APP_LAUNCH_CONDITIONS_ADDR, launch);
 	STM32_Flash_Lock();
 }
 //**********************************************************
-// Function      BOOTLOADER_GetAppState()
-// Description   Reads bootloader key value
+// Function      BOOTLOADER_GetAppLaunch()
+// Description   получение условие запуска приложения
 // Parameters    None
 // RetVal        None
 //*****************************************
-uint32_t BOOTLOADER_GetAppState(void){
+uint32_t BOOT_GetAppLaunch(void){
 
-  return STM32_Flash_ReadWord(APP_CONDITION_ADDR);
+	return STM32_Flash_ReadWord(APP_LAUNCH_CONDITIONS_ADDR);
 }
 //**********************************************************
-// Function      BOOTLOADER_ResetAppState()
-// Description   Resets bootloader key
-// Parameters    None
-// RetVal        None
+// Function      BOOTLOADER_CalcAppCrc()
+// Description   расчет контрольной суммы записанного приложения
+// Parameters	 addr - адрес (кратен 4м) области, с которого начинаем считать CRC
+//				 size - размер (кратен 4м) области, для которой считаем CRC
+// RetVal        crc области данных
 //*****************************************
-void BOOTLOADER_ResetAppState(){
+uint32_t BOOT_CalcCrc(uint32_t *addr, uint32_t size){
 
+	//uint16_t Get_Crc16(uint8_t *buf, uint8_t len){
+
+	//  //uint8_t  i;
+	//  //--------------------
+	//  CRC->CR  |= CRC_CR_RESET; //Делаем сброс...
+	//  //for(i = 0; i < len; i++)
+	//	while (len--)
+	//    {
+	//      CRC->DR = (uint32_t)(*buf & 0x000000FF); //Загоняем данные из буфера в регистр данных
+	//    }
+	//  return (uint16_t)(CRC->DR & 0x0000FFFF); //Читаем контрольную сумму и возвращаем её
+	//}
+
+	//Сброс счетчика CRC
+	CRC->CR |= CRC_CR_RESET;
+	//Считаем CRC
+	for(uint32_t i=0; i < size; i+=4)
+	{
+		CRC->DR = *(uint32_t*)(APP_PROGRAM_START_ADDR + i);
+	}
+	//Читаем контрольную сумму и возвращаем её
+	return CRC->DR;
+}
+//**********************************************************
+// Function      BOOTLOADER_ReadAppCrc()
+// Description	 чтение из флэша записанной ране контрольной
+//				 суммы приложения
+// Parameters
+// RetVal        crc приложения
+//*****************************************
+uint32_t BOOT_ReadAppCrc(void){
+
+	return STM32_Flash_ReadWord(APP_CRC_ADDR);
+}
+//**********************************************************
+// Function      BOOT_CalcAndWriteAppCrc()
+// Description	 расчет и запись во флеш контрольной суммы приложения
+// Parameters
+// RetVal
+//*****************************************
+void BOOT_CalcAndWriteAppCrc(void){
+
+	uint32_t appSize = BOOT_GetAppSize();
+	uint32_t appCrc  = BOOT_CalcCrc((uint32_t*)APP_PROGRAM_START_ADDR ,appSize);
+
+	//запись во флеш контрольной суммы приложения
 	STM32_Flash_Unlock();
-	STM32_Flash_ErasePage(APP_CONDITION_ADDR);
+	STM32_Flash_WriteWord(APP_CRC_ADDR, appCrc);
 	STM32_Flash_Lock();
 }
 //**********************************************************
-uint32_t BOOTLOADER_Loop(void){
+// Function      BOOTLOADER_ErasePageAppState()
+// Description   Очистка страницы памяти (1024байта) со структурой
+//				 состояния приложения
+// Parameters    None
+// RetVal        None
+//*****************************************
+void BOOT_ErasePageAppState(){
+
+	STM32_Flash_Unlock();
+	STM32_Flash_ErasePage(APP_STATE_ADDR);
+	STM32_Flash_Lock();
+}
+//**********************************************************
+uint32_t BOOT_Loop(void){
 
 	//Ждем завершения приема кадра команды (Command frame) от хоста.
 	_waitEndRx();
@@ -646,8 +820,8 @@ uint32_t BOOTLOADER_Loop(void){
 		//-------------------
 		//Переход к коду пользовательского приложения,
 		//расположенному во внутренней флэш-памяти.
-		case(CMD_BOOT_Go):
-			_cmd_Go();
+		case(CMD_BOOT_GO):
+			_cmd_GO();
 		break;
 		//-------------------
 		//Write Memory - Записывает в память до 256 байт,
@@ -662,9 +836,9 @@ uint32_t BOOTLOADER_Loop(void){
 			_cmd_ERASE();
 		break;
 		//-------------------
-		case(CMD_BOOT_NS_WM):
-		//-------------------
-		case(CMD_BOOT_NS_Erase):
+		case(CMD_BOOT_NS_GetCheckSum):
+			_cmd_NS_GetCheckSum();
+		break;
 		//----------------------------------------
 		//Передаем NACK на незнакомую команда
 		default:
@@ -680,3 +854,11 @@ uint32_t BOOTLOADER_Loop(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+
+
+
+
+
+
+
+

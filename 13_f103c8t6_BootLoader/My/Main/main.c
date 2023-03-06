@@ -34,6 +34,8 @@ int main(void){
 	STM32_Clock_Init();
 	GPIO_Init();
 	DELAY_Init();
+	BOOT_Init();
+	__enable_irq();
 	//***********************************************
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
@@ -44,26 +46,32 @@ int main(void){
 		LED_PC13_Off();
 	}
 	//***********************************************
-	BOOTLOADER_Init(); //Инициализация I2C Slave для работы по прерываниям.
-	__enable_irq();
-	//***********************************************
+	//Во время работы приложения пришла команда на обновление прошивки
+	if(BOOT_GetAppLaunch() == APP_REWRITE_ME) goto BOOT;	//переход в загрузчик
+
+	//Подсчитаем сколько байт занимает приложение.
+	uint32_t appSize = BOOT_GetAppSize();
+	if(appSize == 0) goto BOOT;	//0 - приложени отсутствует => переход в загрузчик
+
+	//Проверим crc приложения.
+	uint32_t appCrc = BOOT_CalcCrc(APP_PROGRAM_START_ADDR ,appSize);
+	if(appCrc != BOOT_ReadAppCrc()) goto BOOT;	//Приложение битое => переход в загрузчик
+
+	//По истечении таймаута переходим в приложение
 	uint32_t micros = DELAY_microSecCount();
-	//По истечени таймаута переходим в приложение.
-	while(BOOTLOADER_GetStateI2C() != I2C_IT_STATE_ADDR_WR &&	//нет запросов от хоста по I2C
-		  BOOTLOADER_GetAppState() == APP_OK_AND_START)		 	//есть признак запуска приложения
+	while(BOOT_GetStateI2C()  != I2C_IT_STATE_ADDR_WR && //нет запросов от хоста по I2C
+		  BOOT_GetAppLaunch() == APP_OK_AND_START)		 //есть признак запуска приложения
 	{
 		//Отсчет таймаута
 		if((DELAY_microSecCount() - micros) >= (BOOT_I2C_TIMEOUT_MS*1000))
 		{
-			//Переход на приложение
-			BOOTLOADER_GoToApp(APP_PROGRAM_START_ADDR);
+			//Переход в приложение
+			BOOT_GoToApp(APP_PROGRAM_START_ADDR);
 		}
 	}
 	//***********************************************
-	while(1)
-	{
-		BOOTLOADER_Loop(); //Загрузчик
-	}
+	BOOT:
+	while(1) BOOT_Loop(); //Загрузчик
 }
 //*******************************************************************************************
 //*******************************************************************************************
