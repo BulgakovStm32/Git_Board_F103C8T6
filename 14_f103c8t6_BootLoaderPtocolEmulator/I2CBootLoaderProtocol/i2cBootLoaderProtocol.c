@@ -233,7 +233,7 @@ uint8_t BL_HOST_Cmd_Get(void){
 
 	//Чтение списка поддерживаемых команд.
 	//19 команд для версии загрузчика 1.1(такой в STM32F411)
-	if(_host_receiveData(bootBuf, 19) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	if(_host_receiveData(bootBuf, 20) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 	//if(BL_EMULATOR_ReceiveData(bootBuf, num) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Проверим ответ.
@@ -357,11 +357,11 @@ uint8_t BL_HOST_Cmd_RM(uint32_t addr, uint32_t size){
 //*******************************************************************
 // Function    : BL_HOST_Cmd_Go() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Переходит к коду пользовательского приложения, расположенному во внутренней флэш-памяти.
-// Parameters  : appAddr - адрес приложения
+// Parameters  : addr - адрес приложения
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
 //*****************************************
-uint8_t BL_HOST_Cmd_Go(uint32_t appAddr){
+uint8_t BL_HOST_Cmd_Go(uint32_t addr){
 
 	//Хост отправляет байты на STM32 следующим образом:
 	//- Byte 1: 0x21
@@ -378,10 +378,10 @@ uint8_t BL_HOST_Cmd_Go(uint32_t appAddr){
 	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
 
 	//Предадим Start address приложения
-	bootBuf[0] = (uint8_t)(appAddr >> 24);
-	bootBuf[1] = (uint8_t)(appAddr >> 16);
-	bootBuf[2] = (uint8_t)(appAddr >> 8);
-	bootBuf[3] = (uint8_t)(appAddr >> 0);
+	bootBuf[0] = (uint8_t)(addr >> 24);
+	bootBuf[1] = (uint8_t)(addr >> 16);
+	bootBuf[2] = (uint8_t)(addr >> 8);
+	bootBuf[3] = (uint8_t)(addr >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);//Checksum
 	//Передаим данные
 	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
@@ -394,13 +394,13 @@ uint8_t BL_HOST_Cmd_Go(uint32_t appAddr){
 //*******************************************************************
 // Function    : BL_HOST_Cmd_WM() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
 // Description : Write Memory - Записывает в память до 256 байт, начиная с адреса wrAddr
-// Parameters  : wrAddr - адрес куда пишем
-//				 wrBuf  - буфер с данными на запись
-//				 swSize - кол-во байтов на запись (от 1 до 256)
+// Parameters  : addr - адрес куда пишем
+//				 data - буфер с данными на запись
+//				 size - кол-во байтов на запись (от 1 до 256)
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
 //*****************************************
-uint8_t BL_HOST_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
+uint8_t BL_HOST_Cmd_WM(uint32_t addr, uint8_t *data, uint32_t size){
 
 	//Хост отправляет байты на STM32 следующим образом:
 	//- Byte 1: 0x31
@@ -423,10 +423,10 @@ uint8_t BL_HOST_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 	if(_host_waitACK() != CMD_ACK) return CMD_NACK;	//команда не принята.
 	//---------------------
 	//Передадим Start address куда хотим писать данные
-	bootBuf[0] = (uint8_t)(wrAddr >> 24);
-	bootBuf[1] = (uint8_t)(wrAddr >> 16);
-	bootBuf[2] = (uint8_t)(wrAddr >> 8);
-	bootBuf[3] = (uint8_t)(wrAddr >> 0);
+	bootBuf[0] = (uint8_t)(addr >> 24);
+	bootBuf[1] = (uint8_t)(addr >> 16);
+	bootBuf[2] = (uint8_t)(addr >> 8);
+	bootBuf[3] = (uint8_t)(addr >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);	//Checksum
 	//Передаим данные
 	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
@@ -434,16 +434,16 @@ uint8_t BL_HOST_Cmd_WM(uint32_t wrAddr, uint8_t* wrBuf, uint32_t wrSize){
 	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверный Start address
 	//---------------------
 	//Передача кол-ва байтов N, которое нужно записать, минус 1(0 < N <= 255)
-	bootBuf[0] = (uint8_t)(wrSize-1);//-1 для того чтобы можно было передать число от 1 до 256
+	bootBuf[0] = (uint8_t)(size-1);//-1 для того чтобы можно было передать число от 1 до 256
 
 	//Перепишем N+1 байтов в буфер передачи
-	STM32_Flash_ReadBufU8((void*)wrAddr, (void*)&bootBuf[1], wrSize);
+	STM32_Flash_ReadBufU8((void*)addr, (void*)&bootBuf[1], size);
 
 	//Контрольная сумма
-	bootBuf[wrSize+1] = _host_getChecksum(bootBuf, wrSize+1);//+1 байт потому что +байт N
+	bootBuf[size+1] = _host_getChecksum(bootBuf, size+1);//+1 байт потому что +байт N
 
 	//Передаим данные. +2 байта потому что +байт N и +байт Checksum
-	if(_host_sendData(bootBuf, wrSize+2) == BOOT_I2C_NO_DEVICE)	return CMD_NACK; //нет устройства на шине
+	if(_host_sendData(bootBuf, size+2) == BOOT_I2C_NO_DEVICE)	return CMD_NACK; //нет устройства на шине
 
 	//Подождем окончания записи
 	//tprog - 16-bit programming time = 70μs МАКС
@@ -519,6 +519,63 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 	//---------------------
 	return CMD_ACK;
 }
+//*******************************************************************
+// Function    : BL_HOST_Cmd_NS_GetCheckSum --- !!! В ОТЛАДКЕ !!!
+// Description : No-Stretch Get Memory Checksum - расчет значения CRC для области памяти.
+// Parameters  : addr - адрес (кратный 4м) области во флеш памяти для которой расчитывается CRC
+//				 size - размер (кратный 4м) области во флеш памяти для которой расчитывается CRC
+// RetVal      : значение CRC для заданного области.
+//				 CMD_NACK - пакет отброшен (команда не выполнена)
+//*****************************************
+uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size){
+
+	uint32_t crc;
+	//---------------------
+	//Передача команды
+	if(_host_sendCmd(CMD_BOOT_NS_GetCheckSum) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	//Проверим ответ.
+	if(_host_waitACK() != CMD_ACK) return CMD_NACK;	//команда не принята.
+	//---------------------
+	//Send address (4 bytes, MSB first) and its XOR
+	bootBuf[0] = (uint8_t)(addr >> 24);
+	bootBuf[1] = (uint8_t)(addr >> 16);
+	bootBuf[2] = (uint8_t)(addr >> 8);
+	bootBuf[3] = (uint8_t)(addr >> 0);
+	bootBuf[4] = _host_getChecksum(bootBuf, 4);
+	//Передаим данные
+	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
+	//Проверим ответ.
+	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверный адрес
+	//---------------------
+	//Send memory size to check (4 bytes, MSB first) and its XOR
+	bootBuf[0] = (uint8_t)(size >> 24);
+	bootBuf[1] = (uint8_t)(size >> 16);
+	bootBuf[2] = (uint8_t)(size >> 8);
+	bootBuf[3] = (uint8_t)(size >> 0);
+	bootBuf[4] = _host_getChecksum(bootBuf, 4);
+	//Передаим данные
+	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
+	//Проверим ответ.
+	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверный размер
+	//---------------------
+	//Get calculated checksum (4 bytes, MSB first) and its XOR
+	//Проверим ответ.
+	_host_waitACK();
+
+	//if(_host_waitACK() != CMD_BUSY)	return CMD_NACK;
+	//---------------------
+	//Вычитываем 4 байта CRC и 1 байт XOR
+	if(_host_receiveData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+
+	//Проверим байт XOR
+	if(_host_getChecksum(bootBuf, 5) != 0) return CMD_NACK; //CRC битая
+
+	//Вернем CRC
+	return ((uint32_t)(bootBuf[0] << 24) |
+		    (uint32_t)(bootBuf[1] << 16) |
+		    (uint32_t)(bootBuf[2] << 8)  |
+		    (uint32_t)(bootBuf[3] << 0));
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -532,7 +589,7 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 uint32_t BL_HOST_BaseLoop(void){
 
 	//Машина состояний эмулятора хоста загрузчика
-	static uint32_t bootState = CMD_BOOT_Get;//Начнем с команды CMD_BOOT_Get
+	static uint32_t bootState = CMD_BOOT_NS_GetCheckSum;//Начнем с команды CMD_BOOT_Get
 	uint32_t ack  = CMD_NACK;
 	uint32_t addr = 0;
 	//---------------------
@@ -592,6 +649,11 @@ uint32_t BL_HOST_BaseLoop(void){
 		case(CMD_BOOT_ERASE):
 			//сотрем 13 страниц, начиная со страницы 10
 			ack = BL_HOST_Cmd_ERASE(13, 10);
+		break;
+		//------------------
+		case(CMD_BOOT_NS_GetCheckSum):
+			//Расчитаем CRC для области приложения.
+			ack = BL_HOST_Cmd_NS_GetCheckSum(APP_PROGRAM_START_ADDR, (32 * 1024));
 		break;
 		//------------------
 		default:

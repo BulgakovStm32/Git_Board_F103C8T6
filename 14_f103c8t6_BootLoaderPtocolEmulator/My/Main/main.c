@@ -19,7 +19,7 @@
 //static uint8_t  flashBuf[FLASH_PAGE_SIZE] = {0}; //буфер для принятых данных (= странице памяти)
 //static uint32_t writePageCount = 0;				 //счетчик записанных страниц, используется для вычисления актуального адреса записи
 //static uint32_t readPageCount  = 0;				 //счетчик записанных страниц, используется для вычисления актуального адреса записи
-static uint32_t appSize_Bytes  = 0;              //размер приложения в байтах
+static uint32_t appSize_Bytes = 0;              //размер приложения в байтах
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -40,7 +40,7 @@ static uint32_t appSize_Bytes  = 0;              //размер приложен
 void SetAppState(uint32_t state){
 
 	STM32_Flash_Unlock();
-	STM32_Flash_WriteWord(state, APP_CONDITION_ADDR);
+	STM32_Flash_WriteWord(state, APP_STATE_ADDR);
 	STM32_Flash_Lock();
 }
 //*******************************************************************************************
@@ -52,7 +52,7 @@ void SetAppState(uint32_t state){
 void ResetAppState(){
 
 	STM32_Flash_Unlock();
-	STM32_Flash_ErasePage(APP_CONDITION_ADDR);
+	STM32_Flash_ErasePage(APP_STATE_ADDR);
 	STM32_Flash_Lock();
 }
 //*******************************************************************************************
@@ -63,7 +63,7 @@ void ResetAppState(){
 //*****************************************
 uint32_t GetAppState(){
 
-  return STM32_Flash_ReadWord(APP_CONDITION_ADDR);
+  return STM32_Flash_ReadWord(APP_LAUNCH_CONDITIONS_ADDR);
 }
 //*******************************************************************************************
 // Function   : AppAvailableCheck()
