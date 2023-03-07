@@ -110,6 +110,7 @@ int main(void){
 	STM32_Clock_Init();
 	GPIO_Init();
 	DELAY_Init();
+	BL_HOST_Init();
 	//***********************************************
 	//Мигнем три раза - индикация запуска загрузчика.
 	for(uint32_t i = 0; i < 3; i++)
@@ -120,37 +121,22 @@ int main(void){
 		LED_PC13_Off();
 	}
 	//***********************************************
-	//Подсчитаем сколько байт занимает приложение.
-//	appSize_Bytes = 0;
-//	while(STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR + appSize_Bytes) != 0xFFFFFFFF)
-//	{
-//		appSize_Bytes += 4; //шагаем по 4 байта
-//	}
-	//в appSize_Bytes лежит размер приложения в байтах.
-	//Округлим в большую сторону и сделаем кратным 4м
-//	while((appSize_Bytes % 4) != 0) { appSize_Bytes++; }
-	//appSize_Bytes = appSize_Bytes % 4; //проверка
-	//***********************************************
-	//Тут начинается работа протокола передачи прошивки.
-	BL_HOST_Init();
-
-	uint8_t blVersion = BL_HOST_Cmd_GetVersion();//Прочитаем версию загрузчика.
-	//Ждем ответа загрузчика.
-	while(blVersion == CMD_NACK)
+	//Прочитаем версию загрузчика.
+	uint8_t blVersion = BL_HOST_Cmd_GetVersion();
+	while(blVersion == CMD_NACK)//Ждем ответа загрузчика.
 	{
 		LED_PC13_Toggel();
 		DELAY_milliS(250);
-		blVersion = BL_HOST_Cmd_GetVersion();//Прочитаем версию загрузчика.
+		blVersion = BL_HOST_Cmd_GetVersion();
 	}
 	LED_PC13_Off();
 	//**************************************************************
 	while(1)
 	{
 		uint32_t state = BL_HOST_BaseLoop();//Эмулятор протокола I2C-загрузчика.
-
 		//Мигаем ...
 		if(state != CMD_NACK) DELAY_milliS(25);
-		else 				  DELAY_milliS(2000);
+		else 				  DELAY_milliS(500);
 		LED_PC13_Toggel();
 	}
 	//**************************************************************

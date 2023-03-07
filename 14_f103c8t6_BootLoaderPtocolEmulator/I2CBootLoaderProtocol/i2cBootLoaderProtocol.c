@@ -11,7 +11,7 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-static uint8_t bootBuf[FLASH_PAGE_SIZE + 16] = {0};	//
+static uint8_t bootBuf[FLASH_PAGE_SIZE + 16] = {0};	//Рабочий буфер
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -44,9 +44,9 @@ static uint8_t _startAndSendDeviceAddr(uint8_t rw){
 //				 size - размер передаваемого буфера, от 1 байта
 // RetVal      :
 //*****************************************
-static void _sendBuf(uint8_t *buf, uint32_t size){
+static void _sendBuf(uint8_t *data, uint32_t size){
 
-	I2C_SendDataWithStop(BOOT_I2C, buf, size);
+	I2C_SendDataWithStop(BOOT_I2C, data, size);
 	//I2C_SendDataWithoutStop(BOOT_I2C, buf, size);
 }
 //*******************************************************************
@@ -60,21 +60,6 @@ static void _readBuf(uint8_t *buf, uint32_t size){
 
 	I2C_ReadData(BOOT_I2C, buf, size);
 }
-//*******************************************************************
-// Function    : _bl_emulator_FillBuf()
-// Description : заполнение буфера нужным значением
-// Parameters  : buf    - указатель на буфер
-//				 size   - кол-во байтов в буфере, которое нужно заполнить
-//				 filler - значение, которым будет заполнен буфер
-// RetVal      :
-//*****************************************
-//static void _bl_emulator_FillBuf(uint8_t *buf, uint32_t size, uint8_t filler){
-//
-//	for(uint32_t i=0; i < size; i++)
-//	{
-//		buf[i] = filler;
-//	}
-//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -180,12 +165,57 @@ uint8_t _host_getChecksum(uint8_t *buf, uint32_t size){
 	}
 	return xor;
 }
+//*******************************************************************
+// Function    :
+// Description :
+// Parameters  :
+// RetVal      : CMD_BOOT_ACK  - пакет принят   (команда выполнена)
+//				 CMD_BOOT_NACK - пакет отброшен (команда не выполнена)
+//				 CMD_BOOT_BUSY - состояние занятости (команда в процессе выполнения)
+//*****************************************
+static uint8_t _host_sendCmdAndGetAck(uint8_t cmd){
+
+	//Передача команды
+	if(_host_sendCmd(cmd) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	//Вернем ответ загрузчика.
+	return _host_waitACK();
+}
+//*******************************************************************
+// Function    :
+// Description :
+// Parameters  :
+// RetVal      : CMD_BOOT_ACK  - пакет принят   (команда выполнена)
+//				 CMD_BOOT_NACK - пакет отброшен (команда не выполнена)
+//				 CMD_BOOT_BUSY - состояние занятости (команда в процессе выполнения)
+//*****************************************
+static uint8_t _host_sendDataAndGetAck(uint8_t *data, uint32_t size){
+
+	//Передаим данные
+	if(_host_sendData(data, size) == BOOT_I2C_NO_DEVICE) return CMD_NACK;	//нет устройства на шине
+	//Вернем ответ загрузчика.
+	return _host_waitACK();
+}
+//*******************************************************************
+// Function    :
+// Description :
+// Parameters  :
+// RetVal      : CMD_BOOT_ACK  - пакет принят   (команда выполнена)
+//				 CMD_BOOT_NACK - пакет отброшен (команда не выполнена)
+//				 CMD_BOOT_BUSY - состояние занятости (команда в процессе выполнения)
+//*****************************************
+static uint8_t _host_readDataAndGetAck(uint8_t *buf, uint32_t size){
+
+	//Чтение данных
+	if(_host_receiveData(buf, size) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	//Вернем ответ загрузчика.
+	return _host_waitACK();
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 // Function    : BL_HOST_I2CInit()
-// Description : инициализация I2C
+// Description : инициализация Хоста загрузчика
 // Parameters  :
 // RetVal      :
 //*****************************************
@@ -193,57 +223,26 @@ void BL_HOST_Init(void){
 
 	I2C_Master_Init(BOOT_I2C, I2C_GPIO_NOREMAP, BOOT_I2C_SPEED);
 }
-//*******************************************************************
-// Function    : BL_EMULATOR_CheckDevice()
-// Description : проверка присутсвия загрузчика на шине I2C
-// Parameters  :
-// RetVal      : BOOT_I2C_DEVICE_OK - загрузчик ответил,
-//				 BOOT_I2C_NO_DEVICE - загрузчика нет на шине.
-//*****************************************
-uint8_t BL_HOST_CheckDevice(void){
-
-	uint32_t count = 0;
-	//---------------------
-	while(!I2C_Master_CheckSlave(BOOT_I2C, BOOT_I2C_ADDR))
-	{
-		DELAY_microS(10);
-		if(++count >= 3) return BOOT_I2C_NO_DEVICE;
-	}
-	return BOOT_I2C_DEVICE_OK;
-}
 //*******************************************************************************************
-//*******************************************************************************************
-//*******************************************************************************************
-//****************************КОМАНДЫ ЭМУЛЯТОРА ЗАГРУЗЧИКА***********************************
+//****************************КОМАНДЫ ХОСТА ЗАГРУЗЧИКА***************************************
 // Function    : BL_HOST_Cmd_Get() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Получает версию и разрешенные команды, поддерживаемые текущей версией загрузчика.
-// Parameters  :
+// Description : Команда позволяет узнать версию загрузчика и поддерживаемые команды.
+// Parameters  : buf  - буфер приема
+//				 size - кол-во вычитываемых данных
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
 //*****************************************
-uint8_t BL_HOST_Cmd_Get(void){
+uint8_t BL_HOST_Cmd_Get(uint8_t *buf, uint32_t size){
 
-	//uint8_t num;
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_Get) != CMD_ACK) return CMD_NACK;
 	//---------------------
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_Get) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
-	//Чтение списка поддерживаемых команд.
-	//19 команд для версии загрузчика 1.1(такой в STM32F411)
-	if(_host_receiveData(bootBuf, 20) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-	//if(BL_EMULATOR_ReceiveData(bootBuf, num) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
-	return CMD_ACK;
+	//Чтение списка поддерживаемых команд. 19 команд для версии загрузчика 1.1(такой в STM32F411)
+	return _host_readDataAndGetAck(buf, size);
 }
 //*******************************************************************
 // Function    : BL_HOST_Cmd_GetVersion() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Получает версию загрузчика.
+// Description : Команда позволяет узнать версию загрузчика.
 // Parameters  :
 // RetVal      : bootLoaderVersion - версию загрузчика
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
@@ -252,27 +251,16 @@ uint8_t BL_HOST_Cmd_GetVersion(void){
 
 	uint8_t version = 0;
 	//---------------------
-	//STM32 отправляет байты следующим образом: - Byte 1: ACK
-	//- Byte 2: Bootloader version (0 < Version <= 255) (for example, 0x10 = Version 1.0)
-	//- Byte 3: ACK
-
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_GetVersion) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_GetVersion) != CMD_ACK) return CMD_NACK;
+	//---------------------
 	//Чтение версии загрузчика
-	if(_host_receiveData(&version, 1) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
+	if(_host_readDataAndGetAck(&version, 1) != CMD_ACK) return CMD_NACK;
 	return version;
 }
 //*******************************************************************
 // Function    : BL_HOST_Cmd_GetID() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Получает идентификатор чипа
+// Description : Команда используется для получения версии чипа (product ID).
 // Parameters  :
 // RetVal      : PID - идентификатор чипа
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
@@ -286,141 +274,88 @@ uint16_t BL_HOST_Cmd_GetID(void){
 	//- Byte 4 = LSB
 	//- Byte 5: ACK
 
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_GetID) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
-	//Чтение данных
-	if(_host_receiveData(bootBuf, 3) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_GetID) != CMD_ACK) return CMD_NACK;
+	//---------------------
+	//Чтение данных и проверка ответа. Чтение байта N и 2х байтов PID (product ID)
+	if(_host_readDataAndGetAck(bootBuf, 3) != CMD_ACK) return CMD_NACK;
+	//---------------------
 	//Вернем PID (product ID)
 	return (uint16_t)((bootBuf[1] << 8) |	//MSB
 			   	   	  (bootBuf[2] << 0));	//LSB;
 }
 //*******************************************************************
 // Function    : BL_HOST_Cmd_RM() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Read Memory - Читает до 256 байт памяти, начиная с адреса, указанного приложением.
-// Parameters  : addr - адрес, с которого начинаем чтение
+// Description : Команда используется для чтения данных из любого допустимого адреса
+//				 (см. даташит на используемый STM32 и апноут AN2606 [2]) в RAM,
+//				 памяти Flash и информационного блока (system memory или область байта опций).
+// Parameters  : buf  - приемный буфер
+//				 addr - адрес, с которого начинаем чтение
 //				 size - сколько байт нужно прочитать
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
 //*****************************************
-uint8_t BL_HOST_Cmd_RM(uint32_t addr, uint32_t size){
+uint8_t BL_HOST_Cmd_RM(uint8_t *buf, uint32_t addr, uint32_t size){
 
-	//Хост отправляет байты на STM32 следующим образом:
-	//- Byte 1: 0x11
-	//- Byte 2: 0xEE
-	//Wait for ACK
-	//- Bytes 3-6: Start address (byte 3: MSB, byte 6: LSB)
-	//- Byte 7: Checksum: XOR (byte 3, byte 4, byte 5, byte 6)
-	//Wait for ACK
-	//- Byte 8: The number of bytes to be read - 1 (0 < N <= 255)
-	//- Byte 9: Checksum: XOR byte 8 (complement of byte 8)
-
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_RM) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_RM) != CMD_ACK) return CMD_NACK;
+	//---------------------
 	//Предадим адрес (Start address) откуда хотим прочитать данные
 	bootBuf[0] = (uint8_t)(addr >> 24);
 	bootBuf[1] = (uint8_t)(addr >> 16);
 	bootBuf[2] = (uint8_t)(addr >> 8);
 	bootBuf[3] = (uint8_t)(addr >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);//Checksum
-	//Передаим данные
-	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
+	//Передаим данные и проверим ответ
+	if(_host_sendDataAndGetAck(bootBuf, 5) != CMD_ACK) return CMD_NACK;
+	//---------------------
 	//Send data frame: number of bytes to be read (1 byte) and a checksum (1 byte)
 	bootBuf[0] = (uint8_t)(size - 1);		//The number of bytes to be read-1
 	bootBuf[1] = (uint8_t)(size - 1) ^ 0xFF;//Checksum
-	//Передадим данные
-	if(_host_sendData(bootBuf, 2) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
+	//Передаим данные и проверим ответ
+	if(_host_sendDataAndGetAck(bootBuf, 2) != CMD_ACK) return CMD_NACK;
+	//---------------------
 	//Чтение данных - Receive data frame: needed data from the BL
-	if(_host_receiveData(bootBuf, size) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
+	if(_host_receiveData(buf, size) == BOOT_I2C_NO_DEVICE) return CMD_NACK;
+	//---------------------
 	return CMD_ACK;
 }
 //*******************************************************************
 // Function    : BL_HOST_Cmd_Go() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Переходит к коду пользовательского приложения, расположенному во внутренней флэш-памяти.
-// Parameters  : addr - адрес приложения
+// Description : Команда используется для запуска загруженного или любого
+//				 другого кода путем безусловного перехода по указанному адресу.
+// Parameters  : addr - адрес перехода
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
 //*****************************************
 uint8_t BL_HOST_Cmd_Go(uint32_t addr){
 
-	//Хост отправляет байты на STM32 следующим образом:
-	//- Byte 1: 0x21
-	//- Byte 2: 0xDE
-	//Wait for ACK
-	//- Byte 3 to byte 6: start address (Byte 3 - MSB; Byte 6 - LSB)
-	//- Byte 7: checksum: XOR (byte 3, byte 4, byte 5, byte 6)
-	//Wait for ACK
-
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_Go) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
-	//Предадим Start address приложения
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_GO) != CMD_ACK) return CMD_NACK;
+	//---------------------
+	//Предадим адрес перехода
 	bootBuf[0] = (uint8_t)(addr >> 24);
 	bootBuf[1] = (uint8_t)(addr >> 16);
 	bootBuf[2] = (uint8_t)(addr >> 8);
 	bootBuf[3] = (uint8_t)(addr >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);//Checksum
-	//Передаим данные
-	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;
-
-	return CMD_ACK;
+	//Передаим данные и вернем результат
+	return _host_sendDataAndGetAck(bootBuf, 5);
 }
 //*******************************************************************
 // Function    : BL_HOST_Cmd_WM() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Write Memory - Записывает в память до 256 байт, начиная с адреса wrAddr
-// Parameters  : addr - адрес куда пишем
+// Description : Команда используется для записи данных в любую допустимую
+//				 область память, например в RAM, во Flash или в область байта опций.
+// Parameters  : addr - адрес куда пишем (кратен 4м)
 //				 data - буфер с данными на запись
-//				 size - кол-во байтов на запись (от 1 до 256)
+//				 size - кол-во байтов на запись (от 1 до 256)(кратно 4м)
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
 //				 CMD_NACK - пакет отброшен (команда не выполнена)
 //*****************************************
 uint8_t BL_HOST_Cmd_WM(uint32_t addr, uint8_t *data, uint32_t size){
 
-	//Хост отправляет байты на STM32 следующим образом:
-	//- Byte 1: 0x31
-	//- Byte 2: 0xCE
-	//Wait for ACK
-
-	//- Byte 3 to byte 6: Start address (Byte 3: MSB, Byte 6: LSB)
-	//- Byte 7: Checksum: XOR (byte 3, byte 4, byte 5, byte 6)
-	//Wait for ACK
-
-	//- Byte 8: Number of bytes to be received (0 < N <= 255)
-	//- N+1 data bytes: (max 256 bytes)
-	//- Checksum byte: XOR (N, N+1 data bytes)
-	//Wait for ACK
-
-	//---------------------
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_WM) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;	//команда не принята.
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_WM) != CMD_ACK) return CMD_NACK;
 	//---------------------
 	//Передадим Start address куда хотим писать данные
 	bootBuf[0] = (uint8_t)(addr >> 24);
@@ -428,10 +363,8 @@ uint8_t BL_HOST_Cmd_WM(uint32_t addr, uint8_t *data, uint32_t size){
 	bootBuf[2] = (uint8_t)(addr >> 8);
 	bootBuf[3] = (uint8_t)(addr >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);	//Checksum
-	//Передаим данные
-	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверный Start address
+	//Передаим данные и проверим ответ
+	if(_host_sendDataAndGetAck(bootBuf, 5) != CMD_ACK) return CMD_NACK;	//неверный Start address
 	//---------------------
 	//Передача кол-ва байтов N, которое нужно записать, минус 1(0 < N <= 255)
 	bootBuf[0] = (uint8_t)(size-1);//-1 для того чтобы можно было передать число от 1 до 256
@@ -443,10 +376,10 @@ uint8_t BL_HOST_Cmd_WM(uint32_t addr, uint8_t *data, uint32_t size){
 	bootBuf[size+1] = _host_getChecksum(bootBuf, size+1);//+1 байт потому что +байт N
 
 	//Передаим данные. +2 байта потому что +байт N и +байт Checksum
-	if(_host_sendData(bootBuf, size+2) == BOOT_I2C_NO_DEVICE)	return CMD_NACK; //нет устройства на шине
+	if(_host_sendData(bootBuf, size+2) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
 
 	//Подождем окончания записи
-	//tprog - 16-bit programming time = 70μs МАКС
+	//STM32F103: tprog - 16-bit programming time = 70μs МАКС
 	//1024 байта запишется за ~4.5мс
 	DELAY_milliS(5);
 
@@ -457,8 +390,7 @@ uint8_t BL_HOST_Cmd_WM(uint32_t addr, uint8_t *data, uint32_t size){
 }
 //*******************************************************************
 // Function    : BL_HOST_Cmd_ERASE() --- РАБОТАЕТ!!!-- ПРОВЕРЕНО на STM32F411 !!!
-// Description : Команда стирает от одной до всех страниц или секторов флэш-памяти,
-//				 используя режим двухбайтовой адресации.
+// Description : Команда позволяетстереть страницы памяти Flash STM32.
 // Parameters  : numErasePages - количество страниц или секторов, которые необходимо стереть
 //				 startPage     - страница или сектор, с которой начнется стирание
 // RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
@@ -469,19 +401,15 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 	uint16_t numMinusOne = numErasePages - 1;
 	uint8_t  checksum = 0;
 	//---------------------
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_ERASE) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;	//команда не принята.
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_ERASE) != CMD_ACK) return CMD_NACK;
 	//---------------------
 	//Передадим кол-во страниц или секторов, которые необходимо стереть минус 1 и Checksum
 	bootBuf[0] = (uint8_t)(numMinusOne << 8);
 	bootBuf[1] = (uint8_t)(numMinusOne << 0);
-	bootBuf[2] = bootBuf[0] ^ bootBuf[1]; //_host_getChecksum(bootBuf, 2);	//Checksum
-	//Передаим данные
-	if(_host_sendData(bootBuf, 3) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверное кол-во страниц или секторов
+	bootBuf[2] = _host_getChecksum(bootBuf, 2);	//Checksum
+	//Передаим данные и проверим ответ
+	if(_host_sendDataAndGetAck(bootBuf, 3) != CMD_ACK) return CMD_NACK;	//неверное кол-во страниц или секторов
 	//---------------------
 	//- в случае стирания N страниц или секторов (это наш случай) загрузчик получает (2 x N) байтов,
 	//каждое полуслово которых содержит номер страницы или сектора, закодированный двумя байтами,
@@ -503,11 +431,12 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 	if(_host_sendData(bootBuf, numErasePages*2+1) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
 
 	//Подождем, пока производится стирание
-	//DELAY_milliS(500); 	//STM32F411:
-						// tERASE16KB  - Sector(16 KB)  erase time = 800ms  MAX
-						// tERASE64KB  - Sector(64 KB)  erase time = 2400ms MAX
-						// tERASE128KB - Sector(128 KB) erase time = 2.6sec MAX
-						// tME         - Mass           erase time = 16sec  MAX
+	//STM32F411:
+	// tERASE16KB  - Sector(16 KB)  erase time = 800ms  MAX
+	// tERASE64KB  - Sector(64 KB)  erase time = 2400ms MAX
+	// tERASE128KB - Sector(128 KB) erase time = 2.6sec MAX
+	// tME         - Mass           erase time = 16sec  MAX
+	//DELAY_milliS(2400 * numErasePages);
 
 	//STM32F103:
 	//tERASE - Page(1KB) erase time = 40ms MAX
@@ -529,12 +458,8 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 //*****************************************
 uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size){
 
-	uint32_t crc;
-	//---------------------
-	//Передача команды
-	if(_host_sendCmd(CMD_BOOT_NS_GetCheckSum) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK) return CMD_NACK;	//команда не принята.
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_NS_GetCheckSum) != CMD_ACK) return CMD_NACK;
 	//---------------------
 	//Send address (4 bytes, MSB first) and its XOR
 	bootBuf[0] = (uint8_t)(addr >> 24);
@@ -542,10 +467,8 @@ uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size){
 	bootBuf[2] = (uint8_t)(addr >> 8);
 	bootBuf[3] = (uint8_t)(addr >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);
-	//Передаим данные
-	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверный адрес
+	//Передаим данные и проверим ответ
+	if(_host_sendDataAndGetAck(bootBuf, 5) != CMD_ACK) return CMD_NACK;	//неверный адрес
 	//---------------------
 	//Send memory size to check (4 bytes, MSB first) and its XOR
 	bootBuf[0] = (uint8_t)(size >> 24);
@@ -553,23 +476,20 @@ uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size){
 	bootBuf[2] = (uint8_t)(size >> 8);
 	bootBuf[3] = (uint8_t)(size >> 0);
 	bootBuf[4] = _host_getChecksum(bootBuf, 4);
-	//Передаим данные
-	if(_host_sendData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; 	//нет устройства на шине
-	//Проверим ответ.
-	if(_host_waitACK() != CMD_ACK)	return CMD_NACK;	//неверный размер
+	//Передаим данные и проверим ответ
+	if(_host_sendDataAndGetAck(bootBuf, 5) != CMD_ACK) return CMD_NACK; //неверный размер
 	//---------------------
 	//Get calculated checksum (4 bytes, MSB first) and its XOR
-	//Проверим ответ.
-	_host_waitACK();
-
-	//if(_host_waitACK() != CMD_BUSY)	return CMD_NACK;
+	//Ждем завершения расчета CRC
+	while(_host_waitACK() == CMD_BUSY)
+	{
+		DELAY_microS(1000);//пауза между запросами.
+	}
 	//---------------------
 	//Вычитываем 4 байта CRC и 1 байт XOR
 	if(_host_receiveData(bootBuf, 5) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
-
 	//Проверим байт XOR
 	if(_host_getChecksum(bootBuf, 5) != 0) return CMD_NACK; //CRC битая
-
 	//Вернем CRC
 	return ((uint32_t)(bootBuf[0] << 24) |
 		    (uint32_t)(bootBuf[1] << 16) |
@@ -581,87 +501,104 @@ uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size){
 //*******************************************************************************************
 //*******************************************************************************************
 // Function    : BL_HOST_Loop()
-// Description : Основной цикл эмулятора протокола загрузчика.
+// Description : Основной цикл Хоста протокола загрузчика.
 //				 Тут генерируются команды для передачи прошивки загрузчику.
 // Parameters  :
 // RetVal      :
 //*****************************************
 uint32_t BL_HOST_BaseLoop(void){
 
-	//Машина состояний эмулятора хоста загрузчика
-	static uint32_t bootState = CMD_BOOT_NS_GetCheckSum;//Начнем с команды CMD_BOOT_Get
 	uint32_t ack  = CMD_NACK;
 	uint32_t addr = 0;
 	//---------------------
-	switch(bootState){
-		//------------------
-		case(CMD_BOOT_Get):
-			ack = BL_HOST_Cmd_Get();
-			bootState = CMD_BOOT_GetVersion;
-		break;
-		//------------------
-		case(CMD_BOOT_GetVersion):
-			ack = BL_HOST_Cmd_GetVersion();
-			bootState = CMD_BOOT_GetID;
-		break;
-		//------------------
-		case(CMD_BOOT_GetID):
-			ack = BL_HOST_Cmd_GetID();
-			bootState = CMD_BOOT_RM;
-		break;
-		//------------------
-		case(CMD_BOOT_RM):
-			ack = BL_HOST_Cmd_RM(APP_PROGRAM_START_ADDR, 16);
-			bootState = CMD_BOOT_Go;
-		break;
-		//------------------
-		case(CMD_BOOT_Go):
-			//ack = BL_HOST_Cmd_Go(0x08000000);
-			bootState = CMD_BOOT_WM;
-		break;
-		//------------------
-		case(CMD_BOOT_WM):
+	//Проверим статус записанного прилжения
+//	ack = BL_HOST_Cmd_RM(bootBuf, APP_LAUNCH_CONDITIONS_ADDR, 4);
+//	if(ack == CMD_NACK) return CMD_NACK;
+//
+//	uint32_t state = (uint32_t)(bootBuf[0] << 0)  |
+//		   			 (uint32_t)(bootBuf[1] << 8)  |
+//					 (uint32_t)(bootBuf[2] << 16) |
+//					 (uint32_t)(bootBuf[3] << 24);
+//	//Если условие CRC в норме, можно запускать
+//	if(state == APP_OK_AND_START)
+//	{
+//		//Переход на приложение после записи его в память
+//		ack = BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
+//		if(ack == CMD_NACK) return CMD_NACK;
+//		while(1)
+//		{
+//			//Мигаем...
+//			LED_PC13_Toggel();
+//			DELAY_milliS(2000);
+//		}
+//	}
+	//---------------------
+	//Получим версию и разрешенные команды загрузчика
+	ack = BL_HOST_Cmd_Get(bootBuf, 19);
+	if(ack == CMD_NACK) return CMD_NACK;
+	DELAY_milliS(5);
 
-			//Всего 128 страниц флэш-памяти по 1024 байта каждая.
-			//Размер загрузчика 10КБ (10240 байт = 0х2800)
-			//(9КБ - это сам загрузчик, 1КБ - это обасть хранения состояния приложения).
-			for(uint32_t i=0; i < (128-10); i++)
-			{
-				addr = APP_PROGRAM_START_ADDR + 1024*i; //шагаем по 1024 байта
-				//Запишем страницу флэш-памяти (1024 байта)
-				ack = BL_HOST_Cmd_WM((addr+256*0), 0, 256);
-				ack = BL_HOST_Cmd_WM((addr+256*1), 0, 256);
-				ack = BL_HOST_Cmd_WM((addr+256*2), 0, 256);
-				ack = BL_HOST_Cmd_WM((addr+256*3), 0, 256);
+	//Получим версию загрузчика.
+	ack = BL_HOST_Cmd_GetVersion();
+	if(ack == CMD_NACK) return CMD_NACK;
+	DELAY_milliS(5);
 
-				DELAY_milliS(30);
-				LED_PC13_Toggel();
-			}
-			//запишем признак запуска приложения после ресета
-			//....
+	//Получим идентификатор чипа
+	ack = BL_HOST_Cmd_GetID();
+	if(ack == CMD_NACK) return CMD_NACK;;
+	DELAY_milliS(5);
 
-			//Переход на приложение после записи его в память
-			BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
-			while(1);
-			//bootState = CMD_BOOT_Get;
-		break;
-		//------------------
-		case(CMD_BOOT_ERASE):
-			//сотрем 13 страниц, начиная со страницы 10
-			ack = BL_HOST_Cmd_ERASE(13, 10);
-		break;
-		//------------------
-		case(CMD_BOOT_NS_GetCheckSum):
-			//Расчитаем CRC для области приложения.
-			ack = BL_HOST_Cmd_NS_GetCheckSum(APP_PROGRAM_START_ADDR, (32 * 1024));
-		break;
-		//------------------
-		default:
+	//Read Memory - Читает до 256 байт памяти, начиная с адреса, указанного приложением.
+	ack = BL_HOST_Cmd_RM(bootBuf, APP_LAUNCH_CONDITIONS_ADDR, 4);
+	if(ack == CMD_NACK) return CMD_NACK;
+	DELAY_milliS(5);
+	//---------------------
+	//сотрем область приложения - 13 страниц, начиная со страницы 10
+	ack = BL_HOST_Cmd_ERASE(13, 10);
+	if(ack == CMD_NACK) return CMD_NACK;
+	DELAY_milliS(5);
 
-		break;
-		//------------------
+	//сотрем область Условие запуска приложения - 1 страница, начиная со страницы 9
+	ack = BL_HOST_Cmd_ERASE(1, 9);
+	if(ack == CMD_NACK) return CMD_NACK;
+	DELAY_milliS(10000);
+	//---------------------
+	//TODO ... Сделать проверку CRC приложения
+
+
+	//Запишем приложение
+	//Всего 128 страниц флэш-памяти по 1024 байта каждая.
+	//Размер загрузчика 10КБ (10240 байт = 0х2800)
+	//(9КБ - это сам загрузчик, 1КБ - это обасть хранения состояния приложения).
+	for(uint32_t i=0; i < (128-10); i++)
+	{
+		addr = APP_PROGRAM_START_ADDR + 1024*i; //шагаем по 1024 байта
+		//Запишем страницу флэш-памяти (1024 байта)
+		ack = BL_HOST_Cmd_WM((addr+256*0), 0, 256);
+		ack = BL_HOST_Cmd_WM((addr+256*1), 0, 256);
+		ack = BL_HOST_Cmd_WM((addr+256*2), 0, 256);
+		ack = BL_HOST_Cmd_WM((addr+256*3), 0, 256);
+
+		DELAY_milliS(30);
+		LED_PC13_Toggel();
+		if(ack == CMD_NACK) return CMD_NACK;
 	}
-	//***********************************************
+
+	//Получим CRC для области приложения.
+	ack = BL_HOST_Cmd_NS_GetCheckSum(APP_PROGRAM_START_ADDR, 13532);
+
+	//TODO ... Сравнить CRC приложения
+
+	//Переход на приложение после записи его в память
+	ack = BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
+	if(ack == CMD_NACK) return CMD_NACK;
+	while(1)
+	{
+		//Мигаем...
+		LED_PC13_Toggel();
+		DELAY_milliS(3000);
+	}
+	//---------------------
 	return ack;
 }
 //*******************************************************************************************
