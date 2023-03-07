@@ -54,7 +54,7 @@ int main(void){
 	if(appSize == 0) goto BOOT;	//0 - приложени отсутствует => переход в загрузчик
 
 	//Проверим crc приложения.
-	uint32_t appCrc = BOOT_CalcCrc(APP_PROGRAM_START_ADDR ,appSize);
+	uint32_t appCrc = BOOT_CalcCrc((uint32_t*)APP_PROGRAM_START_ADDR , appSize);
 	if(appCrc != BOOT_ReadAppCrc()) goto BOOT;	//Приложение битое => переход в загрузчик
 
 	//По истечении таймаута переходим в приложение

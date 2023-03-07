@@ -25,10 +25,6 @@ static I2C_IT_t	I2c;					//Рабочий I2C
 //*****************************************
 static void _waitEndRx(void){
 
-//	if(I2c.state != I2C_IT_STATE_STOP) return 1;//Ждем завершения чтения ответа
-//	I2c.state = I2C_IT_STATE_READY;
-//	return 0;
-
 	uint32_t micros = DELAY_microSecCount();
 	//------------------
 	while(I2c.state != I2C_IT_STATE_STOP)//Ждем завершения чтения ответа
@@ -114,9 +110,9 @@ static void _cleareRxFrame(void){
 	bootBuf[1] = 0;
 }
 //*******************************************************************************************
-// Function    : _cmd_CMD_BOOT_GetVersion()
-// Description : заглушка
-// Parameters  : None
+// Function    : _getROPState()
+// Description :
+// Parameters  :
 // RetVal      :
 //*****************************************
 static uint8_t _getROPState(void){
@@ -486,6 +482,7 @@ uint8_t _cmd_NS_GetCheckSum(void){
 
 	uint32_t addr;
 	uint32_t size;
+	uint32_t crc;
 	//-----------------------
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
 	if(_getROPState() == 1)//ROP активна
@@ -499,7 +496,7 @@ uint8_t _cmd_NS_GetCheckSum(void){
 	//Receive address (4 bytes, MSB first) and its XOR
 	_waitEndRx();	//Ждем завершения приема фрейма данных от хоста.
 
-	addr = _getStartAddress(bootBuf);	//Соберем принятый адрес.
+	addr = _getStartAddress(bootBuf);	//Соберем адрес.
 
 	//Address valid, within the memory, and XOR OK?
 	if(_getChecksum(bootBuf, 5) != 0 ||	//Контрольная сумма не совпала
@@ -528,20 +525,28 @@ uint8_t _cmd_NS_GetCheckSum(void){
 	//Все ОК!
 	_sendByte(CMD_ACK);	//Передача ACK
 	//-----------------------
-	//Calculate checksum. Operation completed?
-	_sendByte(CMD_BUSY);
-
+	//Calculate checksum. Operation completed? Передача BUSY при длительном расчете CRC
+	bootBuf[0] = CMD_BUSY;		//при запросе состояния от Хоста передадим ему состояния BUSY
+	I2C_IT_SetDataSize(&I2c, 1);//
+	//Сброс счетчика CRC
+	CRC->CR |= CRC_CR_RESET;
 	//Считаем CRC
-	uint32_t crc= BOOT_CalcCrc((uint32_t*)addr, size);
-
-	//Operation completed?
-	//TODO ... Сделать передачу BUSY при длительном расчете CRC
-	//_sendByte(CMD_BUSY);
-
-
-
-	//Send ACK byte
-	//_sendByte(CMD_ACK);	//Передача ACK
+	for(uint32_t i=0; i < size; i+=4)
+	{
+		CRC->DR = *(uint32_t*)(addr + i);
+		//----------
+		//Пока считаем CRC пердаем хосту состояние BUSY
+		if(I2c.state == I2C_IT_STATE_NAC)//Хост вычитал ответ, сформируем новый
+		{
+			I2c.state = I2C_IT_STATE_READY;	//Сброс состояния I2C
+			bootBuf[0] = CMD_BUSY;			//передаем BUSY
+			I2C_IT_SetDataSize(&I2c, 1);	//1 байт на передачу
+		}
+		//----------
+	}
+	//Сохраним CRC и передадим ACK
+	crc = CRC->DR;
+	_sendByte(CMD_ACK);
 	//-----------------------
 	//Send calculated memory checksum (4 bytes, MSB first) + XOR byte
 	bootBuf[0] = (uint8_t)(crc >> 24);
@@ -549,7 +554,7 @@ uint8_t _cmd_NS_GetCheckSum(void){
 	bootBuf[2] = (uint8_t)(crc >> 8);
 	bootBuf[3] = (uint8_t)(crc >> 0);
 	bootBuf[4] = _getChecksum(bootBuf, 4);
-	_sendBuf(5);	//4 байта на передачу
+	_sendBuf(5);	//кол-во байтов на передачу
 	//-----------------------
 	return 1; //команда выполнена.
 }
