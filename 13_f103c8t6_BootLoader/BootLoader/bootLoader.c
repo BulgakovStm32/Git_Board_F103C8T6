@@ -18,8 +18,9 @@ static I2C_IT_t	I2c;					//Рабочий I2C
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-// Function    :
-// Description :
+// Function    : _waitEndRx
+// Description : Ожидание приема пакета от Хоста.
+//				(Ждем от Мастера STOP - признак завершения записи байтов.)
 // Parameters  :
 // RetVal      :
 //*****************************************
@@ -39,9 +40,9 @@ static void _waitEndRx(void){
 	I2c.state = I2C_IT_STATE_READY;
 }
 //*******************************************************************************************
-// Function    :
-// Description :
-// Parameters  :
+// Function    : _sendBuf
+// Description : отправить ответ мастеру
+// Parameters  : size - кол-во байтов ответа
 // RetVal      :
 //*****************************************
 static void _sendBuf(uint32_t size){
@@ -53,7 +54,7 @@ static void _sendBuf(uint32_t size){
 //*******************************************************************************************
 // Function    : _send_Byte
 // Description : отправить ответ мастеру
-// Parameters  : byte - код ответа
+// Parameters  : byte - байт ответа
 // RetVal      :
 //*****************************************
 static void _sendByte(uint8_t byte){
@@ -292,7 +293,7 @@ uint8_t _cmd_GO(void){
 		_sendByte(CMD_NACK);	//Передача NACK
 		return 0; 				//команда не выполнена.
 	}
-	//Контрольная сумма OK. Соберам принятый адрес. Bytes 3-6: Start address (byte 3: MSB, byte 6: LSB)
+	//Контрольная сумма OK. Соберам принятый адрес.
 	appAddr = _getStartAddress(bootBuf);
 
 	//Application start address
@@ -301,7 +302,7 @@ uint8_t _cmd_GO(void){
 		//по стартовому адресу приложения должно лежать значение вершины стека
 		//приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
 		//приложение отсутсвует
-		if((STM32_Flash_ReadWord(appAddr) & 0x2FFC0000) == 0x20000000)
+		if(BOOT_AppAvailableCheck(appAddr))
 		{
 			_sendByte(CMD_ACK);	//Передача ACK
 			//---------------
@@ -378,19 +379,18 @@ uint8_t _cmd_WM(void){
 		STM32_Flash_WriteBuf((void*)&bootBuf[1], (void*)startAddr, nBytesMinusOne+1);
 		STM32_Flash_Lock();
 	}
-	//Option Bytes
-	else if(startAddr >= 0x1FFFF800 && startAddr < 0x1FFFF80F)
-	{
-		//ToDo .... Data written in Option bytes ?
-		//Если команда Write Memory производит запись в область байтов
-		//управления (the option byte area), то все байты в этой области
-		//будут стерты перед записью новых значений, и по завершению
-		//команды загрузчик генерирует системный сброс, чтобы установки
-		//новых значений байт опций вступили в силу.
-
-		//_sendByte(CMD_ACK);//Передача ACK
-		//NVIC_SystemReset();//Cистемный сброс!!!
-	}
+	//ToDo .... Data written in Option bytes ?
+//	else if(startAddr >= 0x1FFFF800 && startAddr < 0x1FFFF80F)
+//	{
+//		//Если команда Write Memory производит запись в область байтов
+//		//управления (the option byte area), то все байты в этой области
+//		//будут стерты перед записью новых значений, и по завершению
+//		//команды загрузчик генерирует системный сброс, чтобы установки
+//		//новых значений байт опций вступили в силу.
+//
+//		//_sendByte(CMD_ACK);//Передача ACK
+//		//NVIC_SystemReset();//Cистемный сброс!!!
+//	}
 	//Неверный адрес
 	else
 	{
@@ -403,7 +403,7 @@ uint8_t _cmd_WM(void){
 	return 1; //команда выполнена.
 }
 //*******************************************************************************************
-// Function    : _cmd_ERASE() --- не отлажена!!!!!!
+// Function    : _cmd_ERASE() --- Отлажена!!!
 // Description : Стирает от одной до всех страниц или секторов флэш-памяти,
 //				 используя режим двухбайтовой адресации.
 // Parameters  : None
@@ -473,7 +473,7 @@ uint8_t _cmd_ERASE(void){
 	return 1; //команда выполнена.
 }
 //*******************************************************************************************
-// Function    : _cmd_NS_GetMemCs --- не отлажена!!!!!!
+// Function    : _cmd_NS_GetMemCs --- Отлажена!!!
 // Description : Получает значение контрольной суммы CRC для области памяти.
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
@@ -591,13 +591,14 @@ void BOOT_Init(void){
 	I2C_IT_SetpBuf(&I2c, bootBuf);		//Прикрепим буфер загрузчика к обработчику прерываний I2C
 
 	//Включаем модуль CRC
-	RCC->AHBENR |= RCC_AHBENR_CRCEN;
+	CRC_Init();
 }
 //**********************************************************
 // Function   : AppAvailableCheck()
-// Description: по стартовому адресу приложения должно лежать значение вершины стека
-//			    приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
-//				приложение отсутсвует
+// Description: Проверка наличия приложения. По стартовому адресу
+//				приложения должно лежать значение вершины стека
+//				приложения, т.е. значение больше 0x2000 0000.
+//				Если это не так, значит	приложение отсутсвует
 // Parameters : Нет
 // RetVal     : 1 - приложение есть; 0 - приложения нет.
 //*****************************************
@@ -610,14 +611,12 @@ uint32_t BOOT_AppAvailableCheck(uint32_t appAddr){
 // Function   : BOOT_GetAppSize()
 // Description: подсчет размера приложения, в байтах
 // Parameters : Нет
-// RetVal     : рахмер приложения в байтах
+// RetVal     : размер приложения в байтах
 //*****************************************
 uint32_t BOOT_GetAppSize(void){
 
-	//Проверка наличия приложения. По стартовому адресу приложения должно
-	//лежать значение вершины стека приложения, т.е. значение больше 0x2000 0000.
-	//Если это не так, значит приложение отсутсвует
-	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
+	//Проверка наличия приложения.
+	if(!BOOT_AppAvailableCheck(APP_PROGRAM_START_ADDR)) return 0;
 
 	//Подсчитаем сколько байт занимает приложение.
 	uint32_t appSize_Bytes = 0;
@@ -634,33 +633,32 @@ uint32_t BOOT_GetAppSize(void){
 	return appSize_Bytes;
 }
 //**********************************************************
-// Function    :
-// Description :
+// Function    : BOOT_GetStateI2C
+// Description : возвращает состояние шини I2C
 // Parameters  :
-// RetVal      :
+// RetVal      : смотреть I2C_IT_State_t
 //*****************************************
-uint32_t BOOT_GetStateI2C(void){
+I2C_IT_State_t BOOT_GetStateI2C(void){
 
 	return I2c.state;
 }
 //**********************************************************
-// Function    :
-// Description :
-// Parameters  :
+// Function    : BOOT_GoToApp
+// Description : используется для запуска загруженного или
+//				 любого другого кода путем безусловного перехода
+//				 по указанному адресу.
+// Parameters  : appAddr - адрес перехода (кратен 4м)
 // RetVal      :
 //*****************************************
 void BOOT_GoToApp(uint32_t appAddr){
 
-	//Проверка наличия приложения. По стартовому адресу приложения должно
-	//лежать значение вершины стека приложения, т.е. значение больше 0x2000 0000.
-	//Если это не так, значит приложение отсутсвует
-	if((STM32_Flash_ReadWord(appAddr) & 0x2FFC0000) != 0x20000000) return;
+	//Проверка наличия приложения.
+	if(!BOOT_AppAvailableCheck(appAddr)) return;
 
 	//Глобальное отключение прерываний.
 	__disable_irq();
 
-	//Отключение периферии.
-	//I2C_IT_DeInit(&I2c);
+	IWDG_Stop();	//Останавливаем сторожевой таймер
 
 	//Reset the RCC clock configuration to the default reset state(for debug purpose).
 	RCC->CR	  |= (uint32_t)0x00000001;	/* Set HSION bit */
@@ -718,28 +716,7 @@ uint32_t BOOT_GetAppLaunch(void){
 //*****************************************
 uint32_t BOOT_CalcCrc(uint32_t *addr, uint32_t size){
 
-	//uint16_t Get_Crc16(uint8_t *buf, uint8_t len){
-
-	//  //uint8_t  i;
-	//  //--------------------
-	//  CRC->CR  |= CRC_CR_RESET; //Делаем сброс...
-	//  //for(i = 0; i < len; i++)
-	//	while (len--)
-	//    {
-	//      CRC->DR = (uint32_t)(*buf & 0x000000FF); //Загоняем данные из буфера в регистр данных
-	//    }
-	//  return (uint16_t)(CRC->DR & 0x0000FFFF); //Читаем контрольную сумму и возвращаем её
-	//}
-
-	//Сброс счетчика CRC
-	CRC->CR |= CRC_CR_RESET;
-	//Считаем CRC
-	for(uint32_t i=0; i < size; i+=4)
-	{
-		CRC->DR = *(uint32_t*)(APP_PROGRAM_START_ADDR + i);
-	}
-	//Читаем контрольную сумму и возвращаем её
-	return CRC->DR;
+	return CRC_CalcCrc(addr, size);
 }
 //**********************************************************
 // Function      BOOTLOADER_ReadAppCrc()
@@ -817,14 +794,12 @@ uint32_t BOOT_Loop(void){
 			_cmd_GetID();
 		break;
 		//-------------------
-		//Read Memory - Читает до 256 байт памяти,
-		//начиная с указанного адреса.
+		//Read Memory - Читает до 256 байт памяти
 		case(CMD_BOOT_RM):
 			_cmd_RM();
 		break;
 		//-------------------
-		//Переход к коду пользовательского приложения,
-		//расположенному во внутренней флэш-памяти.
+		//Переход к пользовательскому приложению,
 		case(CMD_BOOT_GO):
 			_cmd_GO();
 		break;

@@ -153,7 +153,7 @@ void GPIO_Init(void){
 //	RCC->CFGR |= RCC_CFGR_MCO_PLL;   //Подключение к выводу PA8 частоту PLL/2.
 	//--------------------
 	// LED_PC13 - PC13
-	GPIO_InitForOutputPushPull(LED_PC13_PORT, LED_PC13_PIN);
+	GPIO_InitForOutputPushPull(LED_PC13_GPIO, LED_PC13_PIN);
 	LED_PC13_Off();
 }
 //**********************************************************
@@ -166,7 +166,7 @@ void GPIO_CheckLoop(void){
  	static uint32_t GpioCIDRtemp[3] = {0};
   //-------------------------
   if(++msCount >= GPIO_POLLING_DELAY)
-    { 
+    {
 	  msCount = 0;
       //-------------------------
       if(cycle < 3)
@@ -175,7 +175,7 @@ void GPIO_CheckLoop(void){
           GpioBIDRtemp[cycle] = GPIOB->IDR;//Считывание выводов.
           GpioCIDRtemp[cycle] = GPIOC->IDR;//Считывание выводов.
           cycle++;
-        } 
+        }
       //-------------------------
       else
         {

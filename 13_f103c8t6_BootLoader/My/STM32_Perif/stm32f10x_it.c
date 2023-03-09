@@ -134,7 +134,7 @@ void PendSVC(void){
 *******************************************************************************/
 void SysTick_Handler(void){
 
-	SysTick_IT_Handler();
+//	SysTick_IT_Handler();
 }
 /*******************************************************************************
 * Function Name  : WWDG_IRQHandler

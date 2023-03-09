@@ -10,7 +10,6 @@
 //*******************************************************************************************
 //*******************************************************************************************
 
-//#include "main.h"
 #include "stm32f103xb.h"
 
 //*******************************************************************************************
@@ -40,7 +39,6 @@ void STM32_Flash_ErasePage(uint32_t pageAddress);
 
 void STM32_Flash_WriteWord(uint32_t address, uint32_t data);
 void STM32_Flash_WriteHalfWord(uint32_t address, uint16_t data);
-
 void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size);
 
 uint32_t STM32_Flash_ReadWord(uint32_t address);

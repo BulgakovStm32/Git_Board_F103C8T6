@@ -10,8 +10,12 @@
 //*******************************************************************************************
 //*******************************************************************************************
 
-#include "main.h"
 #include "i2c_ST.h"
+#include "gpio_ST.h"
+#include "flash_ST.h"
+#include "iwdg_ST.h"
+#include "crc_ST.h"
+#include "Delay.h"
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -45,7 +49,7 @@
 #define BOOT_I2C				I2C2 //I2C1
 #define BOOT_I2C_SPEED			400000
 #define BOOT_I2C_ADDR			0b0111000 //такой адрес у встроенных I2C загрузчиков STM32
-#define BOOT_I2C_VERSION		0x01
+#define BOOT_I2C_VERSION		0x01	//Версия загрузчика (0х01 значит версия 0.1)
 
 #define BOOT_I2C_DEVICE_OK		0x01	//устройство ответило на свой адрес
 #define BOOT_I2C_NO_DEVICE		0x00	//устройства нет на шине I2C
@@ -91,7 +95,7 @@
 void 	 BOOT_Init(void);
 uint32_t BOOT_AppAvailableCheck(uint32_t appAddr);
 uint32_t BOOT_GetAppSize(void);
-uint32_t BOOT_GetStateI2C(void);
+I2C_IT_State_t BOOT_GetStateI2C(void);
 void 	 BOOT_GoToApp(uint32_t appAddr);
 
 void 	 BOOT_SetAppLaunch(uint32_t launch);
@@ -104,7 +108,6 @@ void 	 BOOT_CalcAndWriteAppCrc(void);
 void 	 BOOT_ErasePageAppState(void);
 
 uint32_t BOOT_Loop(void);
-
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************

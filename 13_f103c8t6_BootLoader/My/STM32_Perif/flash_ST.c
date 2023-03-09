@@ -182,7 +182,7 @@ void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size){
 		src++;
 		size = size - 2; //-2 т.к. пишем по 2 байта
 	}
-	EndPrg:
+	//EndPrg:
 	FLASH->CR &= ~FLASH_CR_PG; //Запрет записи во флэш.
 }
 //*****************************************************************************
