@@ -1,0 +1,15 @@
+i2c_ST.c:218:6:I2C_Master_Init	8	static
+i2c_ST.c:229:10:I2C_Master_GetNacCount	0	static
+i2c_ST.c:235:10:I2C_Master_CheckSlave	8	static
+i2c_ST.c:254:13:I2C_Master_Write	24	static
+i2c_ST.c:277:13:I2C_Master_Read	24	static
+i2c_ST.c:301:6:I2C_Slave_Init	12	static
+i2c_ST.c:325:6:I2C_IT_Init	16	static
+i2c_ST.c:372:6:I2C_IT_DeInit	0	static,ignoring_inline_asm
+i2c_ST.c:391:6:I2C_IT_SetpBuf	0	static
+i2c_ST.c:396:6:I2C_IT_SetDataSize	0	static
+i2c_ST.c:401:10:I2C_IT_GetDataCount	0	static
+i2c_ST.c:434:28:I2C_IT_SlaveTxCpltCallback	0	static
+i2c_ST.c:451:28:I2C_IT_SlaveRxCpltCallback	0	static
+i2c_ST.c:719:6:I2C_IT_EV_Handler	32	static
+i2c_ST.c:734:6:I2C_IT_ER_Handler	8	static

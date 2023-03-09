@@ -1,0 +1,3 @@
+iwdg_ST.c:26:6:IWDG_Init	12	static
+iwdg_ST.c:60:6:IWDG_Reset	0	static
+iwdg_ST.c:70:6:IWDG_Stop	0	static

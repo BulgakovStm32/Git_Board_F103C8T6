@@ -78,14 +78,8 @@ void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32
 
 //*******************************************************************************************
 //*******************************************************************************************
-//Работа по прерываниям.
-#define I2C_IT_RX_BUF_LEN_MAX		(1024 + 16)
-#define I2C_IT_TX_BUF_LEN_MAX		(1024 + 16)
-
-#define I2C_IT_RX_BUF_SIZE_DEFAULT	32
-#define I2C_IT_TX_BUF_SIZE_DEFAULT	32
-
-//****************************************************
+//***********************************Работа по прерываниям.**********************************
+//Состояние I2C при работе по прерываниям
 typedef enum{
   I2C_IT_STATE_RESET = 0,   	/*!< Peripheral is not yet Initialized         */
   I2C_IT_STATE_READY,  			/*!< Peripheral Initialized and ready for use  */
@@ -110,13 +104,14 @@ typedef struct{
 	uint8_t 		slaveRegAddr;	// В режиме Master - адрес регистра Slave-устройства куда хотим писать/читать данные.
 									// В режиме Slave  - не используется
 	//Переменные для работы в прерываниях
-	I2C_IT_State_t 	state;			//Состояние I2C (работа по прерываниям)
-	uint32_t		timeOut;		//Таймаут между запросами. Нужно для периициализации I2C в случае зависания.
-	uint32_t    	resetCount;		//Счетчик переинициализации i2c. Нужен для отладки.
+	__IO I2C_IT_State_t state;		//Состояние I2C (работа по прерываниям)
+	uint32_t			timeOut;	//Таймаут между запросами. Нужно для периициализации I2C в случае зависания.
+	uint32_t    		resetCount;	//Счетчик переинициализации i2c. Нужен для отладки.
 	//Рабочий буфер приема/передачи
 	uint8_t 	 *pBuf;				//Указатель на рабочий буфер приема/передачи
 	__IO uint32_t bufCount;			//Счетчик принятых/переданных байтов.
 	__IO uint32_t bufSize;			//Размер данных на прием/передачу
+
 //	// буфер передачи.
 //	uint8_t  txBuf[I2C_IT_TX_BUF_LEN_MAX];
 //	uint32_t txBufIndex;	//индекс буфера передачи.
@@ -125,9 +120,6 @@ typedef struct{
 //	uint8_t  rxBuf[I2C_IT_RX_BUF_LEN_MAX];
 //	uint32_t rxBufIndex;	//индекс буфера приема.
 //	uint32_t rxBufSize;		//размер буфера приема.
-//	//Функции обратного вызова
-//	void(*i2cSlaveRxCpltCallback)(void); 	//
-//	void(*i2cSlaveTxCpltCallback)(void); 	//
 }I2C_IT_t;
 //#pragma pack(pop)//вернули предыдущую настройку.
 //****************************************************

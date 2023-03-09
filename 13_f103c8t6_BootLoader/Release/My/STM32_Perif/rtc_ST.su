@@ -1,0 +1,4 @@
+rtc_ST.c:11:6:RTC_Init	4	static
+rtc_ST.c:51:10:RTC_GetCounter	0	static
+rtc_ST.c:65:6:RTC_SetCounter	0	static
+rtc_ST.c:73:6:RTC_IT_Handler	0	static

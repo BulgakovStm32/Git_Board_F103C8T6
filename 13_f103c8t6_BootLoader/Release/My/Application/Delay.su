@@ -1,0 +1,6 @@
+Delay.c:16:6:msDelay_Loop	0	static
+Delay.c:21:6:msDelay	8	static,ignoring_inline_asm
+Delay.c:28:6:DELAY_Init	0	static
+Delay.c:35:10:DELAY_microSecCount	8	static
+Delay.c:42:6:DELAY_microS	4	static
+Delay.c:54:6:DELAY_milliS	4	static

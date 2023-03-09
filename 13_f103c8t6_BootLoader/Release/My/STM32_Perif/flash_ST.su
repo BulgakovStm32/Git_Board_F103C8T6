@@ -1,0 +1,9 @@
+flash_ST.c:52:6:STM32_Flash_Lock	0	static
+flash_ST.c:62:6:STM32_Flash_Unlock	0	static
+flash_ST.c:74:6:STM32_Flash_ErasePage	0	static
+flash_ST.c:102:6:STM32_Flash_WriteWord	8	static
+flash_ST.c:136:6:STM32_Flash_WriteHalfWord	4	static
+flash_ST.c:159:6:STM32_Flash_WriteBuf	4	static
+flash_ST.c:194:10:STM32_Flash_ReadWord	0	static
+flash_ST.c:206:6:STM32_Flash_ReadBufU8	0	static
+flash_ST.c:225:6:STM32_Flash_ReadBufU32	0	static

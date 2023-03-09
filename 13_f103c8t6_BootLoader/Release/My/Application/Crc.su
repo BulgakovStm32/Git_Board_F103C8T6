@@ -1,0 +1,7 @@
+Crc.c:56:10:CRC16_FastCalculate	8	static
+Crc.c:70:9:CRC8_Calculate	4	static
+Crc.c:129:9:CRC8_FastCalculate	4	static
+Crc.c:141:9:CRC8_ForEachByte	0	static
+Crc.c:148:9:CRC8_OneWire	8	static
+Crc.c:193:9:CRC8_TableOneWire	4	static
+Crc.c:206:9:CRC_Calculate	4	static

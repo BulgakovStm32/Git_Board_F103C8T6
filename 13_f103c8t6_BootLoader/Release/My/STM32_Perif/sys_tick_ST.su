@@ -1,0 +1,2 @@
+sys_tick_ST.c:15:6:SYS_TICK_Init	0	static
+sys_tick_ST.c:28:6:SYS_TICK_Control	0	static
