@@ -95,6 +95,8 @@ uint8_t  BL_HOST_Cmd_WM(uint32_t addr, uint8_t *data, uint32_t size);
 uint8_t  BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage);
 uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size);
 
+uint32_t BL_HOST_GetAppSize(uint32_t addr);
+uint32_t BL_HOST_CalcCrc(uint32_t *addr, uint32_t size);
 uint32_t BL_HOST_BaseLoop(void);
 //*******************************************************************************************
 //*******************************************************************************************

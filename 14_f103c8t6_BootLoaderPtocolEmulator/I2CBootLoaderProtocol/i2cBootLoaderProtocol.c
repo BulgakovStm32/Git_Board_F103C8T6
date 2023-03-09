@@ -31,7 +31,6 @@ static uint8_t _startAndSendDeviceAddr(uint8_t rw){
 	//Ждем ответа Slave
 	while(I2C_StartAndSendDeviceAddr(BOOT_I2C, BOOT_I2C_ADDR|rw) != I2C_OK)
 	{
-		I2C_Stop(BOOT_I2C);
 		//Если через 3 попытки нет ответа от устройства, то выходим
 		if(++count >= 3) return BOOT_I2C_NO_DEVICE;
 	}
@@ -64,26 +63,6 @@ static void _readBuf(uint8_t *buf, uint32_t size){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-// Function    : _host_sendCmd()
-// Description : Отправить кадр команды: Хост инициирует связь в качестве главного передатчика и
-//				 отправляет на устройство два байта: код_команды + инверсный_код_команды.
-// Parameters  : cmd - команда, которую хотим передать
-// RetVal      : BOOT_I2C_DEVICE_OK - устройство ответило на свой адрес
-//				 BOOT_I2C_NO_DEVICE - устройства нет на шине I2C
-//*****************************************
-static uint8_t _host_sendCmd(uint8_t cmd){
-
-	uint8_t buf[2] = {cmd, ~cmd};
-	//---------------------
-	//Передаем команду и ее инверсию
-	if(_startAndSendDeviceAddr(BOOT_I2C_Wr) == BOOT_I2C_NO_DEVICE)
-	{
-		return BOOT_I2C_NO_DEVICE;
-	}
-	_sendBuf(buf, 2);
-	return BOOT_I2C_DEVICE_OK;
-}
-//*******************************************************************
 // Function    : _host_waitACK()
 // Description : Ожидание кадра ACK/NACK: Хост инициирует связь I2C в качестве главного получателя и
 //				 получает от устройства один байт: ACK, NACK или BUSY.
@@ -121,7 +100,6 @@ static uint8_t _host_receiveData(uint8_t *buf, uint32_t size){
 		return BOOT_I2C_NO_DEVICE;
 	}
 	_readBuf(buf, size);
-	//DELAY_microS(25);
 	return BOOT_I2C_DEVICE_OK;
 }
 //*******************************************************************
@@ -166,17 +144,27 @@ uint8_t _host_getChecksum(uint8_t *buf, uint32_t size){
 	return xor;
 }
 //*******************************************************************
-// Function    :
-// Description :
-// Parameters  :
-// RetVal      : CMD_BOOT_ACK  - пакет принят   (команда выполнена)
-//				 CMD_BOOT_NACK - пакет отброшен (команда не выполнена)
-//				 CMD_BOOT_BUSY - состояние занятости (команда в процессе выполнения)
+// Function    :_host_sendCmdAndGetAck()
+// Description :Отправить кадр команды и получить ответ. Хост инициирует
+//				связь в качестве главного передатчика и отправляет на
+//				устройство два байта: код_команды + инверсный_код_команды,
+//				после чего читает ответ загрузчика.
+// Parameters  :cmd - команда, которую хотим передать
+// RetVal      :CMD_BOOT_ACK  		- пакет принят   (команда выполнена)
+//				CMD_BOOT_NACK 		- пакет отброшен (команда не выполнена)
+//				CMD_BOOT_BUSY 		- состояние занятости (команда в процессе выполнения)
+//				BOOT_I2C_NO_DEVICE 	- устройства нет на шине I2C
 //*****************************************
 static uint8_t _host_sendCmdAndGetAck(uint8_t cmd){
 
-	//Передача команды
-	if(_host_sendCmd(cmd) == BOOT_I2C_NO_DEVICE) return CMD_NACK; //нет устройства на шине
+	uint8_t buf[2] = {cmd, ~cmd};
+	//---------------------
+	//Передаем команду и ее инверсию
+	if(_startAndSendDeviceAddr(BOOT_I2C_Wr) == BOOT_I2C_NO_DEVICE)
+	{
+		return BOOT_I2C_NO_DEVICE; //нет устройства на шине
+	}
+	_sendBuf(buf, 2);
 	//Вернем ответ загрузчика.
 	return _host_waitACK();
 }
@@ -222,6 +210,9 @@ static uint8_t _host_readDataAndGetAck(uint8_t *buf, uint32_t size){
 void BL_HOST_Init(void){
 
 	I2C_Master_Init(BOOT_I2C, I2C_GPIO_NOREMAP, BOOT_I2C_SPEED);
+
+	//Включаем модуль CRC
+	RCC->AHBENR |= RCC_AHBENR_CRCEN;
 }
 //*******************************************************************************************
 //****************************КОМАНДЫ ХОСТА ЗАГРУЗЧИКА***************************************
@@ -500,6 +491,52 @@ uint32_t BL_HOST_Cmd_NS_GetCheckSum(uint32_t addr, uint32_t size){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+// Function   : BL_HOST_GetAppSize()
+// Description: подсчет размера приложения, в байтах
+// Parameters : Нет
+// RetVal     : рахмер приложения в байтах
+//*****************************************
+uint32_t BL_HOST_GetAppSize(uint32_t addr){
+
+	//Проверка наличия приложения. По стартовому адресу приложения должно
+	//лежать значение вершины стека приложения, т.е. значение больше 0x2000 0000.
+	//Если это не так, значит приложение отсутсвует
+	if((STM32_Flash_ReadWord(APP_PROGRAM_START_ADDR) & 0x2FFC0000) != 0x20000000) return 0;
+
+	//Подсчитаем сколько байт занимает приложение.
+	uint32_t appSize_Bytes = 0;
+	while(STM32_Flash_ReadWord(addr + appSize_Bytes) != 0xFFFFFFFF)
+	{
+		appSize_Bytes += 4; //шагаем по 4 байта
+	}
+
+	//в appSize_Bytes лежит размер приложения в байтах.
+	//Округлим в большую сторону и сделаем кратным 4м
+	//while((appSize_Bytes % 4) != 0) { appSize_Bytes++; }
+	//appSize_Bytes = appSize_Bytes % 4; //проверка
+
+	return appSize_Bytes;
+}
+//**********************************************************
+// Function      BL_HOST_CalcCrc()
+// Description   расчет контрольной суммы записанного приложения
+// Parameters	 addr - адрес (кратен 4м) области, с которого начинаем считать CRC
+//				 size - размер (кратен 4м) области, для которой считаем CRC
+// RetVal        crc области данных
+//*****************************************
+uint32_t BL_HOST_CalcCrc(uint32_t *addr, uint32_t size){
+
+	//Сброс счетчика CRC
+	CRC->CR |= CRC_CR_RESET;
+	//Считаем CRC
+	for(uint32_t i=0; i < size; i+=4)
+	{
+		CRC->DR = *(uint32_t*)(APP_PROGRAM_START_ADDR + i);
+	}
+	//Читаем контрольную сумму и возвращаем её
+	return CRC->DR;
+}
+//**********************************************************
 // Function    : BL_HOST_Loop()
 // Description : Основной цикл Хоста протокола загрузчика.
 //				 Тут генерируются команды для передачи прошивки загрузчику.
@@ -553,25 +590,31 @@ uint32_t BL_HOST_BaseLoop(void){
 	if(ack == CMD_NACK) return CMD_NACK;
 	DELAY_milliS(5);
 	//---------------------
-	//сотрем область приложения - 13 страниц, начиная со страницы 10
-	ack = BL_HOST_Cmd_ERASE(13, 10);
+	//Размер приложения в байтах
+	uint32_t appSize_Bytes = BL_HOST_GetAppSize(APP_PROGRAM_START_ADDR);
+
+	//Размер приложения в страницах (1024 байта)
+	uint32_t appSize_Pages = appSize_Bytes / 1024;
+	if((appSize_Bytes % 1024) != 0) appSize_Pages += 1;
+	//---------------------
+	//сотрем область приложения - appSize_Pages страниц, начиная со страницы 10
+	ack = BL_HOST_Cmd_ERASE(appSize_Pages, 10);
 	if(ack == CMD_NACK) return CMD_NACK;
 	DELAY_milliS(5);
 
 	//сотрем область Условие запуска приложения - 1 страница, начиная со страницы 9
-	ack = BL_HOST_Cmd_ERASE(1, 9);
-	if(ack == CMD_NACK) return CMD_NACK;
-	DELAY_milliS(5);
+//	ack = BL_HOST_Cmd_ERASE(1, 9);
+//	if(ack == CMD_NACK) return CMD_NACK;
+//	DELAY_milliS(5);
 	//---------------------
 	//TODO ... Сделать проверку CRC приложения
-
+	uint32_t appCrc = BL_HOST_CalcCrc((uint32_t*)APP_PROGRAM_START_ADDR, appSize_Bytes);
 
 	//Запишем приложение
 	//Всего 128 страниц флэш-памяти по 1024 байта каждая.
 	//Размер загрузчика 10КБ (10240 байт = 0х2800)
 	//(9КБ - это сам загрузчик, 1КБ - это обасть хранения состояния приложения).
-	//for(uint32_t i=0; i < (128-10); i++)
-	for(uint32_t i=0; i < 16; i++)//запишем 16КБ
+	for(uint32_t i=0; i < appSize_Pages; i++)//
 	{
 		addr = APP_PROGRAM_START_ADDR + 1024*i; //шагаем по 1024 байта
 		//Запишем страницу флэш-памяти (1024 байта)
@@ -585,10 +628,19 @@ uint32_t BL_HOST_BaseLoop(void){
 		if(ack == CMD_NACK) return CMD_NACK;
 	}
 
-	//Получим CRC для области приложения.
-	ack = BL_HOST_Cmd_NS_GetCheckSum(APP_PROGRAM_START_ADDR, 13532);
+	//Получим от загрузчика CRC приложения.
+	ack = BL_HOST_Cmd_NS_GetCheckSum(APP_PROGRAM_START_ADDR, appSize_Bytes);
+	//Сравним CRC
+	if(appCrc != ack)
+	{
+		while(1)
+		{
+			//Мигаем...
+			LED_PC13_Toggel();
+			DELAY_milliS(1000);
+		}
+	}
 
-	//TODO ... Сравнить CRC приложения
 
 	//Переход на приложение после записи его в память
 	ack = BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
