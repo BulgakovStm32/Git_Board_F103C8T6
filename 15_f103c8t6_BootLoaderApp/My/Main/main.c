@@ -396,7 +396,7 @@ int main(void){
 	STM32_Clock_Init();
 	SYS_TICK_Init();
 	GPIO_Init();
-	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 100000);
+	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
 
 	DELAY_Init();
 	DELAY_milliS(100);//Эта задержка нужна для стабилизации напряжения патания.
@@ -421,14 +421,12 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 0, 5);
+	RTOS_SetTask(Task_LcdPageSelection, 0, 15);
 	RTOS_SetTask(Task_TemperatureRead,  0, 1000);
 	RTOS_SetTask(Task_AHT10_ReadData,   0, 500);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();
-
-	//__set_MSP(');
 	//**************************************************************
 	while(1)
 	{
