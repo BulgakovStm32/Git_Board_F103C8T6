@@ -26,7 +26,7 @@ static uint32_t _i2c_LongWait(I2C_TypeDef *i2c, uint32_t flag){
 	return 0;
 }
 //**********************************************************
-static void _i2c_GPIO_Init(I2C_TypeDef *i2c, uint32_t remap){
+static void _i2c_GpioInit(I2C_TypeDef *i2c, uint32_t remap){
 
 	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;//Включаем тактирование GPIOB
 	//Тактирование I2C_1
@@ -123,7 +123,8 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 	i2c->CR1 |= I2C_CR1_START;
 	if(_i2c_LongWait(i2c, I2C_SR1_SB))//Ожидание формирования Start condition.
 	{
-		return I2C_ERR_START; //Start condition не сформирована.
+		i2c->CR1 |= I2C_CR1_STOP;	//Формируем Stop
+		return I2C_ERR_START; 		//Start condition не сформирована.
 	}
 	(void)i2c->SR1;	//Для сброса флага SB необходимо прочитать SR1
 
@@ -139,6 +140,7 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 	if(i2c->SR1 & I2C_SR1_AF)
 	{
 		i2c->SR1 &= ~I2C_SR1_AF;	//Сброс флага NAC.
+		i2c->CR1 |= I2C_CR1_STOP;	//Формируем Stop
 		if(i2c == I2C1) i2c1NacCount++;
 		else			i2c2NacCount++;
 		return I2C_ERR_NAC;
@@ -202,7 +204,6 @@ I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 //**********************************************************
 I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
 
-	//if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения регистра DR
 	_i2c_LongWait(i2c, I2C_SR1_TXE);	//Ждем освобождения регистра DR
 	i2c->DR = byte;
 	return I2C_OK;
@@ -213,7 +214,7 @@ I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 	for(uint32_t i = 0; i < len; i++)
 	{
 		_i2c_LongWait(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
-		i2c->DR = *(pBuf + i);			 //передаем байт
+		i2c->DR = *(pBuf + i);			//передаем байт
 	}
 	_i2c_LongWait(i2c, I2C_SR1_BTF);	//ждем окончания передачи байта
 	I2C_Stop(i2c);	 					//Формируем Stop
@@ -236,7 +237,7 @@ I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t le
 //**************************Функции для работы в режиме Master*******************************
 void I2C_Master_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t speed){
 
-	_i2c_GPIO_Init(i2c, remap);		//Инициализация портов
+	_i2c_GpioInit(i2c, remap);		//Инициализация портов
 	_i2c_ClockEnable(i2c);			//Вкл. тактирования модуля I2C
 	_i2c_ModeInit(i2c, I2C_MASTER);	//Инициализация I2C в режиме Master.
 	_i2c_SetSpeed(i2c, speed);		//Скорость работы.
@@ -319,7 +320,7 @@ I2C_State_t I2C_Master_Read(I2C_TypeDef *i2c, uint8_t deviceAddr, uint8_t regAdd
 //*******************************************************************************************
 void I2C_Slave_Init(I2C_TypeDef *i2c, uint32_t remap, uint32_t slaveAddr, uint32_t speed){
 
-	_i2c_GPIO_Init(i2c, remap);		    		  	//Инициализация портов
+	_i2c_GpioInit(i2c, remap);		    		  	//Инициализация портов
 	_i2c_ClockEnable(i2c);			    		  	//Вкл. тактирования модуля I2C
 	_i2c_ModeInit(i2c, I2C_SLAVE); 		  			//I2C в режиме Slave.
 	_i2c_SetSlaveAddress(i2c, (uint8_t)slaveAddr);	//адрес устройства на шине.
