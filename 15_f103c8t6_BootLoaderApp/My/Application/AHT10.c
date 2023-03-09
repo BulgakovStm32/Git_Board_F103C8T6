@@ -12,16 +12,40 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-static uint8_t rxBuf[6] = {0};
+static uint8_t rxBuf[7] = {0};
+static uint8_t status = 0;
 
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-static uint8_t aht10_read(uint8_t addr, uint8_t *data, uint8_t size){
+static void _readMeasurement(void){
 
-	I2C_Master_Read(AHT10_I2C, AHT10_ADDR, addr, data, size);
-    return 0;
+	/* send measurement command */
+	rxBuf[0] = AHTXX_START_MEASUREMENT_REG;			//send measurement command, strat measurement
+	rxBuf[1] = AHTXX_START_MEASUREMENT_CTRL;		//send measurement control
+	rxBuf[2] = AHTXX_START_MEASUREMENT_CTRL_NOP;	//send measurement NOP control
+
+	if(I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR|I2C_MODE_WRITE) != I2C_OK)
+	{
+		status = AHTXX_ACK_ERROR;
+		return;
+	}
+	I2C_SendDataWithStop(AHT10_I2C, rxBuf, 3);
+
+	//TODO ... /* check busy bit */
+
+	//DELAY_milliS(AHTXX_MEASUREMENT_DELAY);
+
+	/* read data from sensor */
+	if(I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR|I2C_MODE_READ) != I2C_OK)
+	{
+		status = AHTXX_ACK_ERROR;
+		return;
+	}
+	I2C_ReadData(AHT10_I2C, rxBuf, 6);
+
+	status = AHTXX_NO_ERROR;
 }
 //************************************************************
 //static uint8_t aht10_write(uint8_t addr, uint8_t *data, uint8_t size){
@@ -52,7 +76,7 @@ void AHT10_SoftReset(void){
 void AHT10_ReadData(void){
 
 	//Чтение данных
-	aht10_read(0xAC, rxBuf, 6); //0xAC - start measurment command
+	_readMeasurement();
 }
 //**********************************************************
 int32_t AHT10_GetTemperature(void){
