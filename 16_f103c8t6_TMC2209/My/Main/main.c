@@ -433,9 +433,7 @@ void DBG_UsartCmdCheck(void){
 void DBG_MotorRotate(void){
 
 	//LedPC13Toggel();
-
-	//MOTOR_DriverEnable();
-	MOTOR_SetTargetPosition(360000 * 5);
+	MOTOR_SetTargetPosition(360000 * 10);
 	MOTOR_CalcAndStartRotation();
 }
 //*******************************************************************************************

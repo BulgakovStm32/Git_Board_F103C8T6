@@ -16,7 +16,10 @@
 //*******************************************************************************************
 //*******************************************************************************************
 #define MOTOR_TIMER					TIM1		  //базовый таймер для генерации шагов
-#define MOTOR_TIMER_FREQ_Hz			(1000 * 1000U)//частота тактироваия базового таймера в Гц.
+//#define MOTOR_TIMER_FREQ_Hz			(1000 * 1000U)//частота тактироваия базового таймера в Гц.
+//#define MOTOR_TIMER_FREQ_Hz			(2000 * 1000U)
+//#define MOTOR_TIMER_FREQ_Hz			(4000 * 1000U)
+#define MOTOR_TIMER_FREQ_Hz			(8000 * 1000U)
 
 #define MOTOR_ONE_FULL_STEP_DEGREE	1.8f 										  //угол поворота мотора за один полный шаг.
 #define MOTOR_FULL_STEPS_PER_TURN	(uint32_t)(360.0 / MOTOR_ONE_FULL_STEP_DEGREE)//Кол-во полных шагов ШД на оборот.
@@ -32,9 +35,9 @@
 //**********************************
 //Заводские настройки.
 #define MOTOR_DEFAULT_MICROSTEP		STEP_32	//количество микрошагов
-#define MOTOR_DEFAULT_REDUCER_RATE	1 		//передаточное чисо редуктора
+#define MOTOR_DEFAULT_REDUCER_RATE	6 		//передаточное чисо редуктора
 #define MOTOR_DEFAULT_ACCEL_TIME_mS	1000	//время ускорения/замедлениия в мС
-#define MOTOR_DEFAULT_RPM			60		//скорость в RPM
+#define MOTOR_DEFAULT_RPM			100		//скорость в RPM
 //**********************************
 //максимальные и минимальные значения параметров.
 #define MOTOR_REDUCER_RATE_MAX		120  	//передаточное число редуктора
@@ -43,7 +46,7 @@
 #define MOTOR_ACCEL_TIME_mS_MAX		5000	//время ускорения/замедлениия в мС
 #define MOTOR_ACCEL_TIME_mS_MIN		50
 
-#define MOTOR_RPM_MAX				350		//скорость в RPM
+#define MOTOR_RPM_MAX				600//350		//скорость в RPM
 #define MOTOR_RPM_MIN				1
 //****************************************************
 //****************************************************
@@ -56,7 +59,7 @@ typedef enum uint32_t{
 	STEP_8   = 8,
 	STEP_16  = 16,
 	STEP_32  = 32,
-}MotorStepMode_t;
+}MicroSteps_t;
 //**********************************
 // Speed ramp states
 typedef enum {
@@ -78,14 +81,14 @@ typedef struct{
 //*******************************************************************************************
 void MOTOR_Init(void);
 
-void MOTOR_SetMicrostepMode(MotorStepMode_t uSteps);
+void MOTOR_SetMicrostepMode(MicroSteps_t uSteps);
 void MOTOR_SetReducerRate(uint32_t rate);
 void MOTOR_SetAccelerationTime(uint32_t accelTime_mS);
 void MOTOR_SetVelocity(uint32_t vel);
 void MOTOR_SetTargetPosition(int32_t angle);
 
-MotorStepMode_t MOTOR_GetMicrostepMode(void);
-uint32_t 		MOTOR_GetReducerRate(void);
+MicroSteps_t	MOTOR_GetMicrostepMode(void);
+uint32_t		MOTOR_GetReducerRate(void);
 uint32_t 		MOTOR_GetAccelerationTime(void);
 uint32_t 		MOTOR_GetVelocity(void);
 int32_t  		MOTOR_GetTargetPosition(void);
