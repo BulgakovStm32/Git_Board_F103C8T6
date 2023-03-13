@@ -47,8 +47,8 @@
 //#define BOOT_I2C_ADDR			(0b0111001 << 1) //адрес встроенных I2C загрузчиков STM32F411
 #define BOOT_I2C_ADDR			(0b0111000 << 1) //адрес самописного I2C загрузчика для STM32F103
 
-#define BOOT_I2C_Wr				I2C_Wr	//
-#define BOOT_I2C_Rd				I2C_Rd	//
+#define BOOT_I2C_Wr				I2C_WRITE	//
+#define BOOT_I2C_Rd				I2C_READ	//
 
 #define BOOT_I2C_DEVICE_OK		0x01	//устройство ответило на свой адрес
 #define BOOT_I2C_NO_DEVICE		0x00	//устройства нет на шине I2C
