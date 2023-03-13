@@ -16,10 +16,9 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-Time_t	  Time;
-Encoder_t Encoder;
-DS18B20_t DS18B20;
-
+Time_t	  	Time;
+Encoder_t 	Encoder;
+DS18B20_t 	DS18B20;
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -235,6 +234,11 @@ void Task_MPU6050_GetData(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+void Task_DHT11_ReadData(void){
+
+	DHT22_ReadData();
+}
+//************************************************************
 void Task_AHT10_ReadData(void){
 
 	AHT10_ReadData();
@@ -272,6 +276,42 @@ void Task_AHT10_Display(void){
 	Lcd_Print("Hum  = ");
 	Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
 	Lcd_Print(" %");
+	//-------------------
+	//Датчик DHT11
+	if(DHT22_State() == DHT22_STATE_WAITING_MEAS)
+	{
+		Lcd_SetCursor(1, 7);
+		Lcd_Print("DHT22 waiting...");
+	}
+	//
+	else if(DHT22_State() == DHT22_STATE_OK)
+	{
+		//Влажность
+		temp = DHT22_Humidity();
+		Lcd_SetCursor(1, 7);
+		Lcd_Print("DHT22_Hum  = ");
+		Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Chr('.');
+		Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" %");
+
+		//Температура
+		temp = DHT22_Temperature();
+		Lcd_SetCursor(1, 8);
+		Lcd_Print("DHT22_Temp = ");
+		Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Chr('.');
+		Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" C");
+	}
+	//
+	else if(DHT22_State() == DHT22_STATE_PRESENCE_ERR ||
+			DHT22_State() == DHT22_STATE_CHECKSUM_ERR)
+	{
+		//Ошибка датчика...
+		Lcd_SetCursor(1, 7);
+		Lcd_Print("DHT22 Err!!!");
+	}
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -342,7 +382,7 @@ void Task_LcdPageSelection(void){
 	if(BUTTON_LongPress(ENCODER_GetButton(&Encoder), 2000)) pageIndex ^= 1;
 
 	//Если на какой-то странице производится редактирование то выбор страницы запрешен
-//	if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 3);//Выбор сраницы
+	//if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 3);//Выбор сраницы
 	switch(pageIndex){
 		//--------------------
 		case 0:
@@ -351,8 +391,6 @@ void Task_LcdPageSelection(void){
 			//Config_SaveLoop();
 
 			RTOS_SetTask(Task_AHT10_Display, 0, 0);
-
-
 		break;
 		//--------------------
 		case 1:
@@ -399,16 +437,20 @@ int main(void){
 	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
 
 	DELAY_Init();
-	DELAY_milliS(100);//Эта задержка нужна для стабилизации напряжения патания.
+	DELAY_milliS(100);//Эта задержка нужна для стабилизации напряжения питания.
 					  //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Чтение настроек
 	//Config_Init();
+
 	//Инициализация OLED SSD1306 (I2C1).
 	Lcd_Init();
 
 	//Инициализация DS18B20
 	TEMPERATURE_SENSE_Init();
+
+	//Инициализация DHT22
+	DHT22_Init();
 	//***********************************************
 	//Инициализация Энкодера.
 	Encoder.GpioPort_A 	 	= GPIOC;
@@ -421,9 +463,10 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 0, 15);
+	RTOS_SetTask(Task_LcdPageSelection, 0, 25);
 	RTOS_SetTask(Task_TemperatureRead,  0, 1000);
 	RTOS_SetTask(Task_AHT10_ReadData,   0, 500);
+	RTOS_SetTask(Task_DHT11_ReadData,   2000, 2000);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();
