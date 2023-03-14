@@ -35,9 +35,9 @@
 //**********************************
 //Заводские настройки.
 #define MOTOR_DEFAULT_MICROSTEP		STEP_32	//количество микрошагов
-#define MOTOR_DEFAULT_REDUCER_RATE	6 		//передаточное чисо редуктора
-#define MOTOR_DEFAULT_ACCEL_TIME_mS	1000	//время ускорения/замедлениия в мС
-#define MOTOR_DEFAULT_RPM			100		//скорость в RPM
+#define MOTOR_DEFAULT_REDUCER_RATE	1 		//передаточное число редуктора
+#define MOTOR_DEFAULT_ACCEL_TIME_mS	1500	//время ускорения/замедлениия в мС
+#define MOTOR_DEFAULT_RPM			120		//скорость в RPM
 //**********************************
 //максимальные и минимальные значения параметров.
 #define MOTOR_REDUCER_RATE_MAX		120  	//передаточное число редуктора
@@ -46,7 +46,7 @@
 #define MOTOR_ACCEL_TIME_mS_MAX		5000	//время ускорения/замедлениия в мС
 #define MOTOR_ACCEL_TIME_mS_MIN		50
 
-#define MOTOR_RPM_MAX				600//350		//скорость в RPM
+#define MOTOR_RPM_MAX				300		//скорость в RPM
 #define MOTOR_RPM_MIN				1
 //****************************************************
 //****************************************************

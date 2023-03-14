@@ -502,8 +502,8 @@ int main(void){
 	//RTOS_SetTask(Task_CheckRotate,      0, 50); //Проверка вращения. Не отлажена!!!
 
 	//Отладочные задачи.
-	//RTOS_SetTask(DBG_SendDebugInfo,	0, 500);	//Передача отладочной информации.
-	//RTOS_SetTask(DBG_UsartCmdCheck, 0, 50);		//Парсинг команд каждые 50 мс
+	RTOS_SetTask(DBG_SendDebugInfo,	0, 500);	//Передача отладочной информации.
+	RTOS_SetTask(DBG_UsartCmdCheck, 0, 50);		//Парсинг команд каждые 50 мс
 	RTOS_SetTask(DBG_MotorRotate,	500, 10000);	//Вращение мотора
 	//--------------------------
 	SysTick_Init();
