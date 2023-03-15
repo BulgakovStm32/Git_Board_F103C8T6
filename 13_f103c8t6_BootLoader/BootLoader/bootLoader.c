@@ -116,16 +116,18 @@ static uint32_t _getStartAddress(uint8_t *buf){
 // Parameters  :
 // RetVal      :
 //*****************************************
-static uint8_t _getROPState(void){
-
-	//заглушка
-	return 0;
-}
+//static uint32_t _getROPState(void){
+//
+//	//заглушка
+//	//return 0;
+//
+//	return STM32_Flash_GetReadOutProtectionStatus();
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-// Function    : _cmd_BOOT_Get() -- Не отлажено!!!!
+// Function    : _cmd_BOOT_Get()
 // Description : Передача версии загрузчика и поддерживаемые команды.
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
@@ -134,9 +136,9 @@ uint8_t _cmd_Get(void){
 
 	//Передача ACK
 	_sendByte(CMD_ACK);
-
+	//-----------------------
 	//Сборка кадра данных
-	bootBuf[0]	= (9 - 1);			//N = Number of bytes to follow - 1, except current and ACKs
+	bootBuf[0]	= (11 - 1);			//N = Number of bytes to follow - 1, except current and ACKs
 	bootBuf[1]	= BOOT_I2C_VERSION;	//bootloader version
 	//list of supported commands
 	bootBuf[2] 	= CMD_BOOT_Get;
@@ -146,23 +148,15 @@ uint8_t _cmd_Get(void){
 	bootBuf[6] 	= CMD_BOOT_GO;
 	bootBuf[7] 	= CMD_BOOT_WM;
 	bootBuf[8] 	= CMD_BOOT_ERASE;
-	bootBuf[9] 	= CMD_BOOT_NS_GetCheckSum;
+	bootBuf[9] 	= CMD_BOOT_RP;
+	bootBuf[10]	= CMD_BOOT_RUP;
+	bootBuf[11] = CMD_BOOT_NS_GetCheckSum;
 
-//	bootBuf[10] = CMD_BOOT_NS_Erase;
-//	bootBuf[11] = CMD_BOOT_WP;
-//	bootBuf[12] = CMD_BOOT_NS_WP;
-//	bootBuf[13] = CMD_BOOT_WUP;
-//	bootBuf[14] = CMD_BOOT_NS_WUP;
-//	bootBuf[15] = CMD_BOOT_RP;
-//	bootBuf[16] = CMD_BOOT_NS_RP;
-//	bootBuf[17] = CMD_BOOT_RUP;
-//	bootBuf[18] = CMD_BOOT_NS_RUP;
-//	bootBuf[19] = CMD_BOOT_NS_GetCheckSum;
-	_sendBuf(10); //передадим ... байт
-
+	_sendBuf(12); //кол-во байт на передачу
+	//-----------------------
 	//Передача ACK
 	_sendByte(CMD_ACK);
-
+	//-----------------------
 	return 1; //команда выполнена.
 }
 //*******************************************************************************************
@@ -175,13 +169,13 @@ uint8_t _cmd_GetVersion(void){
 
 	//Передача ACK
 	_sendByte(CMD_ACK);
-
+	//-----------------------
 	//Передача версии загрузчика
 	_sendByte(BOOT_I2C_VERSION);
-
+	//-----------------------
 	//Передача ACK
 	_sendByte(CMD_ACK);
-
+	//-----------------------
 	return 1; //команда выполнена.
 }
 //*******************************************************************************************
@@ -194,7 +188,7 @@ uint8_t _cmd_GetID(void){
 
 	//Передача ACK
 	_sendByte(CMD_ACK);
-
+	//-----------------------
 	//Передача кадра данных - идентификатор чипа
 	//DBGMCU_IDCODE - регистр кода микроконтроллера.
 	//Младшие 12 бит содержат код микроконтроллера.
@@ -204,14 +198,14 @@ uint8_t _cmd_GetID(void){
 	bootBuf[1] = (uint8_t)(pid >> 8);  //0x04;	//product ID MSB
 	bootBuf[2] = (uint8_t)(pid >> 0);  //0x10;	//product ID LSB
 	_sendBuf(3);		//3 байта на передачу
-
+	//-----------------------
 	//Передача ACK
 	_sendByte(CMD_ACK);
-
+	//-----------------------
 	return 1; //команда выполнена.
 }
 //*******************************************************************************************
-// Function    : _cmd_BOOT_RM(void)()
+// Function    : _cmd_BOOT_RM()
 // Description : выполнение команды CMD_BOOT_RM - Read Memory - Читает до 256 байт памяти,
 //				 начиная с адреса, указанного приложением.
 // Parameters  : None
@@ -223,7 +217,7 @@ uint8_t _cmd_RM(void){
 	uint32_t size;
 	//-----------------------
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
-	if(_getROPState() == 1)//ROP активна
+	if(STM32_Flash_GetReadOutProtectionStatus() == 1)//ROP активна
 	{
 		_sendByte(CMD_NACK);	//Передача NACK
 		return 0; 				//команда не выполнена.
@@ -279,7 +273,7 @@ uint8_t _cmd_GO(void){
 	uint32_t appAddr;
 	//-----------------------
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
-	if(_getROPState() == 1)//ROP активна
+	if(STM32_Flash_GetReadOutProtectionStatus() == 1)//ROP активна
 	{
 		_sendByte(CMD_NACK);//Передача NACK
 		return 0; 			//команда не выполнена.
@@ -331,7 +325,7 @@ uint8_t _cmd_WM(void){
 	uint32_t nBytesMinusOne;
 	//-----------------------
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
-	if(_getROPState() == 1)//ROP активна
+	if(STM32_Flash_GetReadOutProtectionStatus() == 1)//ROP активна
 	{
 		_sendByte(CMD_NACK);//Передача NACK
 		return 0; 			//команда не выполнена.
@@ -406,6 +400,65 @@ uint8_t _cmd_WM(void){
 	return 1; //команда выполнена.
 }
 //*******************************************************************************************
+// Function    : _cmd_RP() --- Не отлажена!!!
+// Description : Readout Protect - Включает защиту от чтения.
+// Parameters  : None
+// RetVal      : 1 - команда выполнена; 0 - команда выполняется.
+//*****************************************
+uint8_t _cmd_RP(void){
+
+	//Проверка ROP (Readout Protect) и передача ACK/NACK
+	if(STM32_Flash_GetReadOutProtectionStatus() == 1)//ROP активна
+	{
+		_sendByte(CMD_NACK);//Передача NACK
+		return 0; 			//команда не выполнена.
+	}
+	//ROP отключена
+	_sendByte(CMD_ACK);		//Передача ACK
+	//-----------------------
+	//Активация защиты от чтения
+	STM32_Flash_ReadOutProtection(FLASH_RDO_ENABLE);
+	_sendByte(CMD_ACK);		//Передача ACK
+	//-----------------------
+	//Генерация сброса микроконтроллера.
+	NVIC_SystemReset();
+	//-----------------------
+	return 1; //команда выполнена.
+}
+//*******************************************************************************************
+// Function    : _cmd_RUP() --- Не отлажена!!!
+// Description : Readout Unprotect - Отключает защиту от чтения.
+//				 !!!эта команда запустит процесс стирание ВСЕЙ флэш памяти!!!
+// Parameters  : None
+// RetVal      : 1 - команда выполнена; 0 - команда выполняется.
+//*****************************************
+uint8_t _cmd_RUP(void){
+
+	//Передача ACK
+	_sendByte(CMD_ACK);
+	//-----------------------
+	//Отключение защиты от чтения - это запустит процесс стирание ВСЕЙ флэш памяти!!!
+	STM32_Flash_ReadOutProtection(FLASH_RDO_DISABLE);
+	_sendByte(CMD_ACK);		//Передача ACK
+	//-----------------------
+	//Очистка всей RAM-памяти
+
+	//-----------------------
+	//Генерация сброса микроконтроллера.
+	NVIC_SystemReset();
+	//-----------------------
+	return 1; //команда выполнена.
+}
+
+
+
+
+
+
+
+
+
+//*******************************************************************************************
 // Function    : _cmd_ERASE() --- Отлажена!!!
 // Description : Стирает от одной до всех страниц или секторов флэш-памяти,
 //				 используя режим двухбайтовой адресации.
@@ -418,7 +471,7 @@ uint8_t _cmd_ERASE(void){
 	uint32_t nPages;
 	//-----------------------
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
-	if(_getROPState() == 1)//ROP активна
+	if(STM32_Flash_GetReadOutProtectionStatus() == 1)//ROP активна
 	{
 		_sendByte(CMD_NACK);//Передача NACK
 		return 0; 			//команда не выполнена.
@@ -488,7 +541,7 @@ uint8_t _cmd_NS_GetCheckSum(void){
 	uint32_t crc;
 	//-----------------------
 	//Проверка ROP (Readout Protect) и передача ACK/NACK
-	if(_getROPState() == 1)//ROP активна
+	if(STM32_Flash_GetReadOutProtectionStatus() == 1)//ROP активна
 	{
 		_sendByte(CMD_NACK);//Передача NACK
 		return 0; 			//команда не выполнена.
@@ -828,6 +881,16 @@ uint32_t BOOT_Loop(void){
 		//используя режим двухбайтовой адресации.
 		case(CMD_BOOT_ERASE):
 			_cmd_ERASE();
+		break;
+		//-------------------
+		//Readout Protect - Включает защиту от чтения.
+		case(CMD_BOOT_RP):
+			_cmd_RP();
+		break;
+		//-------------------
+		//Readout Unprotect - Отключает защиту от чтения.
+		case(CMD_BOOT_RUP):
+			_cmd_RUP();
 		break;
 		//-------------------
 		case(CMD_BOOT_NS_GetCheckSum):
