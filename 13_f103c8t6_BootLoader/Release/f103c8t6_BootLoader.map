@@ -30,7 +30,7 @@ Discarded input sections
  .text._cmd_GetVersion
                 0x0000000000000000       0x4c BootLoader/bootLoader.o
  .text._cmd_GetID
-                0x0000000000000000       0x58 BootLoader/bootLoader.o
+                0x0000000000000000       0x60 BootLoader/bootLoader.o
  .text.BOOT_AppAvailableCheck
                 0x0000000000000000       0x1c BootLoader/bootLoader.o
  .text.BOOT_SetAppLaunch

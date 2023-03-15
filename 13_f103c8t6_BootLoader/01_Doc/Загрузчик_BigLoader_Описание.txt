@@ -48,6 +48,10 @@ APP_CRC_ERR 		0xAAAA001F	//ошибка CRC
 
 
 
+0b0111000
+
+
+
 
 
 

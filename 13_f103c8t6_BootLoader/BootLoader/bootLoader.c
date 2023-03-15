@@ -105,11 +105,11 @@ static uint32_t _getStartAddress(uint8_t *buf){
 // Parameters  : None
 // RetVal      :
 //*****************************************
-static void _cleareRxFrame(void){
-
-	bootBuf[0] = 0;
-	bootBuf[1] = 0;
-}
+//static void _cleareRxFrame(void){
+//
+//	bootBuf[0] = 0;
+//	bootBuf[1] = 0;
+//}
 //*******************************************************************************************
 // Function    : _getROPState()
 // Description :
@@ -196,10 +196,13 @@ uint8_t _cmd_GetID(void){
 	_sendByte(CMD_ACK);
 
 	//Передача кадра данных - идентификатор чипа
+	//DBGMCU_IDCODE - регистр кода микроконтроллера.
+	//Младшие 12 бит содержат код микроконтроллера.
 	//STM32F103CBT6 - Medium-density - PID = 0x410
+	uint32_t pid = (DBGMCU->IDCODE & 0xFFF);
 	bootBuf[0] = 1;		//N = the number of bytes-1 (for STM32, N = 1), except for current byte and ACKs
-	bootBuf[1] = 0x04;	//product ID MSB
-	bootBuf[2] = 0x10;	//product ID LSB
+	bootBuf[1] = (uint8_t)(pid >> 8);  //0x04;	//product ID MSB
+	bootBuf[2] = (uint8_t)(pid >> 0);  //0x10;	//product ID LSB
 	_sendBuf(3);		//3 байта на передачу
 
 	//Передача ACK
@@ -688,7 +691,11 @@ void BOOT_GoToApp(uint32_t appAddr){
 //**********************************************************
 // Function      BOOTLOADER_SetAppLaunch()
 // Description   установить условие запуска приложения
-// Parameters    None
+// Parameters    launch - Условие запуска приложения
+//				 APP_NO					0xFFFFFFFF	//приложение отсутствует
+//				 APP_OK_AND_START 		0xAAAA0001	//CRC в норме, можно запускать
+//				 APP_REWRITE_ME			0xAAAA0002	//была команда на переход в загрузчик после ресета
+//				 APP_CRC_ERR 			0xAAAA001F	//ошибка CRC
 // RetVal        None
 //*****************************************
 void BOOT_SetAppLaunch(uint32_t launch){
@@ -759,23 +766,30 @@ void BOOT_ErasePageAppState(){
 	STM32_Flash_Lock();
 }
 //**********************************************************
+// Function		BOOT_Loop()
+// Descriptio	Основной цикл работы загрузчика. В нем производится обработка
+//				команд.
+// Parameters   None
+// RetVal       состояние команды: 1 - команда выполнена; 0 - неизвестная команда
+//*****************************************
 uint32_t BOOT_Loop(void){
 
 	//Ждем завершения приема кадра команды (Command frame) от хоста.
-	_waitEndRx();
+	_waitEndRx();	//Блокирующая ф-ия
 
-	//Кадр команды (Command frame) от хоста состояит из кода команды и инверсии кода команды.
+	//Принят Кадр команды (Command frame) от хоста.
+	//Кадр команды состояит из кода команды и инверсии кода команды.
 	//После чего хост ждет ACK или NACK.
 	//Проверка команды. Если команда не верна то передаем NACK и выходим
 	uint8_t invertCmd = invertCmd = ~bootBuf[0];//0-й байт - код команды
 	if(invertCmd != bootBuf[1])				  	//1-й байт - инверсия кода команды
 	{
 		_sendByte(CMD_NACK);	//передаем NACK
-		_cleareRxFrame();		//Сброс приемного буфера
+		//bootBuf[0] = 0;		//Сброс приемного буфера
+		//bootBuf[1] = 0;
 		return 0;
 	}
 	//Команда верна! Обработаем команду.
-	//LED_PC13_Toggel();	//мигнем светодиодом
 	switch(bootBuf[0])	//Выполнение принятой команды
 	{
 		//-------------------
