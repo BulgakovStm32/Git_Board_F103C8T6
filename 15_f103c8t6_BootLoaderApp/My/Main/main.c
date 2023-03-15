@@ -234,9 +234,17 @@ void Task_MPU6050_GetData(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-void Task_DHT11_ReadData(void){
+void Task_DHT22_ReadData(void){
 
 	DHT22_ReadData();
+
+	//Ждем 18 мс
+	if(DHT22_State() == DHT22_STATE_WAITING_PRESENCE)
+	{
+		RTOS_SetTask(Task_DHT22_ReadData, 0, 18);
+	}
+	//Следующее измерение чере 2 сек.
+	else RTOS_SetTask(Task_DHT22_ReadData, 2000, 0);
 }
 //************************************************************
 void Task_AHT10_ReadData(void){
@@ -259,7 +267,7 @@ void Task_AHT10_Display(void){
 	//Температура
 	int32_t temp = AHT10_GetTemperature();
 	Lcd_SetCursor(1, 4);
-	Lcd_Print("Temp =");
+	Lcd_Print("AHT10_Temp =");
 	if(temp < 0)
 	{
 		temp = -temp;
@@ -273,44 +281,43 @@ void Task_AHT10_Display(void){
 
 	//Влажность
 	Lcd_SetCursor(1, 5);
-	Lcd_Print("Hum  = ");
+	Lcd_Print("AHT10_Hum  = ");
 	Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
 	Lcd_Print(" %");
 	//-------------------
 	//Датчик DHT11
 	if(DHT22_State() == DHT22_STATE_WAITING_MEAS)
 	{
+		//Ожидание завершения измерения
 		Lcd_SetCursor(1, 7);
 		Lcd_Print("DHT22 waiting...");
 	}
-	//
-	else if(DHT22_State() == DHT22_STATE_OK)
-	{
-		//Влажность
-		temp = DHT22_Humidity();
-		Lcd_SetCursor(1, 7);
-		Lcd_Print("DHT22_Hum  = ");
-		Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
-		Lcd_Chr('.');
-		Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
-		Lcd_Print(" %");
-
-		//Температура
-		temp = DHT22_Temperature();
-		Lcd_SetCursor(1, 8);
-		Lcd_Print("DHT22_Temp = ");
-		Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
-		Lcd_Chr('.');
-		Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
-		Lcd_Print(" C");
-	}
-	//
 	else if(DHT22_State() == DHT22_STATE_PRESENCE_ERR ||
 			DHT22_State() == DHT22_STATE_CHECKSUM_ERR)
 	{
 		//Ошибка датчика...
 		Lcd_SetCursor(1, 7);
 		Lcd_Print("DHT22 Err!!!");
+	}
+	else //if(DHT22_State() == DHT22_STATE_OK)
+	{
+		//Температура
+		temp = DHT22_Temperature();
+		Lcd_SetCursor(1, 7);
+		Lcd_Print("DHT22_Temp = ");
+		Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Chr('.');
+		Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" C");
+
+		//Влажность
+		temp = DHT22_Humidity();
+		Lcd_SetCursor(1, 8);
+		Lcd_Print("DHT22_Hum  = ");
+		Lcd_BinToDec(temp/10, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Chr('.');
+		Lcd_BinToDec(temp%10, 1, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" %");
 	}
 }
 //*******************************************************************************************
@@ -463,10 +470,10 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 0, 25);
+	RTOS_SetTask(Task_LcdPageSelection, 0, 5);
 	RTOS_SetTask(Task_TemperatureRead,  0, 1000);
 	RTOS_SetTask(Task_AHT10_ReadData,   0, 500);
-	RTOS_SetTask(Task_DHT11_ReadData,   2000, 2000);
+	RTOS_SetTask(Task_DHT22_ReadData,   2000, 0);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();
