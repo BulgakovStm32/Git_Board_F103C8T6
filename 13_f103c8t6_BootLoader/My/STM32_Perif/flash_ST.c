@@ -61,8 +61,8 @@ void STM32_Flash_Lock(void){
 //*****************************************
 void STM32_Flash_Unlock(void){
 
-	FLASH->KEYR = 0x45670123;
-	FLASH->KEYR = 0xCDEF89AB;
+	FLASH->KEYR = FLASH_KEY1;	//0x45670123;
+	FLASH->KEYR = FLASH_KEY2;	//0xCDEF89AB;
 }
 //*****************************************************************************
 // Function    : STM32_Flash_ErasePage()
@@ -233,6 +233,73 @@ void STM32_Flash_ReadBufU32(void* Src, void* Dst, uint32_t size){
 		*dst++ = *src++;
 		size--;
 	}
+}
+//*****************************************************************************
+// Function    : STM32_Flash_GetReadOutProtectionStatus()
+// Description :
+// Parameters  :
+// RetVal      : 1 - включена защита от чтения
+//*****************************************
+uint32_t STM32_Flash_GetReadOutProtectionStatus(void){
+
+	if(FLASH->OBR & FLASH_OBR_RDPRT) return 1;
+	return 0;
+}
+
+//*****************************************************************************
+// Function    : STM32_Flash_ReadOutProtection()
+// Description : Вкл./Откл. защиты от чтения
+// Parameters  : state - FLASH_RDO_ENABLE / FLASH_RDO_DISABLE
+// RetVal      :
+//*****************************************
+FlashStatus_t STM32_Flash_ReadOutProtection(uint32_t state){
+
+	/* Authorizes the small information block programming */
+	STM32_Flash_Unlock();			//
+	FLASH->CR |= FLASH_CR_OPTER;	//Option Byte Erase
+	FLASH->CR |= FLASH_CR_STRT;		//Start
+
+	/* Wait for last operation to be completed */
+	while(!_flash_Ready()); 	//Ожидаем завершеия операции
+
+	/* if the erase operation is completed, disable the OPTER Bit */
+	FLASH->CR &= ~FLASH_CR_OPTER;
+
+	/* Enable the Option Bytes Programming operation */
+	FLASH->CR |= FLASH_CR_OPTPG;	//Option Byte Programming
+
+	if(state == FLASH_RDO_ENABLE) OB->RDP = 0x00;		//
+	else	  					  OB->RDP = RDP_KEY;	//
+
+	/* Wait for last operation to be completed */
+	while(!_flash_Ready()); 	//Ожидаем завершеия операции
+
+	/* if the program operation is completed, disable the OPTPG Bit */
+	FLASH->CR &= ~FLASH_CR_OPTPG;
+
+	return FLASH_COMPLETE;
+}
+//*****************************************************************************
+// Function    : STM32_Flash_GetWriteProtectionOptionByte()
+// Description :
+// Parameters  :
+// RetVal      :
+//*****************************************
+uint32_t STM32_Flash_GetWriteProtectionOptionByte(void){
+
+	/* Return the Flash write protection Register value */
+	return (uint32_t)(FLASH->WRPR);
+}
+//*****************************************************************************
+// Function    : STM32_Flash_EnableWriteProtection()
+// Description :
+// Parameters  :
+// RetVal      :
+//*****************************************
+FlashStatus_t STM32_Flash_EnableWriteProtection(uint32_t flashPages){
+
+
+
 }
 //*******************************************************************************************
 //*******************************************************************************************

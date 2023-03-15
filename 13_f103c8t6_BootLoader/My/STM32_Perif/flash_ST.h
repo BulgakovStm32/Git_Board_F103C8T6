@@ -30,6 +30,22 @@
 //
 //#define FLASH_PAGE127_END_ADDR 	(FLASH_PAGE_127 + FLASH_PAGE_SIZE)
 //#define FLASH_PAGE126_END_ADDR 	(FLASH_PAGE_126 + FLASH_PAGE_SIZE)
+//**********************************
+#define FLASH_RDO_ENABLE	1
+#define FLASH_RDO_DISABLE	0
+//**********************************
+//Состояния выполнения операция
+typedef enum{
+	FLASH_BUSY = 1,
+	FLASH_ERROR_PG,
+	FLASH_ERROR_WRP,
+	FLASH_COMPLETE,
+	FLASH_TIMEOUT
+}FlashStatus_t;
+//**********************************
+//typedef enum{
+//
+//}FlashState_t;
 //*******************************************************************************************
 //*******************************************************************************************
 void STM32_Flash_Lock     (void);
@@ -44,6 +60,12 @@ void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size);
 uint32_t STM32_Flash_ReadWord(uint32_t address);
 void 	 STM32_Flash_ReadBufU8(void* Src, void* Dst, uint32_t size);
 void 	 STM32_Flash_ReadBufU32(void* Src, void* Dst, uint32_t size);
+
+uint32_t 	  STM32_Flash_GetReadOutProtectionStatus(void);
+FlashStatus_t STM32_Flash_ReadOutProtection(uint32_t state);
+
+uint32_t 	  STM32_Flash_GetWriteProtectionOptionByte(void);
+FlashStatus_t STM32_Flash_EnableWriteProtection(uint32_t flashPages);
 //*******************************************************************************************
 //*******************************************************************************************
 #endif /* FLASH_ST_H */
