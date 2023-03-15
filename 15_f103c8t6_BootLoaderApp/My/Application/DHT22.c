@@ -29,17 +29,27 @@ __STATIC_INLINE void _singleWire_usDelay(uint32_t us){
 }
 //**********************************************************
 //Процедура инициализации: импульсы сброса и присутствия
-static uint32_t _singleWire_SendStartSignal(GPIO_TypeDef *port, uint32_t pin){
+static Dht22_State_t _singleWire_SendStartSignal(GPIO_TypeDef *port, uint32_t pin){
 
 	uint32_t presence = 0;
 	pin = (1 << pin);
 	//---------------------
-	if(!port) return 0;	//Проверка. Не определен порт - значит нет датчика.
-						//Выходим с признаком отсутствия устройства на шине.
+	if(!port) return DHT22_STATE_RESET;	//Проверка. Не определен порт - значит нет датчика.
+										//Выходим с признаком отсутствия устройства на шине.
 	//---------------------
 	//Формирование Start_Signal
 	port->ODR &= ~pin;			//низкий уровень
-	_singleWire_usDelay(18100);	//задержка >18мс
+	//_singleWire_usDelay(18100);	//задержка >18мс
+
+
+	//Неблокирующая задержка > 18мс
+	static uint32_t us = 0;
+	if(us == 0) us = DELAY_microSecCount();
+	//возвращаем состояние ожидания
+	if((DELAY_microSecCount() - us) < 18000) return DHT22_STATE_WAITING_PRESENCE;
+	us = 0;
+
+
 	port->ODR |= pin;	  		//отпускаем линию.
 	_singleWire_usDelay(30);	//задержка 20-40мк
 	//---------------------
@@ -52,7 +62,8 @@ static uint32_t _singleWire_SendStartSignal(GPIO_TypeDef *port, uint32_t pin){
 
 	_singleWire_usDelay(40);	//Пауза для окончения ответа от DHT11
 	//---------------------
-	return presence;
+	if(presence == 2) return DHT22_STATE_PRESENCE_OK;
+					  return DHT22_STATE_PRESENCE_ERR;
 }
 //**********************************************************
 //Чтение байта.
@@ -103,16 +114,31 @@ void DHT22_Init(void){
 void DHT22_ReadData(void){
 
 	//Проверим присутствие датчика на шине.
-	uint32_t count = 0;
+//	uint32_t count = 0;
+//	while(_singleWire_SendStartSignal(dht22.port, dht22.pin) != DHT22_PRESENCE)
+//	{
+//		if(++count > 3) //Три попытки
+//		{
+//			//Нет ответа от DHT11
+//			dht22.state = DHT22_STATE_PRESENCE_ERR;
+//			return;
+//		}
+//	}
 
-	while(_singleWire_SendStartSignal(dht22.port, dht22.pin) != DHT22_PRESENCE)
+	//Неблокирующая проверка присутствия датчика на шине
+	Dht22_State_t state = _singleWire_SendStartSignal(dht22.port, dht22.pin);
+	if(state == DHT22_STATE_WAITING_PRESENCE)
 	{
-		if(++count > 3) //Три попытки
-		{
-			//Нет ответа от DHT11
-			dht22.state = DHT22_STATE_PRESENCE_ERR;
-			return;
-		}
+		//Ожиданеи паузы 18 мс
+		dht22.state = DHT22_STATE_WAITING_PRESENCE;
+		return;
+	}
+	//нет датчика на шине
+	if(state != DHT22_STATE_PRESENCE_OK)
+	{
+		//Нет ответа от DHT11
+		dht22.state = DHT22_STATE_PRESENCE_ERR;
+		return;
 	}
 	//---------------------
 	//Прочитаем данные из датчика (40 битов = 5 байтов)
