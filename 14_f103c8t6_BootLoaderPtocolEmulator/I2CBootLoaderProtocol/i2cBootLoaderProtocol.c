@@ -47,7 +47,6 @@ static uint8_t _startAndSendDeviceAddr(uint8_t rw){
 static void _sendBuf(uint8_t *data, uint32_t size){
 
 	I2C_SendDataWithStop(BOOT_I2C, data, size);
-	//I2C_SendDataWithoutStop(BOOT_I2C, buf, size);
 }
 //*******************************************************************
 // Function    : _readBuf()
@@ -170,12 +169,13 @@ static uint8_t _host_sendCmdAndGetAck(uint8_t cmd){
 	return _host_waitACK();
 }
 //*******************************************************************
-// Function    :
-// Description :
-// Parameters  :
-// RetVal      : CMD_BOOT_ACK  - пакет принят   (команда выполнена)
-//				 CMD_BOOT_NACK - пакет отброшен (команда не выполнена)
-//				 CMD_BOOT_BUSY - состояние занятости (команда в процессе выполнения)
+// Function    :_host_sendDataAndGetAck()
+// Description :Отправить кадр данных и получить ответ.
+// Parameters  :data - буфер с данными на передачу
+//				size - кол-во данных  на передачу
+// RetVal      :CMD_BOOT_ACK  - пакет принят   (команда выполнена)
+//				CMD_BOOT_NACK - пакет отброшен (команда не выполнена)
+//				CMD_BOOT_BUSY - состояние занятости (команда в процессе выполнения)
 //*****************************************
 static uint8_t _host_sendDataAndGetAck(uint8_t *data, uint32_t size){
 
@@ -441,6 +441,45 @@ uint8_t BL_HOST_Cmd_ERASE(uint16_t numErasePages, uint16_t startPage){
 	return CMD_ACK;
 }
 //*******************************************************************
+// Function    : BL_HOST_Cmd_RP --- !!! В ОТЛАДКЕ !!!
+// Description : Readout Protect - Включает защиту от чтения.
+// Parameters  :
+// RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
+//				 CMD_NACK - пакет отброшен (команда не выполнена)
+//*****************************************
+uint32_t BL_HOST_Cmd_RP(void){
+
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_RP) != CMD_ACK) return CMD_NACK;
+	//---------------------
+	//Проверим ответ.
+	return _host_waitACK();
+}
+//*******************************************************************
+// Function    : BL_HOST_Cmd_RUP --- !!! В ОТЛАДКЕ !!!
+// Description : Readout Unprotect - Отключает защиту от чтения.
+//				 !!! ВНИМАНИЕ !!! Данная команда стирает ВЕСЬ FLASH!!!
+//				 В том числе и загрузчик!!!
+// Parameters  :
+// RetVal      : CMD_ACK  - пакет принят   (команда выполнена)
+//				 CMD_NACK - пакет отброшен (команда не выполнена)
+//*****************************************
+uint32_t BL_HOST_Cmd_RUP(void){
+
+	//Передача команды и проверка ответа
+	if(_host_sendCmdAndGetAck(CMD_BOOT_RUP) != CMD_ACK) return CMD_NACK;
+	//---------------------
+	//Проверим ответ.
+	return _host_waitACK();
+}
+
+
+
+
+
+
+
+//*******************************************************************
 // Function    : BL_HOST_Cmd_NS_GetCheckSum --- !!! В ОТЛАДКЕ !!!
 // Description : No-Stretch Get Memory Checksum - расчет значения CRC для области памяти.
 // Parameters  : addr - адрес (кратный 4м) области во флеш памяти для которой расчитывается CRC
@@ -548,48 +587,35 @@ uint32_t BL_HOST_BaseLoop(void){
 
 	uint32_t ack  = CMD_NACK;
 	uint32_t addr = 0;
+	uint32_t temp;
 	//---------------------
-	//Проверим статус записанного прилжения
-//	ack = BL_HOST_Cmd_RM(bootBuf, APP_LAUNCH_CONDITIONS_ADDR, 4);
-//	if(ack == CMD_NACK) return CMD_NACK;
-//
-//	uint32_t state = (uint32_t)(bootBuf[0] << 0)  |
-//		   			 (uint32_t)(bootBuf[1] << 8)  |
-//					 (uint32_t)(bootBuf[2] << 16) |
-//					 (uint32_t)(bootBuf[3] << 24);
-//	//Если условие CRC в норме, можно запускать
-//	if(state == APP_OK_AND_START)
-//	{
-//		//Переход на приложение после записи его в память
-//		ack = BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
-//		if(ack == CMD_NACK) return CMD_NACK;
-//		while(1)
-//		{
-//			//Мигаем...
-//			LED_PC13_Toggel();
-//			DELAY_milliS(2000);
-//		}
-//	}
-	//---------------------
-	//Получим версию и разрешенные команды загрузчика
-	ack = BL_HOST_Cmd_Get(bootBuf, 19);
-	if(ack == CMD_NACK) return CMD_NACK;
-	DELAY_milliS(5);
-
 	//Получим версию загрузчика.
-	ack = BL_HOST_Cmd_GetVersion();
-	if(ack == CMD_NACK) return CMD_NACK;
+	temp = BL_HOST_Cmd_GetVersion();
+	if(temp == CMD_NACK) return CMD_NACK;
 	DELAY_milliS(5);
 
+	if(temp == BOOT_I2C_VERSION)
+	{
+		//Получим версию и разрешенные команды загрузчика
+		ack = BL_HOST_Cmd_Get(bootBuf, 12);//прочитаем 12 байтов
+		if(ack == CMD_NACK) return CMD_NACK;
+		DELAY_milliS(5);
+
+		//TODO ... Тут можно сделать разбор поддерживаемых команд.
+
+	}
+
+	//---------------------
 	//Получим идентификатор чипа
 	ack = BL_HOST_Cmd_GetID();
-	if(ack == CMD_NACK) return CMD_NACK;;
-	DELAY_milliS(5);
-
-	//Read Memory - Читает до 256 байт памяти, начиная с адреса, указанного приложением.
-	ack = BL_HOST_Cmd_RM(bootBuf, APP_LAUNCH_CONDITIONS_ADDR, 4);
 	if(ack == CMD_NACK) return CMD_NACK;
 	DELAY_milliS(5);
+
+	//---------------------
+	//Read Memory - Читает до 256 байт памяти, начиная с адреса, указанного приложением.
+	//ack = BL_HOST_Cmd_RM(bootBuf, APP_LAUNCH_CONDITIONS_ADDR, 4);
+	//if(ack == CMD_NACK) return CMD_NACK;
+	//DELAY_milliS(5);
 	//---------------------
 	//Размер приложения в байтах
 	uint32_t appSize_Bytes = BL_HOST_GetAppSize(APP_PROGRAM_START_ADDR);
@@ -597,6 +623,7 @@ uint32_t BL_HOST_BaseLoop(void){
 	//Размер приложения в страницах (1024 байта)
 	uint32_t appSize_Pages = appSize_Bytes / 1024;
 	if((appSize_Bytes % 1024) != 0) appSize_Pages += 1;
+
 	//---------------------
 	//сотрем область приложения - appSize_Pages страниц, начиная со страницы 10
 	ack = BL_HOST_Cmd_ERASE(appSize_Pages, 10);
@@ -604,13 +631,15 @@ uint32_t BL_HOST_BaseLoop(void){
 	DELAY_milliS(5);
 
 	//сотрем область Условие запуска приложения - 1 страница, начиная со страницы 9
-//	ack = BL_HOST_Cmd_ERASE(1, 9);
-//	if(ack == CMD_NACK) return CMD_NACK;
-//	DELAY_milliS(5);
+	//ack = BL_HOST_Cmd_ERASE(1, 9);
+	//if(ack == CMD_NACK) return CMD_NACK;
+	//DELAY_milliS(5);
+
 	//---------------------
 	//TODO ... Сделать проверку CRC приложения
 	uint32_t appCrc = BL_HOST_CalcCrc((uint32_t*)APP_PROGRAM_START_ADDR, appSize_Bytes);
 
+	//---------------------
 	//Запишем приложение
 	//Всего 128 страниц флэш-памяти по 1024 байта каждая.
 	//Размер загрузчика 10КБ (10240 байт = 0х2800)
@@ -629,8 +658,10 @@ uint32_t BL_HOST_BaseLoop(void){
 		if(ack == CMD_NACK) return CMD_NACK;
 	}
 
+	//---------------------
 	//Получим от загрузчика CRC приложения.
 	ack = BL_HOST_Cmd_NS_GetCheckSum(APP_PROGRAM_START_ADDR, appSize_Bytes);
+	if(ack == CMD_NACK) return CMD_NACK;
 	//Сравним CRC
 	if(appCrc != ack)
 	{
@@ -642,10 +673,19 @@ uint32_t BL_HOST_BaseLoop(void){
 		}
 	}
 
+	//---------------------
+	//Включим защиту от чтения
+	//ack = BL_HOST_Cmd_RP();
+	//if(ack == CMD_NACK) return CMD_NACK;
 
+	//---------------------
 	//Переход на приложение после записи его в память
-	ack = BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
-	if(ack == CMD_NACK) return CMD_NACK;
+	//ack = BL_HOST_Cmd_Go(APP_PROGRAM_START_ADDR);
+	//if(ack == CMD_NACK) return CMD_NACK;
+
+	//Переход на приложение произойдет после сброса МК
+	//по сторожевому таймеру (чере 3сек.)
+
 	while(1)
 	{
 		//Мигаем...
@@ -653,7 +693,7 @@ uint32_t BL_HOST_BaseLoop(void){
 		DELAY_milliS(3000);
 	}
 	//---------------------
-	return ack;
+	return CMD_ACK;
 }
 //*******************************************************************************************
 //*******************************************************************************************
