@@ -61,8 +61,8 @@ void STM32_Flash_Lock(void){
 //*****************************************
 void STM32_Flash_Unlock(void){
 
-	FLASH->KEYR = FLASH_KEY1;	//0x45670123;
-	FLASH->KEYR = FLASH_KEY2;	//0xCDEF89AB;
+	FLASH->KEYR = FLASH_KEY1;
+	FLASH->KEYR = FLASH_KEY2;
 }
 //*****************************************************************************
 // Function    : STM32_Flash_ErasePage()
@@ -73,9 +73,6 @@ void STM32_Flash_Unlock(void){
 //*****************************************
 void STM32_Flash_ErasePage(uint32_t pageAddress){
 
-//	while(FLASH->SR & FLASH_SR_BSY);                      //Ждем окончания работы с памятю.
-//	if(FLASH->SR & FLASH_SR_EOP) FLASH->SR = FLASH_SR_EOP;//Сбрасывается бит EOP записью в него единицы.
-
 	while(!_flash_Ready()); 	//Ожидаем готовности флеша к записи
 	_flash_CheckEOP();	    	//Сбрасывается бит EOP записью в него единицы.
 
@@ -83,8 +80,6 @@ void STM32_Flash_ErasePage(uint32_t pageAddress){
 	FLASH->AR  = pageAddress;   //адрес стираемой страницы.
 	FLASH->CR |= FLASH_CR_STRT; //Запускаем стирание
 
-//	while (!(FLASH->SR & FLASH_SR_EOP));
-//	FLASH->SR = FLASH_SR_EOP;
 	while(!_flash_CheckEOP());	//Ждем завершения стирания
 
 	FLASH->CR &= ~FLASH_CR_PER;	//Сбрасываем бит стирания одной страницы
@@ -101,9 +96,6 @@ void STM32_Flash_ErasePage(uint32_t pageAddress){
 //*****************************************
 void STM32_Flash_WriteWord(uint32_t address, uint32_t data){
 
-//	while(FLASH->SR & FLASH_SR_BSY){};                     //Ждем окончания работы с памятю.
-//	if(FLASH->SR & FLASH_SR_EOP) FLASH->SR = FLASH_SR_EOP; //Сбрасывается бит EOP записью в него единицы.
-
 	while(!_flash_Ready()); 	//Ожидаем готовности флеша к записи
 	_flash_CheckEOP();	    	//Сбрасывается бит EOP записью в него единицы.
 
@@ -111,15 +103,9 @@ void STM32_Flash_WriteWord(uint32_t address, uint32_t data){
 
 	*(__IO uint16_t*)address = (uint16_t)data;	//запишем МЛАДШИЕ 2 байта
 	while(!_flash_CheckEOP());					//Ждем завершения стирания
-//	while(!(FLASH->SR & FLASH_SR_EOP)){};     	//Ждем завершения записи
-//	FLASH->SR = FLASH_SR_EOP;
-
 
 	*(__IO uint16_t*)(address + 2) = (uint16_t)(data >> 16);//запишем СТАРШИЕ 2 байта
 	while(!_flash_CheckEOP());		//Ждем завершения стирания
-//	while(!(FLASH->SR & FLASH_SR_EOP)){};
-//	FLASH->SR = FLASH_SR_EOP;
-
 
 	FLASH->CR &= ~FLASH_CR_PG;	//Запрет записи во флэш.
 }
@@ -161,9 +147,6 @@ void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size){
 		     uint16_t* src = Src;
 	volatile uint16_t* dst = Dst;
 	//-----------------------
-//	while(FLASH->SR & FLASH_SR_BSY){};  				   //Ждем окончания работы с памятю.
-//	if(FLASH->SR & FLASH_SR_EOP) FLASH->SR = FLASH_SR_EOP; //Сбрасывается бит EOP записью в него единицы.
-
 	while(!_flash_Ready()); 	//Ожидаем готовности флеша к записи
 	_flash_CheckEOP();	    	//Сбрасывается бит EOP записью в него единицы.
 
@@ -173,7 +156,7 @@ void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size){
 	{
 		*dst = *src;			//пишем во флэш
 		while(!_flash_Ready());	//Ждем завершения записи
-		while((FLASH->SR & FLASH_SR_BSY) != 0); //Ждем завершения записи
+		//while((FLASH->SR & FLASH_SR_BSY) != 0); //Ждем завершения записи
 
 		//Проверка: если не совпадает то что записываем и то что записаловь, то выходим.
 		//if(*dst != *src) goto EndPrg;
@@ -255,7 +238,8 @@ uint32_t STM32_Flash_GetReadOutProtectionStatus(void){
 FlashStatus_t STM32_Flash_ReadOutProtection(uint32_t state){
 
 	/* Authorizes the small information block programming */
-	STM32_Flash_Unlock();			//
+	FLASH->OPTKEYR = FLASH_KEY1;
+	FLASH->OPTKEYR = FLASH_KEY2;
 	FLASH->CR |= FLASH_CR_OPTER;	//Option Byte Erase
 	FLASH->CR |= FLASH_CR_STRT;		//Start
 
@@ -268,8 +252,8 @@ FlashStatus_t STM32_Flash_ReadOutProtection(uint32_t state){
 	/* Enable the Option Bytes Programming operation */
 	FLASH->CR |= FLASH_CR_OPTPG;	//Option Byte Programming
 
-	if(state == FLASH_RDO_ENABLE) OB->RDP = 0x00;		//
-	else	  					  OB->RDP = RDP_KEY;	//
+	if(state == FLASH_RDO_ENABLE) OB->RDP = 0x00;				//
+	else	  					  OB->RDP = (uint16_t)0x00A5;	//
 
 	/* Wait for last operation to be completed */
 	while(!_flash_Ready()); 	//Ожидаем завершеия операции
@@ -298,8 +282,7 @@ uint32_t STM32_Flash_GetWriteProtectionOptionByte(void){
 //*****************************************
 FlashStatus_t STM32_Flash_EnableWriteProtection(uint32_t flashPages){
 
-
-
+	return FLASH_ERROR_PG;
 }
 //*******************************************************************************************
 //*******************************************************************************************

@@ -100,35 +100,11 @@ static uint32_t _getStartAddress(uint8_t *buf){
 					  (buf[3]<< 0));
 }
 //*******************************************************************************************
-// Function    : _cleareRxFrame()
-// Description : очистка первых байтов приемного буфера
-// Parameters  : None
-// RetVal      :
-//*****************************************
-//static void _cleareRxFrame(void){
-//
-//	bootBuf[0] = 0;
-//	bootBuf[1] = 0;
-//}
-//*******************************************************************************************
-// Function    : _getROPState()
-// Description :
-// Parameters  :
-// RetVal      :
-//*****************************************
-//static uint32_t _getROPState(void){
-//
-//	//заглушка
-//	//return 0;
-//
-//	return STM32_Flash_GetReadOutProtectionStatus();
-//}
-//*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 // Function    : _cmd_BOOT_Get()
-// Description : Передача версии загрузчика и поддерживаемые команды.
+// Description : Команда Get позволяет узнать версию bootloader и поддерживаемые команды.
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
 //*****************************************
@@ -140,7 +116,7 @@ uint8_t _cmd_Get(void){
 	//Сборка кадра данных
 	bootBuf[0]	= (11 - 1);			//N = Number of bytes to follow - 1, except current and ACKs
 	bootBuf[1]	= BOOT_I2C_VERSION;	//bootloader version
-	//list of supported commands
+	//Поддерживаемые команды
 	bootBuf[2] 	= CMD_BOOT_Get;
 	bootBuf[3] 	= CMD_BOOT_GetVersion;
 	bootBuf[4] 	= CMD_BOOT_GetID;
@@ -148,8 +124,8 @@ uint8_t _cmd_Get(void){
 	bootBuf[6] 	= CMD_BOOT_GO;
 	bootBuf[7] 	= CMD_BOOT_WM;
 	bootBuf[8] 	= CMD_BOOT_ERASE;
-	bootBuf[9] 	= CMD_BOOT_RP;
-	bootBuf[10]	= CMD_BOOT_RUP;
+	bootBuf[9] 	= 0xFF; //CMD_BOOT_RP;
+	bootBuf[10]	= 0xFF; //CMD_BOOT_RUP;
 	bootBuf[11] = CMD_BOOT_NS_GetCheckSum;
 
 	_sendBuf(12); //кол-во байт на передачу
@@ -161,7 +137,7 @@ uint8_t _cmd_Get(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_CMD_BOOT_GetVersion()
-// Description : выполнение команды CMD_BOOT_GetVersion - Получает версию загрузчика.
+// Description : Команда используется для получения версии загрузчика.
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
 //*****************************************
@@ -180,7 +156,7 @@ uint8_t _cmd_GetVersion(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_BOOT_GetID()
-// Description : выполнение команды CMD_BOOT_GetID - Получает идентификатор чипа
+// Description : Команда Get ID используется для получения идентификатора чипа.
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
 //*****************************************
@@ -206,8 +182,9 @@ uint8_t _cmd_GetID(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_BOOT_RM()
-// Description : выполнение команды CMD_BOOT_RM - Read Memory - Читает до 256 байт памяти,
-//				 начиная с адреса, указанного приложением.
+// Description : Команда Read Memory используется для чтения данных из любого допустимого
+//				 адреса (см. даташит на используемый STM32 и апноут AN2606 [2]) в RAM,
+//				 памяти Flash и информационного блока (system memory или область байта опций).
 // Parameters  : None
 // RetVal      :1 - команда выполнена; 0 - команда не выполнена.
 //*****************************************
@@ -256,7 +233,13 @@ uint8_t _cmd_RM(void){
 	_sendByte(CMD_ACK);		//Передача ACK
 	//-----------------------
 	//Send data frame: requested data to the host
+
+	//Чтение данных из флэш-памяти.
 	STM32_Flash_ReadBufU8((void*)startAddr, (void*)bootBuf, size);//копируем нужное кол-во байтов в буфер передачи
+
+	//TODO ... Чтение из любого допустимого адреса
+	//(см. даташит на используемый STM32 и апноут AN2606 [2])
+	//в RAM, памяти Flash и информационного блока (system memory или область байта опций).
 
 	_sendBuf(size);//кол-во байт на передачу
 	//-----------------------
@@ -264,7 +247,8 @@ uint8_t _cmd_RM(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_BOOT_Go()
-// Description : Переход к коду пользовательского приложения, расположенному во внутренней флэш-памяти.
+// Description : Команда Go используется для запуска загруженного или любого другого кода
+//				 путем безусловного перехода по указанному адресу.
 // Parameters  : None
 // RetVal      :1 - команда выполнена; 0 - команда не выполнена.
 //*****************************************
@@ -292,21 +276,22 @@ uint8_t _cmd_GO(void){
 	}
 	//Контрольная сумма OK. Соберам принятый адрес.
 	appAddr = _getStartAddress(bootBuf);
+	//-----------------------
+	//TODO ... запуск любого другого кода путем безусловного перехода по указанному адресу
 
-	//Application start address
+
+	//Запуск загруженного кода приложения.
 	if(appAddr == APP_PROGRAM_START_ADDR)
 	{
-		//по стартовому адресу приложения должно лежать значение вершины стека
-		//приложения, т.е. значение больше 0x2000 0000. Если это не так, значит
-		//приложение отсутсвует
+		//Проверка наличия приложения.
 		if(BOOT_AppAvailableCheck(appAddr))
 		{
 			_sendByte(CMD_ACK);	//Передача ACK
 			//---------------
-			BOOT_ErasePageAppState();				//Сбросим признак запуска основного приложения
-			BOOT_SetAppLaunch(APP_OK_AND_START);	//Установим признак запуска приложения после ресета
-			BOOT_CalcAndWriteAppCrc();				//Расчет и запись во флеш CRC приложения
-			BOOT_GoToApp(appAddr);			 		//Переход на функцию Reset_Handler приложения
+			//BOOT_ErasePageAppState();				//Сбросим признак запуска основного приложения
+			//BOOT_SetAppLaunch(APP_OK_AND_START);	//Установим признак запуска приложения после ресета
+			//BOOT_CalcAndWriteAppCrc();			//Расчет и запись во флеш CRC приложения
+			BOOT_GoToApp(appAddr);			 		//Переход в приложение
 		}
 	}
 	//-----------------------
@@ -315,7 +300,7 @@ uint8_t _cmd_GO(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_BOOT_WM(void)()
-// Description : Write Memory - Записывает в память до 256 байт, начиная с адреса, указанного приложением.
+// Description : Команда WM (Write Memory) используется для записи данных во Flash.
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
 //*****************************************
@@ -376,7 +361,7 @@ uint8_t _cmd_WM(void){
 		STM32_Flash_WriteBuf((void*)&bootBuf[1], (void*)startAddr, nBytesMinusOne+1);
 		STM32_Flash_Lock();
 	}
-	//ToDo .... Data written in Option bytes ?
+	//TODO ... Data written in Option bytes ?
 //	else if(startAddr >= 0x1FFFF800 && startAddr < 0x1FFFF80F)
 //	{
 //		//Если команда Write Memory производит запись в область байтов
@@ -401,7 +386,7 @@ uint8_t _cmd_WM(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_RP() --- Не отлажена!!!
-// Description : Readout Protect - Включает защиту от чтения.
+// Description : Команда Readout Protect используется для разрешения защиты от чтения памяти Flash (RDP).
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
 //*****************************************
@@ -417,9 +402,15 @@ uint8_t _cmd_RP(void){
 	_sendByte(CMD_ACK);		//Передача ACK
 	//-----------------------
 	//Активация защиты от чтения
+	STM32_Flash_Unlock();
 	STM32_Flash_ReadOutProtection(FLASH_RDO_ENABLE);
+	STM32_Flash_Lock();
+
 	_sendByte(CMD_ACK);		//Передача ACK
 	//-----------------------
+	//Деинициализация всей периферии
+	BOOT_DeinitAll();
+
 	//Генерация сброса микроконтроллера.
 	NVIC_SystemReset();
 	//-----------------------
@@ -427,7 +418,10 @@ uint8_t _cmd_RP(void){
 }
 //*******************************************************************************************
 // Function    : _cmd_RUP() --- Не отлажена!!!
-// Description : Readout Unprotect - Отключает защиту от чтения.
+// Description : Команда Readout Unprotect используется для запрета (отмены) защиты от чтения памяти Flash (RDP).
+//				 Когда загрузчик получит команду Readout Unprotect command, он передаст хосту байт ACK.
+//				 После передачи байта ACK загрузчик сотрет всю память Flash и деактивирует защиту от чтения
+//				 памяти Flash. Если операция стирания была успешной, загрузчик деактивирует RDP.
 //				 !!!эта команда запустит процесс стирание ВСЕЙ флэш памяти!!!
 // Parameters  : None
 // RetVal      : 1 - команда выполнена; 0 - команда выполняется.
@@ -438,12 +432,18 @@ uint8_t _cmd_RUP(void){
 	_sendByte(CMD_ACK);
 	//-----------------------
 	//Отключение защиты от чтения - это запустит процесс стирание ВСЕЙ флэш памяти!!!
+	STM32_Flash_Unlock();
 	STM32_Flash_ReadOutProtection(FLASH_RDO_DISABLE);
+	STM32_Flash_Lock();
+
 	_sendByte(CMD_ACK);		//Передача ACK
 	//-----------------------
 	//Очистка всей RAM-памяти
 
 	//-----------------------
+	//Деинициализация всей периферии
+	BOOT_DeinitAll();
+
 	//Генерация сброса микроконтроллера.
 	NVIC_SystemReset();
 	//-----------------------
@@ -520,7 +520,17 @@ uint8_t _cmd_ERASE(void){
 		pageAddr = pageAddr & 0x000000FF;							//Маска
 		pageAddr = pageAddr * 1024;									//смещение страницы относительно базового адреса
 		pageAddr = pageAddr + FLASH_BASE;							//адрес стираемой страницы
-		STM32_Flash_ErasePage(pageAddr);							//Стирание одной страницы flash
+
+		//Запрещено стирание страниц с 0 по 8,
+		//в них записан загрузчик.
+		if(pageAddr < APP_STATE_ADDR)
+		{
+			STM32_Flash_Lock();
+			_sendByte(CMD_NACK);//Передача NACK
+			return 0; 			//команда не выполнена.
+		}
+
+		STM32_Flash_ErasePage(pageAddr);	//Стирание одной страницы flash
 	}
 	STM32_Flash_Lock();
 	//Передача ACK
@@ -650,6 +660,34 @@ void BOOT_Init(void){
 	CRC_Init();
 }
 //**********************************************************
+// Function   : BOOT_DeinitAll()
+// Description: Деинициализация всей периферии
+// Parameters :
+// RetVal     :
+//*****************************************
+void BOOT_DeinitAll(void){
+
+	IWDG_Stop();	//Останавливаем сторожевой таймер
+
+	//Reset the RCC clock configuration to the default reset state(for debug purpose).
+	RCC->CR	  |= (uint32_t)0x00000001;	/* Set HSION bit */
+	RCC->CFGR &= (uint32_t)0xF0FF0000;	/* Reset SW, HPRE, PPRE1, PPRE2, ADCPRE and MCO bits */
+	RCC->CR   &= (uint32_t)0xFEF6FFFF;	/* Reset HSEON, CSSON and PLLON bits */
+	RCC->CR   &= (uint32_t)0xFFFBFFFF;	/* Reset HSEBYP bit */
+	RCC->CFGR &= (uint32_t)0xFF80FFFF;	/* Reset PLLSRC, PLLXTPRE, PLLMUL and USBPRE/OTGFSPRE bits */
+	RCC->CIR   = 0x009F0000;  			/* Disable all interrupts and clear pending bits  */
+
+	RCC->APB1RSTR = 0xFFFFFFFF;	//Сбрасываем всю периферию на APB1
+	RCC->APB1RSTR = 0x0;
+
+	RCC->APB2RSTR = 0xFFFFFFFF;	//Сбрасываем всю периферию на APB2
+	RCC->APB2RSTR = 0x0;
+
+	RCC->APB1ENR  = 0x0; 		//Выключаем всю периферию на APB1
+	RCC->APB2ENR  = 0x0; 		//Выключаем всю периферию на APB2
+	RCC->AHBENR   = 0x0; 		//Выключаем всю периферию на AHB
+}
+//**********************************************************
 // Function   : AppAvailableCheck()
 // Description: Проверка наличия приложения. По стартовому адресу
 //				приложения должно лежать значение вершины стека
@@ -672,7 +710,7 @@ uint32_t BOOT_AppAvailableCheck(uint32_t appAddr){
 uint32_t BOOT_GetAppSize(void){
 
 	//Проверка наличия приложения.
-	if(!BOOT_AppAvailableCheck(APP_PROGRAM_START_ADDR)) return 0;
+	if(!BOOT_AppAvailableCheck(APP_PROGRAM_START_ADDR)) return 0;	//Приложение нет.
 
 	//Подсчитаем сколько байт занимает приложение.
 	uint32_t appSize_Bytes = 0;
@@ -690,7 +728,7 @@ uint32_t BOOT_GetAppSize(void){
 }
 //**********************************************************
 // Function    : BOOT_GetStateI2C
-// Description : возвращает состояние шини I2C
+// Description : возвращает состояние шины I2C
 // Parameters  :
 // RetVal      : смотреть I2C_IT_State_t
 //*****************************************
@@ -714,25 +752,8 @@ void BOOT_GoToApp(uint32_t appAddr){
 	//Глобальное отключение прерываний.
 	__disable_irq();
 
-	IWDG_Stop();	//Останавливаем сторожевой таймер
-
-	//Reset the RCC clock configuration to the default reset state(for debug purpose).
-	RCC->CR	  |= (uint32_t)0x00000001;	/* Set HSION bit */
-	RCC->CFGR &= (uint32_t)0xF0FF0000;	/* Reset SW, HPRE, PPRE1, PPRE2, ADCPRE and MCO bits */
-	RCC->CR   &= (uint32_t)0xFEF6FFFF;	/* Reset HSEON, CSSON and PLLON bits */
-	RCC->CR   &= (uint32_t)0xFFFBFFFF;	/* Reset HSEBYP bit */
-	RCC->CFGR &= (uint32_t)0xFF80FFFF;	/* Reset PLLSRC, PLLXTPRE, PLLMUL and USBPRE/OTGFSPRE bits */
-	RCC->CIR   = 0x009F0000;  			/* Disable all interrupts and clear pending bits  */
-
-	RCC->APB1RSTR = 0xFFFFFFFF;	//Сбрасываем всю периферию на APB1
-	RCC->APB1RSTR = 0x0;
-
-	RCC->APB2RSTR = 0xFFFFFFFF;	//Сбрасываем всю периферию на APB2
-	RCC->APB2RSTR = 0x0;
-
-	RCC->APB1ENR  = 0x0; 		//Выключаем всю периферию на APB1
-	RCC->APB2ENR  = 0x0; 		//Выключаем всю периферию на APB2
-	RCC->AHBENR   = 0x0; 		//Выключаем всю периферию на AHB
+	//Деинициализация всей периферии
+	BOOT_DeinitAll();
 
 	//Переход на приложение
 	uint32_t addrResetHandler = *(__IO uint32_t*)(appAddr + 4);	//Адрес функции Reset_Handler приложения
@@ -825,7 +846,7 @@ void BOOT_ErasePageAppState(){
 // Parameters   None
 // RetVal       состояние команды: 1 - команда выполнена; 0 - неизвестная команда
 //*****************************************
-uint32_t BOOT_Loop(void){
+void BOOT_Loop(void){
 
 	//Ждем завершения приема кадра команды (Command frame) от хоста.
 	_waitEndRx();	//Блокирующая ф-ия
@@ -840,39 +861,39 @@ uint32_t BOOT_Loop(void){
 		_sendByte(CMD_NACK);	//передаем NACK
 		//bootBuf[0] = 0;		//Сброс приемного буфера
 		//bootBuf[1] = 0;
-		return 0;
+		return;
 	}
 	//Команда верна! Обработаем команду.
 	switch(bootBuf[0])	//Выполнение принятой команды
 	{
 		//-------------------
-	 	//Передача версии загрузчика и поддерживаемые команды.
+	 	//Команда Get позволяет узнать версию bootloader и поддерживаемые команды.
 		case(CMD_BOOT_Get):
 			_cmd_Get();
 		break;
 		//-------------------
-		//Передача версии загрузчика.
+		//Команда используется для получения версии загрузчика.
 		case(CMD_BOOT_GetVersion):
 			_cmd_GetVersion();
 		break;
 		//-------------------
-		//Передача идентификатора чипа
+		//Команда Get ID используется для получения идентификатора чипа
 		case(CMD_BOOT_GetID):
 			_cmd_GetID();
 		break;
 		//-------------------
-		//Read Memory - Читает до 256 байт памяти
+		//Команда Read Memory используется для чтения данных из любого допустимого адреса
 		case(CMD_BOOT_RM):
 			_cmd_RM();
 		break;
 		//-------------------
-		//Переход к пользовательскому приложению,
+		//Команда Go используется для запуска загруженного или любого другого
+		//кода путем безусловного перехода по указанному адресу
 		case(CMD_BOOT_GO):
 			_cmd_GO();
 		break;
 		//-------------------
-		//Write Memory - Записывает в память до 256 байт,
-		//начиная с указанного адреса.
+		//Команда WM (Write Memory) используется для записи данных во Flash.
 		case(CMD_BOOT_WM):
 			_cmd_WM();
 		break;
@@ -883,29 +904,31 @@ uint32_t BOOT_Loop(void){
 			_cmd_ERASE();
 		break;
 		//-------------------
-		//Readout Protect - Включает защиту от чтения.
-		case(CMD_BOOT_RP):
-			_cmd_RP();
-		break;
+		//Команда Readout Protect используется для разрешения защиты от чтения памяти Flash (RDP).
+		//case(CMD_BOOT_RP):
+		//	_cmd_RP();
+		//break;
 		//-------------------
-		//Readout Unprotect - Отключает защиту от чтения.
-		case(CMD_BOOT_RUP):
-			_cmd_RUP();
-		break;
+		//Команда Readout Unprotect используется для запрета (отмены) защиты от чтения памяти Flash (RDP).
+		//Когда загрузчик получит команду Readout Unprotect command, он передаст хосту байт ACK.
+		//После передачи байта ACK загрузчик сотрет всю память Flash и деактивирует защиту от чтения
+		//памяти Flash. Если операция стирания была успешной, загрузчик деактивирует RDP.
+		//case(CMD_BOOT_RUP):
+		//	_cmd_RUP();
+		//break;
 		//-------------------
+		//Вычисление CRC заданного диапазона флэш-памяти
 		case(CMD_BOOT_NS_GetCheckSum):
 			_cmd_NS_GetCheckSum();
 		break;
 		//----------------------------------------
 		//Передаем NACK на незнакомую команда
 		default:
-			_sendByte(CMD_NACK);	//передаем NACK
-			return 0;
+			_sendByte(CMD_NACK);
 		break;
 		//----------------------------------------
 	}
 	//----------------------------------------
-	return 1;
 }
 //*******************************************************************************************
 //*******************************************************************************************

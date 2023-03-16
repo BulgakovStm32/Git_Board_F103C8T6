@@ -1,5 +1,5 @@
-timers_ST.c:14:6:TIM3_InitForPWM	8	static
+timers_ST.c:14:6:TIM3_InitForPWM	0	static
 timers_ST.c:76:6:TIM1_Init	0	static
-timers_ST.c:115:6:TIM2_Init	4	static
+timers_ST.c:115:6:TIM2_Init	0	static
 timers_ST.c:155:6:TIMx_Enable	0	static
 timers_ST.c:160:6:TIMx_Disable	0	static

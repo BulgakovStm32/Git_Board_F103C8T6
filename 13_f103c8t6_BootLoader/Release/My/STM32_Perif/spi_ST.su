@@ -1,5 +1,5 @@
 spi_ST.c:13:6:_spi_GPIO_Init	0	static
-spi_ST.c:49:6:SPI_Init	4	static
+spi_ST.c:49:6:SPI_Init	8	static
 spi_ST.c:91:9:SPI_RxByte	0	static
 spi_ST.c:103:9:SPI_TxRxByte	0	static
-spi_ST.c:123:10:SPI_Rx3Byte	8	static
+spi_ST.c:123:10:SPI_Rx3Byte	16	static
