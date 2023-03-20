@@ -12,8 +12,8 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-static uint8_t rxBuf[7] = {0};
-static uint8_t status = 0;
+static uint8_t 		  rxBuf[7] = {0};
+static AHT10_Status_t status   = AHTXX_STATUS_RESET;
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -21,44 +21,43 @@ static uint8_t status = 0;
 //*******************************************************************************************
 static void _readMeasurement(void){
 
-	/* send measurement command */
-	rxBuf[0] = AHTXX_START_MEASUREMENT_REG;			//send measurement command, strat measurement
-	rxBuf[1] = AHTXX_START_MEASUREMENT_CTRL;		//send measurement control
-	rxBuf[2] = AHTXX_START_MEASUREMENT_CTRL_NOP;	//send measurement NOP control
-
-	if(I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR|I2C_MODE_WRITE) != I2C_OK)
+	//-------------------
+	//Прочитаем данные (6 байтов).
+	if(I2C_Master_ReadData(AHT10_I2C, AHT10_ADDR, rxBuf, 6) != I2C_OK)
 	{
-		status = AHTXX_ACK_ERROR;
+		status = AHTXX_STATUS_ERR_ACK;
 		return;
 	}
-	I2C_SendDataWithStop(AHT10_I2C, rxBuf, 3);
-
-	//TODO ... /* check busy bit */
-
-	//DELAY_milliS(AHTXX_MEASUREMENT_DELAY);
-
-	/* read data from sensor */
-	if(I2C_StartAndSendDeviceAddr(AHT10_I2C, AHT10_ADDR|I2C_MODE_READ) != I2C_OK)
+	//-------------------
+	//Проверим флаг BUSY
+	if(rxBuf[0] & AHTXX_STATUS_CTRL_BUSY)
 	{
-		status = AHTXX_ACK_ERROR;
+		//Модуль занят измерением...
+		status = AHTXX_STATUS_BUSY;
 		return;
 	}
-	I2C_ReadData(AHT10_I2C, rxBuf, 6);
-
-	status = AHTXX_NO_ERROR;
+	//-------------------
+	//Модуль закончил измерения и данные вылидны.
+	//Передадим команду на запуск измерения.
+	uint8_t txBuf[3];
+	txBuf[0] = AHTXX_START_MEASUREMENT_REG;			//send measurement command, strat measurement
+	txBuf[1] = AHTXX_START_MEASUREMENT_CTRL;		//send measurement control
+	txBuf[2] = AHTXX_START_MEASUREMENT_CTRL_NOP;	//send measurement NOP control
+	if(I2C_Master_SendData(AHT10_I2C, AHT10_ADDR, txBuf, 3) != I2C_OK)
+	{
+		status = AHTXX_STATUS_ERR_ACK;
+		return;
+	}
+	status = AHTXX_STATUS_OK;
+	//-------------------
 }
-//************************************************************
-//static uint8_t aht10_write(uint8_t addr, uint8_t *data, uint8_t size){
-//
-//	I2C_Master_Write(AHT10_I2C, AHT10_ADDR, addr, data, size);
-//    return 0;
-//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 void AHT10_Init(void){
 
+	status = AHTXX_STATUS_INIT;
 }
 //************************************************************
 void AHT10_SoftReset(void){
@@ -77,6 +76,44 @@ void AHT10_ReadData(void){
 
 	//Чтение данных
 	_readMeasurement();
+
+//	static uint32_t flag = 0;
+//	//-------------------
+//	if(!flag)
+//	{
+//		//Передача команды на запус измерения
+//		/* send measurement command */
+//		rxBuf[0] = AHTXX_START_MEASUREMENT_REG;			//send measurement command, strat measurement
+//		rxBuf[1] = AHTXX_START_MEASUREMENT_CTRL;		//send measurement control
+//		rxBuf[2] = AHTXX_START_MEASUREMENT_CTRL_NOP;	//send measurement NOP control
+//
+//		if(I2C_Master_SendData(AHT10_I2C, AHT10_ADDR, rxBuf, 3) != I2C_OK)
+//		{
+//			status = AHTXX_STATUS_ERR_ACK;
+//			return;
+//		}
+//		flag = 1;
+//		return;
+//	}
+//	//-------------------
+//	//TODO ... /* check busy bit */
+//
+//	//DELAY_milliS(AHTXX_MEASUREMENT_DELAY);
+//
+//	//-------------------
+//	/* read data from sensor */
+//	flag = 0;
+//	if(I2C_Master_ReadData(AHT10_I2C, AHT10_ADDR, rxBuf, 6) != I2C_OK)
+//	{
+//		status = AHTXX_STATUS_ERR_ACK;
+//		return;
+//	}
+//	status = AHTXX_STATUS_OK;
+}
+//**********************************************************
+AHT10_Status_t AHT10_GetStatus(void){
+
+	return status;
 }
 //**********************************************************
 int32_t AHT10_GetTemperature(void){

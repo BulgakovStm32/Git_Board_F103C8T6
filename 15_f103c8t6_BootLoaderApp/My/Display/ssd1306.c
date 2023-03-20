@@ -31,7 +31,6 @@ static void ssd1306_I2C_Init(void){
 static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
 
 	I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
-//	I2C_DMA_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
 }
 //***********************************************************************
 /**
@@ -42,9 +41,9 @@ static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
  * @param  data: data to be written
  * @retval None
  */
-static uint32_t ssd1306_I2C_WriteCMD(uint8_t cmd){
+static void ssd1306_I2C_WriteCMD(uint8_t cmd){
 
-	return I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, &cmd, 1);
+	I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, &cmd, 1);
 }
 //*******************************************************************************************
 //*******************************************************************************************

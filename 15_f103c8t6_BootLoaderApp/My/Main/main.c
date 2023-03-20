@@ -241,7 +241,7 @@ void Task_DHT22_ReadData(void){
 	//Ждем 18 мс
 	if(DHT22_State() == DHT22_STATE_WAITING_PRESENCE)
 	{
-		RTOS_SetTask(Task_DHT22_ReadData, 0, 18);
+		RTOS_SetTask(Task_DHT22_ReadData, 18, 0);
 	}
 	//Следующее измерение чере 2 сек.
 	else RTOS_SetTask(Task_DHT22_ReadData, 2000, 0);
@@ -254,6 +254,7 @@ void Task_AHT10_ReadData(void){
 //************************************************************
 void Task_AHT10_Display(void){
 
+	int32_t temp = 0;
 	//-------------------
 	Lcd_ClearVideoBuffer();
 	//Шапка
@@ -264,28 +265,39 @@ void Task_AHT10_Display(void){
 	//-------------------
 	Temperature_Display(TEMPERATURE_SENSE_GetSens(1), 1, 2);
 
-	//Температура
-	int32_t temp = AHT10_GetTemperature();
-	Lcd_SetCursor(1, 4);
-	Lcd_Print("AHT10_Temp =");
-	if(temp < 0)
-	{
-		temp = -temp;
-		Lcd_Chr('-');
-	}
-	else Lcd_Chr('+');
-	Lcd_BinToDec(temp/100, 2, LCD_CHAR_SIZE_NORM);
-	Lcd_Chr('.');
-	Lcd_BinToDec(temp%100, 2, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" C");
-
-	//Влажность
-	Lcd_SetCursor(1, 5);
-	Lcd_Print("AHT10_Hum  = ");
-	Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" %");
 	//-------------------
-	//Датчик DHT11
+	//Датчик AHT10
+	if(AHT10_GetStatus() != AHTXX_STATUS_OK)
+	{
+		//Проблемы с датчиком...
+		Lcd_SetCursor(1, 4);
+		Lcd_Print("AHT10 problem...");
+	}
+	else
+	{
+		//Температура
+		temp = AHT10_GetTemperature();
+		Lcd_SetCursor(1, 4);
+		Lcd_Print("AHT10_Temp =");
+		if(temp < 0)
+		{
+			temp = -temp;
+			Lcd_Chr('-');
+		}
+		else Lcd_Chr('+');
+		Lcd_BinToDec(temp/100, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Chr('.');
+		Lcd_BinToDec(temp%100, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" C");
+
+		//Влажность
+		Lcd_SetCursor(1, 5);
+		Lcd_Print("AHT10_Hum  = ");
+		Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" %");
+	}
+	//-------------------
+	//Датчик DHT22
 	if(DHT22_State() == DHT22_STATE_WAITING_MEAS)
 	{
 		//Ожидание завершения измерения
@@ -434,8 +446,10 @@ void Task_LedBlink(void){
 //*******************************************************************************************
 int main(void){
 
-	__disable_irq();				//Запрещаем прерывания
-	SCB->VTOR = FLASH_BASE + 0x2800;//переносим таблицу векторов прерываний на адреса, соответствующие основной программе
+	//***********************************************
+	//Это необходимо для работы с загрузчиком.
+	//__disable_irq();				//Запрещаем прерывания
+	//SCB->VTOR = FLASH_BASE + 0x2800;//Перенос таблицы векторов прерываний
 	//***********************************************
 	//Drivers.
 	STM32_Clock_Init();
@@ -456,6 +470,9 @@ int main(void){
 	//Инициализация DS18B20
 	TEMPERATURE_SENSE_Init();
 
+	//Инициализация AHT10
+	AHT10_Init();
+
 	//Инициализация DHT22
 	DHT22_Init();
 	//***********************************************
@@ -470,9 +487,9 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 0, 5);
+	RTOS_SetTask(Task_LcdPageSelection, 0, 15);
 	RTOS_SetTask(Task_TemperatureRead,  0, 1000);
-	RTOS_SetTask(Task_AHT10_ReadData,   0, 500);
+	RTOS_SetTask(Task_AHT10_ReadData,   0, 1000);
 	RTOS_SetTask(Task_DHT22_ReadData,   2000, 0);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
@@ -487,6 +504,8 @@ int main(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 //Прерывание каждую милисекунду.
 void SysTick_IT_Handler(void){
 
@@ -496,4 +515,18 @@ void SysTick_IT_Handler(void){
 	ENCODER_ScanLoop(&Encoder);
 }
 //*******************************************************************************************
-//******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
+
+
+
+
+
+
+
+
+
+
+

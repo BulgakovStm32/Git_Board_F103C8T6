@@ -62,6 +62,7 @@ static Dht22_State_t _singleWire_SendStartSignal(GPIO_TypeDef *port, uint32_t pi
 
 	_singleWire_usDelay(40);	//Пауза для окончения ответа от DHT11
 	//---------------------
+
 	if(presence == 2) return DHT22_STATE_PRESENCE_OK;
 					  return DHT22_STATE_PRESENCE_ERR;
 }
