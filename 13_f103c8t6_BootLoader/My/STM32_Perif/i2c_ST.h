@@ -146,6 +146,9 @@ typedef struct{
 //*******************************************************************************************
 void 	 I2C_IT_Init(I2C_IT_t *i2c);
 void 	 I2C_IT_DeInit(I2C_IT_t *i2cIt);
+void	 I2C_IT_InterruptDisable(I2C_IT_t *i2cIt);
+void 	 I2C_IT_InterruptEnable(I2C_IT_t *i2cIt);
+
 void 	 I2C_IT_SetTxSize(I2C_IT_t *i2cIt, uint32_t size);
 void 	 I2C_IT_SetpBuf(I2C_IT_t *i2cIt, uint8_t *pBuf);
 void 	 I2C_IT_SetDataSize(I2C_IT_t *i2cIt, uint32_t size);

@@ -18,46 +18,45 @@ static uint32_t STM32_RCC_Init(void){
 			HSEStatus = RCC->CR & RCC_CR_HSERDY;
 			StartUpCounter++;  
 	  }
-	while((HSEStatus == 0) && (StartUpCounter != 0xFFFF));
+	while((HSEStatus == 0) && (StartUpCounter != 0xFFFFFF));
 	//--------------------
-	if ((RCC->CR & RCC_CR_HSERDY) != 0) HSEStatus = (uint32_t)0x01;
-	else                                HSEStatus = (uint32_t)0x00;
+	if(RCC->CR & RCC_CR_HSERDY) HSEStatus = (uint32_t)0x01;
 	//--------------------
 	if(HSEStatus == (uint32_t)0x01)
-		{
-			// Enable Prefetch Buffer
-			FLASH->ACR |= FLASH_ACR_PRFTBE;
-			// Flash 2 wait state
-			FLASH->ACR &= (uint32_t)((uint32_t)~FLASH_ACR_LATENCY);
-			FLASH->ACR |= (uint32_t)FLASH_ACR_LATENCY_2;  
-			//--------------------
-			// Настройка тактирования шин AHB, APB1 и APB2.
-			RCC->CFGR |= (uint32_t)(RCC_CFGR_HPRE_DIV1  | // AHB prescaler. SYSCLK not divided
-									RCC_CFGR_PPRE2_DIV1 | // APB2 = AHB. APB2 Fmax = 72MHz.
-									RCC_CFGR_PPRE1_DIV2); // APB1 = (AHB / 2). APB1 Fmax = 36MHz.
-			//--------------------
-			// PLL configuration: = HSE * 9 = 72 MHz */
-			RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
-			RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_Msk | //HSE oscillator clock selected as PLL input clock
-														  //RCC_CFGR_PLLXTPRE_HSE_Div2 |  // HSE clock divided by 2
-														  RCC_CFGR_PLLMULL9);
-			// Enable PLL
-			RCC->CR |= RCC_CR_PLLON;
-			// Wait till PLL is ready
-			while((RCC->CR & RCC_CR_PLLRDY) == 0) {}
-			// Select PLL as system clock source
-			RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-			RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;    
-			// Wait till PLL is used as system clock source
-			while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x08){}
-			// Включаем защиту HSE от сбоев - CSS.
-			RCC->CR |= RCC_CR_CSSON;
-		}
+	{
+		// Enable Prefetch Buffer
+		FLASH->ACR |= FLASH_ACR_PRFTBE;
+		// Flash 2 wait state
+		FLASH->ACR &= (uint32_t)((uint32_t)~FLASH_ACR_LATENCY);
+		FLASH->ACR |= (uint32_t)FLASH_ACR_LATENCY_2;
+		//--------------------
+		// Настройка тактирования шин AHB, APB1 и APB2.
+		RCC->CFGR |= (uint32_t)(RCC_CFGR_HPRE_DIV1  | // AHB prescaler. SYSCLK not divided
+								RCC_CFGR_PPRE2_DIV1 | // APB2 = AHB. APB2 Fmax = 72MHz.
+								RCC_CFGR_PPRE1_DIV2); // APB1 = (AHB / 2). APB1 Fmax = 36MHz.
+		//--------------------
+		// PLL configuration: = HSE * 9 = 72 MHz */
+		RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
+		RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_Msk | 			//HSE oscillator clock selected as PLL input clock
+							    //RCC_CFGR_PLLXTPRE_HSE_Div2 |  // HSE clock divided by 2
+								RCC_CFGR_PLLMULL9);
+		// Enable PLL
+		RCC->CR |= RCC_CR_PLLON;
+		// Wait till PLL is ready
+		while((RCC->CR & RCC_CR_PLLRDY) == 0) {}
+		// Select PLL as system clock source
+		RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
+		RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;
+		// Wait till PLL is used as system clock source
+		while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x08){}
+		// Включаем защиту HSE от сбоев - CSS.
+		RCC->CR |= RCC_CR_CSSON;
+	}
 	else
-		{
-				/* If HSE fails to start-up, the application will have wrong clock 
-				 configuration. User can add here some code to deal with this error */
-		} 
+	{
+			/* If HSE fails to start-up, the application will have wrong clock
+			 configuration. User can add here some code to deal with this error */
+	}
 	return HSEStatus;
 }
 //*****************************************************************************

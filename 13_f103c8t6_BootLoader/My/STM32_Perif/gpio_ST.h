@@ -14,17 +14,17 @@
 #define PIN_LOW		0
 //**********************************************************
 // Макросы
-#define GPIO_PIN_High(gpio, pin) 	(gpio->BSRR = pin)
-#define GPIO_PIN_Low(gpio, pin)  	(gpio->BSRR = (pin<<15))
-#define GPIO_PIN_Toggel(gpio, pin)	(gpio->ODR ^= pin)
+#define GPIO_PIN_High(gpio, pin) 	(gpio->BSRR =  (1 << pin))
+#define GPIO_PIN_Low(gpio, pin) 	(gpio->BSRR = ((1 << pin) << 16))
+#define GPIO_PIN_Toggel(gpio, pin)	(gpio->ODR ^=  (1 << pin))
 
 //**********************************************************
 // LED_PC13 - PC13
-#define LED_PC13_GPIO 	  GPIOC
-#define LED_PC13_PIN	  13
-#define LED_PC13_On()     (LED_PC13_GPIO->BSRR = GPIO_BSRR_BR13)
-#define LED_PC13_Off()    (LED_PC13_GPIO->BSRR = GPIO_BSRR_BS13)
-#define LED_PC13_Toggel() (LED_PC13_GPIO->ODR ^= (1<<LED_PC13_PIN))
+//#define LED_PC13_GPIO 	  GPIOC
+//#define LED_PC13_PIN	  13
+//#define LED_PC13_On()     (LED_PC13_GPIO->BSRR = GPIO_BSRR_BR13)
+//#define LED_PC13_Off()    (LED_PC13_GPIO->BSRR = GPIO_BSRR_BS13)
+//#define LED_PC13_Toggel() (LED_PC13_GPIO->ODR ^= (1<<LED_PC13_PIN))
 //*******************************************************************************************
 //*******************************************************************************************
 void GPIO_InitForOutputPushPull(GPIO_TypeDef *port, uint32_t pin);
