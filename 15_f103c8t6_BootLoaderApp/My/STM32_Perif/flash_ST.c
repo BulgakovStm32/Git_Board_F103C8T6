@@ -45,7 +45,7 @@ void STM32_Flash_ErasePage(uint32_t pageAddress){
 	FLASH->CR &= ~FLASH_CR_PER;
 }
 //*****************************************************************************
-void STM32_Flash_WriteWord(uint32_t word, uint32_t address){
+void STM32_Flash_WriteWord(uint32_t address, uint32_t word){
 
 	while(FLASH->SR & FLASH_SR_BSY){};                     //Ждем окончания работы с памятю.
 	if(FLASH->SR & FLASH_SR_EOP) FLASH->SR = FLASH_SR_EOP; //Сбрасывается бит EOP записью в него единицы.

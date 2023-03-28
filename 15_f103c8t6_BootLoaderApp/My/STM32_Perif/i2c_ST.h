@@ -24,19 +24,19 @@
 //TPCLK1 = 27,7777 ns
 //CCR    = 1000nS/ (2 * TPCLK1)
 //TRISE  = (1000nS/TPCLK1)
-#define I2C_SM_CCR				180 //(10000U / (2 * TPCLK1))
+#define I2C_SM_CCR				180	//(10000U / (2 * TPCLK1))
 #define I2C_SM_TRISE			36  //(1000U  / TPCLK1)
 
 //Fm mode:
 //TPCLK1 = 27,7777 ns
 //CCR    = 2500nS/ (3 * TPCLK1)
 //TRISE  = (300nS/TPCLK1)
-#define I2C_FM_CCR				30 //(2500U / (3 * TPCLK1))
-#define I2C_FM_TRISE			12 //(300U  / TPCLK1)
+#define I2C_FM_CCR				30 	//(2500U / (3 * TPCLK1))
+#define I2C_FM_TRISE			12 	//(300U  / TPCLK1)
 //*********************************************
 //Таймаут ожидания сброса флага регистра SR1.
 //Меньше 70 не делать, т.к. пауза будет меньше чем время передачи байта адреса
-#define I2C_WAIT_TIMEOUT_SR1	1000
+#define I2C_WAIT_TIMEOUT_SR1	5000
 
 //Таймаут ожидания сброса флага регистра CR1.
 #define I2C_WAIT_TIMEOUT_CR1	10000
@@ -54,10 +54,9 @@
 //Состояние I2C при работе в блокирующем режиме (поллинг)
 typedef enum{
 	I2C_OK = 0,
-	I2C_TIMEOUT,	//вышел таймаут
+	I2C_TIMEOUT,	//Истек таймаут
 	I2C_ERR_START,	//Ошибка при фоормировании Старт-последовательности
 	I2C_ERR_NAC,	//Отсутствие Slave на шине
-
 
 	//I2C_BUSY,		  //Шина I2C занята (передача/прием данных)
 	//I2C_ERR_TX_BYTE,//Вышел таймаут передачи байта.

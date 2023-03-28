@@ -34,18 +34,18 @@ typedef enum{
 }EncoderButtonState_t;
 //**********************************
 typedef struct{
-	GPIO_TypeDef *GpioPort_A;
-	uint32_t	  GpioPin_A;
+	GPIO_TypeDef 	*GpioPort_A;
+	uint32_t	 	GpioPin_A;
 
-	GPIO_TypeDef *GpioPort_B;
-	uint32_t	  GpioPin_B;
+	GPIO_TypeDef 	*GpioPort_B;
+	uint32_t	  	GpioPin_B;
 
-	GPIO_TypeDef *GpioPort_BUTTON;
-	uint32_t	  GpioPin_BUTTON;
+	GPIO_TypeDef 	*GpioPort_BUTTON;
+	uint32_t	  	GpioPin_BUTTON;
 
-	uint32_t	  		 encoderNumber;
-	EncoderState_t	  	 encoderState;
-	EncoderButtonState_t buttonState;
+	uint32_t	  				encoderNumber;
+	__IO EncoderState_t	  	 	encoderState;
+	__IO EncoderButtonState_t	buttonState;
 }Encoder_t;
 //*******************************************************************************************
 //*******************************************************************************************

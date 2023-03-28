@@ -36,13 +36,27 @@ _Min_Stack_Size = 0x200; /*0x400;	/* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)   : ORIGIN = 0x20000000,                 LENGTH = 20K
-  FLASH  (rx)    : ORIGIN =(0x08000000 + 1024 * 0),    LENGTH = 64K-0K
+  RAM   (xrw)	: ORIGIN = 0x20000000,				LENGTH = 20K
+  FLASH (rx)	: ORIGIN =(0x08000000 + 1024 * 10),	LENGTH = 64K-10K
+  
+  META	(rx)	: ORIGIN = ORIGIN(FLASH) - 1024,	LENGTH = 1K 
 }
+
 
 /* Sections */
 SECTIONS
 {
+
+ 	/***************************************************/
+  	/***************************************************/
+  	.image_hdr :
+	{
+		KEEP (*(.image_hdr))
+	} >META
+	/***************************************************/
+	/***************************************************/
+	
+
   /* The startup code into "FLASH" Rom type memory */
   .isr_vector :
   {
@@ -119,7 +133,7 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
   } >FLASH
-
+  
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 

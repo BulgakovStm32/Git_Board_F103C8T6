@@ -39,21 +39,19 @@ static Dht22_State_t _singleWire_SendStartSignal(GPIO_TypeDef *port, uint32_t pi
 	//---------------------
 	//Формирование Start_Signal
 	port->ODR &= ~pin;			//низкий уровень
-	//_singleWire_usDelay(18100);	//задержка >18мс
 
+	//Блокирующая задержка > 18мс
+	//_singleWire_usDelay(18100);
 
 	//Неблокирующая задержка > 18мс
-	static uint32_t us = 0;
-	if(us == 0) us = DELAY_microSecCount();
-	//возвращаем состояние ожидания
-	if((DELAY_microSecCount() - us) < 18000) return DHT22_STATE_WAITING_PRESENCE;
-	us = 0;
-
+	static uint8_t flag = 0;
+	flag ^= 1;
+	if(flag == 1)return DHT22_STATE_WAITING_PRESENCE; //возвращаем состояние ожидания
 
 	port->ODR |= pin;	  		//отпускаем линию.
 	_singleWire_usDelay(30);	//задержка 20-40мк
 	//---------------------
-	//Теперь DHT11 потянет линию LOW на 80 мкс, а затем HIGH на 80 мкс.
+	//Теперь DHT22 потянет линию LOW на 80 мкс, а затем HIGH на 80 мкс.
 	_singleWire_usDelay(40);	//чтение состояния в середине LOW
 	if((port->IDR & pin) == 0) presence += 1; //фиксируем уровень
 
@@ -62,7 +60,6 @@ static Dht22_State_t _singleWire_SendStartSignal(GPIO_TypeDef *port, uint32_t pi
 
 	_singleWire_usDelay(40);	//Пауза для окончения ответа от DHT11
 	//---------------------
-
 	if(presence == 2) return DHT22_STATE_PRESENCE_OK;
 					  return DHT22_STATE_PRESENCE_ERR;
 }
@@ -114,23 +111,12 @@ void DHT22_Init(void){
 //**********************************************************
 void DHT22_ReadData(void){
 
-	//Проверим присутствие датчика на шине.
-//	uint32_t count = 0;
-//	while(_singleWire_SendStartSignal(dht22.port, dht22.pin) != DHT22_PRESENCE)
-//	{
-//		if(++count > 3) //Три попытки
-//		{
-//			//Нет ответа от DHT11
-//			dht22.state = DHT22_STATE_PRESENCE_ERR;
-//			return;
-//		}
-//	}
-
 	//Неблокирующая проверка присутствия датчика на шине
 	Dht22_State_t state = _singleWire_SendStartSignal(dht22.port, dht22.pin);
+
+	//Ожидание паузы 18 мс
 	if(state == DHT22_STATE_WAITING_PRESENCE)
 	{
-		//Ожиданеи паузы 18 мс
 		dht22.state = DHT22_STATE_WAITING_PRESENCE;
 		return;
 	}

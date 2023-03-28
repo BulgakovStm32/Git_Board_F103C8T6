@@ -96,7 +96,7 @@ static void _i2c_ModeInit(I2C_TypeDef *i2c, uint32_t mode){
 	i2c->CR1 &= ~I2C_CR1_PE;    //Откл. модуля I2C.
 	i2c->CR1 |=  I2C_CR1_SWRST; //Программный сброс модуля I2C
 	i2c->CR1 &= ~I2C_CR1_SWRST; //Это нужно для востановления работоспособноси после КЗ на линии.
-	i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
+	//i2c->CR1 |=  I2C_CR1_PE;    //Включение модуля I2C1.
 	i2c->CR1 &= ~I2C_CR1_SMBUS; //модуль работает в режиме I2C
 
 	//Bit 7 NOSTRETCH: Clock stretching disable (Slave mode)
@@ -147,36 +147,28 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //Формирование состояния СТАРТ и передача адреса ведомого устройства.
 I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 
-	volatile uint32_t cnt;
 	//---------------------
 	//Формирование Start condition.
 	i2c->CR1 |= I2C_CR1_START;
 	if(_i2c_WaitSetFlagSR1(i2c, I2C_SR1_SB))	//Ожидание формирования Start condition.
 	{
-		i2c->CR1 |= I2C_CR1_STOP;	//Формируем Stop
-		return I2C_ERR_START;		//Start condition не сформирована.
+		i2c->CR1 |= I2C_CR1_STOP;				//Формируем Stop
 
-//		i2c->CR1 &= ~I2C_CR1_START;
-//		i2c->CR1 |=  I2C_CR1_STOP;				//Формируем Stop
-//		_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP);	//Ждем аппаратного сброса STOP
-//
-//		//Принудительно сбрасываем STOP, т.к. set by hardware when a timeout error is detected.
-//		//STOP: Stop generation
-//		//The bit is set and cleared by software, cleared by hardware when a Stop condition is
-//		//detected, set by hardware when a timeout error is detected.
-//		i2c->CR1 &= ~I2C_CR1_STOP;
-//		return I2C_ERR_START;		//Start condition не сформирована.
+		//!!! ОТЛАДКА !!!
+		i2c->CR1 &= ~I2C_CR1_START;
+		//I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+
+		return I2C_ERR_START;					//Start condition не сформирована.
 	}
-	(void)i2c->SR1;					//Для сброса флага SB необходимо прочитать SR1
+	(void)i2c->SR1;	//Для сброса флага SB необходимо прочитать SR1
 	//---------------------
 	//Передаем адрес. ADDR(Address sent (master mode)/matched (slave mode)) — в режиме master
 	//устанавливается после передачи адреса, в режиме slave устанавливается при
 	//совпадении адреса. Для сброса нужно прочитать регистр SR1, а затем SR2.
-	cnt = I2C_WAIT_TIMEOUT_SR1;
-	i2c->DR = (uint8_t)deviceAddr;			//Передаем адрес.
+	volatile uint32_t cnt = 0;
+	i2c->DR = deviceAddr;					//Передаем адрес.
 	while((i2c->SR1 & I2C_SR1_ADDR) == 0)	//ждем передачу адреса и установку ADDR
 	{
-		cnt--;
 		//Если получили NAC то выходим
 		if(i2c->SR1 & I2C_SR1_AF)
 		{
@@ -187,17 +179,15 @@ I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 			return I2C_ERR_NAC;
 		}
 		//Истек таймаут
-		if(cnt == 0)
+		if(++cnt >= 10000)//I2C_WAIT_TIMEOUT_SR1)
 		{
-			i2c->CR1 |= I2C_CR1_STOP;				//Формируем Stop
-			_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP);	//Ждем аппаратного сброса STOP
-
-			//Принудительно сбрасываем STOP, т.к. set by hardware when a timeout error is detected.
-			//STOP: Stop generation
-			//The bit is set and cleared by software, cleared by hardware when a Stop condition is
-			//detected, set by hardware when a timeout error is detected.
-			i2c->CR1 &= ~I2C_CR1_STOP;
-
+			//i2c->CR1 |= I2C_CR1_STOP;	//Формируем Stop
+			//Ждем аппаратного сброса STOP
+			//if(_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP) == I2C_TIMEOUT)
+			//{
+			//	//Принудительно сбрасываем STOP, т.к. set by hardware when a timeout error is detected.
+			//	i2c->CR1 &= ~I2C_CR1_STOP;
+			//}
 			return I2C_TIMEOUT;
 		}
 	}
@@ -212,6 +202,13 @@ void I2C_Stop(I2C_TypeDef *i2c){
 
 	//_i2c_WaitSetFlagSR1(i2c, I2C_SR1_BTF);	//ждем окончания передачи байта из сдвигового регистра
 	i2c->CR1 |= I2C_CR1_STOP;		 		//Формируем Stop
+
+	//Ждем аппаратного сброса STOP
+	//if(_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP) == I2C_TIMEOUT)
+	//{
+	//	//Принудительно сбрасываем STOP, т.к. set by hardware when a timeout error is detected.
+	//	//i2c->CR1 &= ~I2C_CR1_STOP;
+	//}
 }
 //**********************************************************
 //Чсение данных длинной Len в буфер pBuf.
@@ -220,25 +217,25 @@ I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 	//receiving 1 byte
 	if(len == 1)
 	{
-		i2c->CR1 &= ~I2C_CR1_ACK;			//ACK = 0  - Фомирование NACK.
-		i2c->CR1 |= I2C_CR1_STOP;			//STOP = 1 - Формируем Stop.
+		i2c->CR1 &= ~I2C_CR1_ACK;				//ACK = 0  - Фомирование NACK.
+		i2c->CR1 |= I2C_CR1_STOP;				//STOP = 1 - Формируем Stop.
 		_i2c_WaitSetFlagSR1(i2c, I2C_SR1_RXNE);	//Wait until RXNE = 1
-		*(pBuf + 0) = i2c->DR;				//Read the data
-		_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP);//Wait until STOP is cleared by hardware
-		i2c->CR1 |= I2C_CR1_ACK;			//ACK = 1 (to be ready for another reception)
+		*(pBuf + 0) = i2c->DR;					//Read the data
+		_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP);	//Wait until STOP is cleared by hardware
+		i2c->CR1 |= I2C_CR1_ACK;				//ACK = 1 (to be ready for another reception)
 	}
 	//receiving 2 bytes
 	else if(len == 2)
 	{
-		i2c->CR1 |=  I2C_CR1_POS;			//POS = 1
-		i2c->CR1 &= ~I2C_CR1_ACK;			//ACK = 0 - Фомирование NACK.
+		i2c->CR1 |=  I2C_CR1_POS;				//POS = 1
+		i2c->CR1 &= ~I2C_CR1_ACK;				//ACK = 0 - Фомирование NACK.
 		_i2c_WaitSetFlagSR1(i2c, I2C_SR1_BTF);	//Wait for BTF = 1
-		i2c->CR1 |= I2C_CR1_STOP;			//STOP = 1 - Формируем Stop.
-		*(pBuf + 0) = i2c->DR;	 			//Read Data1.
-		*(pBuf + 1) = i2c->DR;	 			//Read Data2.
-		_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP);//Wait until STOP is cleared by hardware
-		i2c->CR1 &= ~I2C_CR1_POS;			//POS = 0
-		i2c->CR1 |= I2C_CR1_ACK; 			//and ACK = 1  (to be ready for another reception)
+		i2c->CR1 |= I2C_CR1_STOP;				//STOP = 1 - Формируем Stop.
+		*(pBuf + 0) = i2c->DR;	 				//Read Data1.
+		*(pBuf + 1) = i2c->DR;	 				//Read Data2.
+		_i2c_ClearFlagCR1(i2c, I2C_CR1_STOP);	//Wait until STOP is cleared by hardware
+		i2c->CR1 &= ~I2C_CR1_POS;				//POS = 0
+		i2c->CR1 |= I2C_CR1_ACK; 				//and ACK = 1  (to be ready for another reception)
 	}
 	//receiving more than 2 bytes
 	else
@@ -289,21 +286,95 @@ I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 //Передача одного байта.
 I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
 
-	i2c->DR = byte;
-	_i2c_WaitSetFlagSR1(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
+//	i2c->DR = byte;
+//	_i2c_WaitSetFlagSR1(i2c, I2C_SR1_TXE);//Ждем освобождения регистра DR
+//	return I2C_OK;
+
+	//---------------------
+	//Ждем освобождения регистра DR
+	if(_i2c_WaitSetFlagSR1(i2c, I2C_SR1_TXE) != I2C_OK)
+	{
+		//Если получили NAC то выходим
+		if(i2c->SR1 & I2C_SR1_AF)
+		{
+			i2c->SR1 &= ~I2C_SR1_AF;		//Сброс флага NAC.
+			i2c->CR1 |= I2C_CR1_STOP;		//Формируем Stop
+
+			if(i2c == I2C1) i2c1NacCount++;	//+1 к счетчику NACK
+			else			i2c2NacCount++;
+			return I2C_ERR_NAC;
+		}
+	}
+	//---------------------
+	//Передаем байт
+	i2c->DR = byte;//Write data to DR
 	return I2C_OK;
 }
 //**********************************************************
 //Передача данных длиной len из буфера pBuf с последующим формирование СТОП.
 I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 
-	for(uint32_t i = 0; i < len; i++)
+//	for(uint32_t i = 0; i < len; i++)
+//	{
+//		i2c->DR = *(pBuf + i);					//передаем байт
+//		_i2c_WaitSetFlagSR1(i2c, I2C_SR1_TXE);	//Ждем освобождения регистра DR
+//	}
+//	_i2c_WaitSetFlagSR1(i2c, I2C_SR1_BTF);		//ждем окончания передачи байта
+//	I2C_Stop(i2c);	 							//Формируем Stop
+//	return I2C_OK;
+
+
+
+	while(len > 0)
 	{
-		i2c->DR = *(pBuf + i);					//передаем байт
-		_i2c_WaitSetFlagSR1(i2c, I2C_SR1_TXE);	//Ждем освобождения регистра DR
+		//---------------------
+		//Ждем освобождения регистра DR
+		if(_i2c_WaitSetFlagSR1(i2c, I2C_SR1_TXE) != I2C_OK)
+		{
+			//Если получили NAC то выходим
+			if(i2c->SR1 & I2C_SR1_AF)
+			{
+				i2c->SR1 &= ~I2C_SR1_AF;		//Сброс флага NAC.
+				i2c->CR1 |= I2C_CR1_STOP;		//Формируем Stop
+
+				if(i2c == I2C1) i2c1NacCount++;	//+1 к счетчику NACK
+				else			i2c2NacCount++;
+				return I2C_ERR_NAC;
+			}
+		}
+		//---------------------
+		//Передаем байт
+		i2c->DR = *pBuf;//Write data to DR
+		pBuf++;			//Increment Buffer pointer
+		len--;			//Update counter
+
+		//
+		if((i2c->SR1 & I2C_SR1_BTF) && (len != 0))
+		{
+			//Передаем байт
+			i2c->DR = *pBuf;//Write data to DR
+			pBuf++;			//Increment Buffer pointer
+			len--;			//Update counter
+		}
+		//---------------------
+		//Wait until BTF flag is set
+		if(_i2c_WaitSetFlagSR1(i2c, I2C_SR1_BTF) != I2C_OK)
+		{
+			//Если получили NAC то выходим
+			if(i2c->SR1 & I2C_SR1_AF)
+			{
+				i2c->SR1 &= ~I2C_SR1_AF;		//Сброс флага NAC.
+				i2c->CR1 |= I2C_CR1_STOP;		//Формируем Stop
+
+				if(i2c == I2C1) i2c1NacCount++;	//+1 к счетчику NACK
+				else			i2c2NacCount++;
+				return I2C_ERR_NAC;
+			}
+		}
+		//---------------------
 	}
-	_i2c_WaitSetFlagSR1(i2c, I2C_SR1_BTF);		//ждем окончания передачи байта
-	I2C_Stop(i2c);	 							//Формируем Stop
+	//Формируем Stop
+	I2C_Stop(i2c);
 	return I2C_OK;
 }
 //**********************************************************
