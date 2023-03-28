@@ -340,7 +340,7 @@ void I2C_IT_Init(I2C_IT_t *i2cIt){
 	{
 		//Приоритет прерывания.
 		NVIC_SetPriority(I2C1_EV_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 1, 0));
-		NVIC_SetPriority(I2C1_ER_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 2, 0));
+		NVIC_SetPriority(I2C1_ER_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 1, 0));
 		//Разрешаем прерывание.
 		NVIC_EnableIRQ(I2C1_EV_IRQn);
 		NVIC_EnableIRQ(I2C1_ER_IRQn);
@@ -359,7 +359,7 @@ void I2C_IT_Init(I2C_IT_t *i2cIt){
 
 		//Приоритет прерывания.
 		NVIC_SetPriority(I2C2_EV_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 1, 0));
-		NVIC_SetPriority(I2C2_ER_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 2, 0));
+		NVIC_SetPriority(I2C2_ER_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 1, 0));
 		//Разрешаем прерывание.
 		NVIC_EnableIRQ(I2C2_EV_IRQn);
 		NVIC_EnableIRQ(I2C2_ER_IRQn);
@@ -673,6 +673,12 @@ static void I2C_IT_Error(I2C_IT_t *i2cIt){
 	{
 		i2c->SR1 &= ~I2C_SR1_BERR; //Сброс BERR.
 		//_i2c_ClearFlag(i2c, I2C_SR1_BERR);
+
+		if(i2c->SR1 & I2C_SR1_STOPF)
+		{
+			(void)i2c->SR1;		//EV4: STOPF = 1, сбрасывается чтением регистра SR1
+			i2c->CR1 |= 0x1;	//и записью в регистр CR1
+		}
 	}
 	//------------------------------
 	//Arbitration loss (Master)
