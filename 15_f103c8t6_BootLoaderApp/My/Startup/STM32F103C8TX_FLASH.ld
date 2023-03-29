@@ -36,10 +36,11 @@ _Min_Stack_Size = 0x200; /*0x400;	/* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM   (xrw)	: ORIGIN = 0x20000000,				LENGTH = 20K
-  FLASH (rx)	: ORIGIN =(0x08000000 + 1024 * 10),	LENGTH = 64K-10K
-  
-  META	(rx)	: ORIGIN = ORIGIN(FLASH) - 1024,	LENGTH = 1K 
+  SHARED_RAM	(xrw)	: ORIGIN = 0x20000000,					LENGTH = 256
+  RAM			(xrw)	: ORIGIN = 0x20000000 + 256,			LENGTH = 20K-LENGTH(SHARED_RAM)
+  	
+  FLASH 		(rx)	: ORIGIN = (0x08000000 + 1024 * 10),	LENGTH = 64K-10K
+  META			(rx)	: ORIGIN =  0x08002400,					LENGTH = 1K 
 }
 
 
@@ -133,6 +134,13 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
   } >FLASH
+  
+  
+	.shared_memory (NOLOAD) :
+  	{
+   		KEEP(*(.shared_memory))
+    } >SHARED_RAM
+  
   
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);

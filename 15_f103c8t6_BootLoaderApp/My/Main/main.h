@@ -12,6 +12,7 @@
 //Hardware.
 #include "stm32f103xb.h"
 #include "math.h"
+#include "stddef.h"
 //-------------------------
 //Drivers.
 #include "sys_ST.h"
@@ -52,6 +53,7 @@
 #include "DHT22.h"
 
 #include "metaData.h"
+#include "sharedMemory.h"
 //*******************************************************************************************
 //*******************************************************************************************
 #define FLAG_SET	1
