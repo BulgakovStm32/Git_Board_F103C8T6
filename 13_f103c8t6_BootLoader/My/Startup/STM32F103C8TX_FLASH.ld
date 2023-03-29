@@ -36,9 +36,25 @@ _Min_Stack_Size = 1024;  /*1024 байта  /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-	RAM    (xrw) : ORIGIN = 0x20000000,	LENGTH = 20K
-	FLASH  (rx)  : ORIGIN = 0x08000000,	LENGTH = 10K /* 64K */
+	/*  RAM    	(xrw) 	: ORIGIN = 0x20000000,	LENGTH = 20K   */
+	
+	SHARED_RAM	(xrw)	: ORIGIN = 0x20000000,			LENGTH = 256
+  	RAM   		(xrw)	: ORIGIN = 0x20000000 + 256,	LENGTH = 20K-LENGTH(SHARED_RAM)
+	
+	FLASH  		(rx)  	: ORIGIN = 0x08000000,			LENGTH = 10K 
 }
+
+/*********************************/
+/*********************************/
+/* Разделяема память ОЗУ */
+SECTIONS
+{
+    .shared_memory (NOLOAD) : {
+        KEEP(*(.shared_memory))
+    } >SHARED_RAM
+}
+/*********************************/
+/*********************************/
 
 /* Sections */
 SECTIONS
@@ -120,7 +136,7 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
   } >FLASH
-
+  
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 

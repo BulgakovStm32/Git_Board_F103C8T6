@@ -32,18 +32,22 @@ Discarded input sections
                 0x0000000000000000       0x24 BootLoader/bootLoader.o
  .text.BOOT_GetAppSize
                 0x0000000000000000       0x2c BootLoader/bootLoader.o
- .text.BOOT_SetAppLaunch
-                0x0000000000000000        0x2 BootLoader/bootLoader.o
- .text.BOOT_GetAppLaunch
-                0x0000000000000000        0x2 BootLoader/bootLoader.o
  .text.BOOT_CalcCrc
                 0x0000000000000000        0x4 BootLoader/bootLoader.o
- .text.BOOT_ReadAppCrc
-                0x0000000000000000        0x4 BootLoader/bootLoader.o
  .text.BOOT_CalcAndWriteAppCrc
-                0x0000000000000000       0x18 BootLoader/bootLoader.o
- .text.BOOT_ErasePageAppState
                 0x0000000000000000        0x2 BootLoader/bootLoader.o
+ .text          0x0000000000000000        0x0 BootLoader/sharedMemory.o
+ .data          0x0000000000000000        0x0 BootLoader/sharedMemory.o
+ .bss           0x0000000000000000        0x0 BootLoader/sharedMemory.o
+ .text.SharedMemory_SetFlag
+                0x0000000000000000       0x10 BootLoader/sharedMemory.o
+ .text.SharedMemory_IncrementBootCounter
+                0x0000000000000000       0x10 BootLoader/sharedMemory.o
+ .text.SharedMemory_ClearBootCounter
+                0x0000000000000000       0x14 BootLoader/sharedMemory.o
+ .text.SharedMemory_GetBootCounter
+                0x0000000000000000        0xc BootLoader/sharedMemory.o
+ .rodata.MAGIC  0x0000000000000000        0x4 BootLoader/sharedMemory.o
  .text          0x0000000000000000        0x0 My/Application/Crc.o
  .data          0x0000000000000000        0x0 My/Application/Crc.o
  .bss           0x0000000000000000        0x0 My/Application/Crc.o
@@ -92,8 +96,6 @@ Discarded input sections
  .text          0x0000000000000000        0x0 My/Main/main.o
  .data          0x0000000000000000        0x0 My/Main/main.o
  .bss           0x0000000000000000        0x0 My/Main/main.o
- .data.applLaunch
-                0x0000000000000000        0x4 My/Main/main.o
  .rodata.appMetadata
                 0x0000000000000000        0x4 My/Main/main.o
  .text          0x0000000000000000        0x0 My/STM32_Perif/adc_ST.o
@@ -188,13 +190,26 @@ Discarded input sections
                 0x0000000000000000       0x50 My/STM32_Perif/i2c_ST.o
  .text.I2C_IT_GetDataCount
                 0x0000000000000000        0x4 My/STM32_Perif/i2c_ST.o
- .text.I2C_IT_SlaveTxCpltCallback
-                0x0000000000000000        0x2 My/STM32_Perif/i2c_ST.o
  .text.I2C_IT_SlaveRxCpltCallback
                 0x0000000000000000        0x2 My/STM32_Perif/i2c_ST.o
  .text          0x0000000000000000        0x0 My/STM32_Perif/iwdg_ST.o
  .data          0x0000000000000000        0x0 My/STM32_Perif/iwdg_ST.o
  .bss           0x0000000000000000        0x0 My/STM32_Perif/iwdg_ST.o
+ .text.IWDG_Init
+                0x0000000000000000       0x3c My/STM32_Perif/iwdg_ST.o
+ .text.IWDG_Reset
+                0x0000000000000000       0x10 My/STM32_Perif/iwdg_ST.o
+ .text.IWDG_Stop
+                0x0000000000000000       0x10 My/STM32_Perif/iwdg_ST.o
+ .text.WWDG_Init
+                0x0000000000000000       0x38 My/STM32_Perif/iwdg_ST.o
+ .text.WWDG_Reset
+                0x0000000000000000       0x10 My/STM32_Perif/iwdg_ST.o
+ .text.WWDG_Stop
+                0x0000000000000000       0x10 My/STM32_Perif/iwdg_ST.o
+ .comment       0x0000000000000000       0x54 My/STM32_Perif/iwdg_ST.o
+ .ARM.attributes
+                0x0000000000000000       0x2d My/STM32_Perif/iwdg_ST.o
  .text          0x0000000000000000        0x0 My/STM32_Perif/rtc_ST.o
  .data          0x0000000000000000        0x0 My/STM32_Perif/rtc_ST.o
  .bss           0x0000000000000000        0x0 My/STM32_Perif/rtc_ST.o
@@ -367,7 +382,8 @@ Discarded input sections
 Memory Configuration
 
 Name             Origin             Length             Attributes
-RAM              0x0000000020000000 0x0000000000005000 xrw
+SHARED_RAM       0x0000000020000000 0x0000000000000100 xrw
+RAM              0x0000000020000100 0x0000000000004f00 xrw
 FLASH            0x0000000008000000 0x0000000000002800 xr
 *default*        0x0000000000000000 0xffffffffffffffff
 
@@ -377,6 +393,7 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
 LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
 LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/crt0.o
 LOAD BootLoader/bootLoader.o
+LOAD BootLoader/sharedMemory.o
 LOAD My/Application/Crc.o
 LOAD My/Application/Delay.o
 LOAD My/CMSIS/system_stm32f1xx.o
@@ -420,6 +437,11 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
                 0x0000000000000000                _Min_Heap_Size = 0x0
                 0x0000000000000400                _Min_Stack_Size = 0x400
 
+.shared_memory  0x0000000020000000        0xc
+ *(.shared_memory)
+ .shared_memory
+                0x0000000020000000        0xc BootLoader/sharedMemory.o
+
 .isr_vector     0x0000000008000000      0x130
                 0x0000000008000000                . = ALIGN (0x4)
  *(.isr_vector)
@@ -427,7 +449,7 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
                 0x0000000008000000                g_pfnVectors
                 0x0000000008000130                . = ALIGN (0x4)
 
-.text           0x0000000008000130      0xfa0
+.text           0x0000000008000130      0xf98
                 0x0000000008000130                . = ALIGN (0x4)
  *(.text)
  .text          0x0000000008000130       0x40 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
@@ -439,478 +461,478 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
  .text._sendByte
                 0x00000000080001b8       0x2c BootLoader/bootLoader.o
  .text._waitEndRx
-                0x00000000080001e4       0x4c BootLoader/bootLoader.o
+                0x00000000080001e4       0x48 BootLoader/bootLoader.o
  .text._getStartAddress.constprop.0
-                0x0000000008000230        0xc BootLoader/bootLoader.o
+                0x000000000800022c        0xc BootLoader/bootLoader.o
  .text._getChecksum.constprop.0
-                0x000000000800023c       0x20 BootLoader/bootLoader.o
+                0x0000000008000238       0x20 BootLoader/bootLoader.o
  .text._cmd_Get
-                0x000000000800025c       0x54 BootLoader/bootLoader.o
-                0x000000000800025c                _cmd_Get
+                0x0000000008000258       0x54 BootLoader/bootLoader.o
+                0x0000000008000258                _cmd_Get
  .text._cmd_GetVersion
-                0x00000000080002b0       0x18 BootLoader/bootLoader.o
-                0x00000000080002b0                _cmd_GetVersion
+                0x00000000080002ac       0x18 BootLoader/bootLoader.o
+                0x00000000080002ac                _cmd_GetVersion
  .text._cmd_GetID
-                0x00000000080002c8       0x2c BootLoader/bootLoader.o
-                0x00000000080002c8                _cmd_GetID
- .text._cmd_RM  0x00000000080002f4       0x68 BootLoader/bootLoader.o
-                0x00000000080002f4                _cmd_RM
- .text._cmd_WM  0x000000000800035c       0x70 BootLoader/bootLoader.o
-                0x000000000800035c                _cmd_WM
+                0x00000000080002c4       0x2c BootLoader/bootLoader.o
+                0x00000000080002c4                _cmd_GetID
+ .text._cmd_RM  0x00000000080002f0       0x68 BootLoader/bootLoader.o
+                0x00000000080002f0                _cmd_RM
+ .text._cmd_WM  0x0000000008000358       0x70 BootLoader/bootLoader.o
+                0x0000000008000358                _cmd_WM
  .text._cmd_ERASE
-                0x00000000080003cc       0x88 BootLoader/bootLoader.o
-                0x00000000080003cc                _cmd_ERASE
+                0x00000000080003c8       0x88 BootLoader/bootLoader.o
+                0x00000000080003c8                _cmd_ERASE
  .text._cmd_NS_GetCheckSum
-                0x0000000008000454       0xec BootLoader/bootLoader.o
-                0x0000000008000454                _cmd_NS_GetCheckSum
+                0x0000000008000450       0xec BootLoader/bootLoader.o
+                0x0000000008000450                _cmd_NS_GetCheckSum
  .text.I2C_IT_SlaveRxCpltCallback
-                0x0000000008000540       0x10 BootLoader/bootLoader.o
-                0x0000000008000540                I2C_IT_SlaveRxCpltCallback
- .text.I2C_IT_SlaveTxCpltCallback
-                0x0000000008000550        0x2 BootLoader/bootLoader.o
-                0x0000000008000550                I2C_IT_SlaveTxCpltCallback
- *fill*         0x0000000008000552        0x2 
+                0x000000000800053c       0x10 BootLoader/bootLoader.o
+                0x000000000800053c                I2C_IT_SlaveRxCpltCallback
  .text.BOOT_Init
-                0x0000000008000554       0x48 BootLoader/bootLoader.o
-                0x0000000008000554                BOOT_Init
+                0x000000000800054c       0x48 BootLoader/bootLoader.o
+                0x000000000800054c                BOOT_Init
  .text.BOOT_Indication
-                0x000000000800059c       0x28 BootLoader/bootLoader.o
-                0x000000000800059c                BOOT_Indication
+                0x0000000008000594       0x28 BootLoader/bootLoader.o
+                0x0000000008000594                BOOT_Indication
  .text.BOOT_DeinitAll
-                0x00000000080005c4       0x54 BootLoader/bootLoader.o
-                0x00000000080005c4                BOOT_DeinitAll
+                0x00000000080005bc       0x54 BootLoader/bootLoader.o
+                0x00000000080005bc                BOOT_DeinitAll
  .text.BOOT_AppAvailableCheck
-                0x0000000008000618       0x18 BootLoader/bootLoader.o
-                0x0000000008000618                BOOT_AppAvailableCheck
+                0x0000000008000610       0x18 BootLoader/bootLoader.o
+                0x0000000008000610                BOOT_AppAvailableCheck
  .text.BOOT_GetStateI2C
-                0x0000000008000630        0xc BootLoader/bootLoader.o
-                0x0000000008000630                BOOT_GetStateI2C
+                0x0000000008000628        0xc BootLoader/bootLoader.o
+                0x0000000008000628                BOOT_GetStateI2C
  .text.BOOT_GoToApp
-                0x000000000800063c       0x3c BootLoader/bootLoader.o
-                0x000000000800063c                BOOT_GoToApp
- .text._cmd_GO  0x0000000008000678       0x60 BootLoader/bootLoader.o
-                0x0000000008000678                _cmd_GO
+                0x0000000008000634       0x38 BootLoader/bootLoader.o
+                0x0000000008000634                BOOT_GoToApp
+ .text._cmd_GO  0x000000000800066c       0x60 BootLoader/bootLoader.o
+                0x000000000800066c                _cmd_GO
  .text.BOOT_Loop
-                0x00000000080006d8       0x84 BootLoader/bootLoader.o
-                0x00000000080006d8                BOOT_Loop
+                0x00000000080006cc       0x94 BootLoader/bootLoader.o
+                0x00000000080006cc                BOOT_Loop
+ .text.SharedMemory_Init
+                0x0000000008000760       0x30 BootLoader/sharedMemory.o
+                0x0000000008000760                SharedMemory_Init
+ .text.SharedMemory_GetFlags
+                0x0000000008000790        0xc BootLoader/sharedMemory.o
+                0x0000000008000790                SharedMemory_GetFlags
+ .text.SharedMemory_ClearFlag
+                0x000000000800079c       0x10 BootLoader/sharedMemory.o
+                0x000000000800079c                SharedMemory_ClearFlag
  .text.DELAY_Init
-                0x000000000800075c       0x24 My/Application/Delay.o
-                0x000000000800075c                DELAY_Init
+                0x00000000080007ac       0x24 My/Application/Delay.o
+                0x00000000080007ac                DELAY_Init
  .text.DELAY_microSecCount
-                0x0000000008000780       0x10 My/Application/Delay.o
-                0x0000000008000780                DELAY_microSecCount
+                0x00000000080007d0       0x10 My/Application/Delay.o
+                0x00000000080007d0                DELAY_microSecCount
  .text.DELAY_microS
-                0x0000000008000790       0x20 My/Application/Delay.o
-                0x0000000008000790                DELAY_microS
+                0x00000000080007e0       0x20 My/Application/Delay.o
+                0x00000000080007e0                DELAY_microS
  .text.DELAY_milliS
-                0x00000000080007b0        0xa My/Application/Delay.o
-                0x00000000080007b0                DELAY_milliS
- *fill*         0x00000000080007ba        0x2 
+                0x0000000008000800        0xa My/Application/Delay.o
+                0x0000000008000800                DELAY_milliS
+ *fill*         0x000000000800080a        0x2 
  .text.SystemInit
-                0x00000000080007bc       0x4c My/CMSIS/system_stm32f1xx.o
-                0x00000000080007bc                SystemInit
+                0x000000000800080c       0x4c My/CMSIS/system_stm32f1xx.o
+                0x000000000800080c                SystemInit
  .text.startup.main
-                0x0000000008000808       0x64 My/Main/main.o
-                0x0000000008000808                main
+                0x0000000008000858       0x6c My/Main/main.o
+                0x0000000008000858                main
  .text.CRC_Init
-                0x000000000800086c       0x10 My/STM32_Perif/crc_ST.o
-                0x000000000800086c                CRC_Init
+                0x00000000080008c4       0x10 My/STM32_Perif/crc_ST.o
+                0x00000000080008c4                CRC_Init
  .text._flash_Ready
-                0x000000000800087c       0x10 My/STM32_Perif/flash_ST.o
+                0x00000000080008d4       0x10 My/STM32_Perif/flash_ST.o
  .text._flash_CheckEOP
-                0x000000000800088c       0x1c My/STM32_Perif/flash_ST.o
+                0x00000000080008e4       0x1c My/STM32_Perif/flash_ST.o
  .text.STM32_Flash_Lock
-                0x00000000080008a8       0x10 My/STM32_Perif/flash_ST.o
-                0x00000000080008a8                STM32_Flash_Lock
+                0x0000000008000900       0x10 My/STM32_Perif/flash_ST.o
+                0x0000000008000900                STM32_Flash_Lock
  .text.STM32_Flash_Unlock
-                0x00000000080008b8       0x18 My/STM32_Perif/flash_ST.o
-                0x00000000080008b8                STM32_Flash_Unlock
+                0x0000000008000910       0x18 My/STM32_Perif/flash_ST.o
+                0x0000000008000910                STM32_Flash_Unlock
  .text.STM32_Flash_ErasePage
-                0x00000000080008d0       0x3c My/STM32_Perif/flash_ST.o
-                0x00000000080008d0                STM32_Flash_ErasePage
+                0x0000000008000928       0x3c My/STM32_Perif/flash_ST.o
+                0x0000000008000928                STM32_Flash_ErasePage
  .text.STM32_Flash_WriteBuf
-                0x000000000800090c       0x44 My/STM32_Perif/flash_ST.o
-                0x000000000800090c                STM32_Flash_WriteBuf
+                0x0000000008000964       0x44 My/STM32_Perif/flash_ST.o
+                0x0000000008000964                STM32_Flash_WriteBuf
  .text.STM32_Flash_ReadWord
-                0x0000000008000950        0x4 My/STM32_Perif/flash_ST.o
-                0x0000000008000950                STM32_Flash_ReadWord
+                0x00000000080009a8        0x4 My/STM32_Perif/flash_ST.o
+                0x00000000080009a8                STM32_Flash_ReadWord
  .text.STM32_Flash_ReadBufU8
-                0x0000000008000954       0x12 My/STM32_Perif/flash_ST.o
-                0x0000000008000954                STM32_Flash_ReadBufU8
- *fill*         0x0000000008000966        0x2 
+                0x00000000080009ac       0x12 My/STM32_Perif/flash_ST.o
+                0x00000000080009ac                STM32_Flash_ReadBufU8
+ *fill*         0x00000000080009be        0x2 
  .text.STM32_Flash_GetReadOutProtectionStatus
-                0x0000000008000968       0x10 My/STM32_Perif/flash_ST.o
-                0x0000000008000968                STM32_Flash_GetReadOutProtectionStatus
+                0x00000000080009c0       0x10 My/STM32_Perif/flash_ST.o
+                0x00000000080009c0                STM32_Flash_GetReadOutProtectionStatus
  .text._gpio_PortXClockEnable
-                0x0000000008000978       0x48 My/STM32_Perif/gpio_ST.o
+                0x00000000080009d0       0x48 My/STM32_Perif/gpio_ST.o
  .text.GPIO_InitForOutputPushPull
-                0x00000000080009c0       0x4c My/STM32_Perif/gpio_ST.o
-                0x00000000080009c0                GPIO_InitForOutputPushPull
+                0x0000000008000a18       0x4c My/STM32_Perif/gpio_ST.o
+                0x0000000008000a18                GPIO_InitForOutputPushPull
  .text.GPIO_Init
-                0x0000000008000a0c       0x1c My/STM32_Perif/gpio_ST.o
-                0x0000000008000a0c                GPIO_Init
+                0x0000000008000a64       0x1c My/STM32_Perif/gpio_ST.o
+                0x0000000008000a64                GPIO_Init
  .text._i2c_GPIO_Init
-                0x0000000008000a28       0x5c My/STM32_Perif/i2c_ST.o
+                0x0000000008000a80       0x5c My/STM32_Perif/i2c_ST.o
  .text._i2c_ClockEnable
-                0x0000000008000a84       0x1c My/STM32_Perif/i2c_ST.o
+                0x0000000008000adc       0x1c My/STM32_Perif/i2c_ST.o
  .text._i2c_SetSpeed
-                0x0000000008000aa0       0x48 My/STM32_Perif/i2c_ST.o
+                0x0000000008000af8       0x48 My/STM32_Perif/i2c_ST.o
  .text.NVIC_EncodePriority.constprop.0
-                0x0000000008000ae8       0x2e My/STM32_Perif/i2c_ST.o
+                0x0000000008000b40       0x2e My/STM32_Perif/i2c_ST.o
  .text.I2C_Master_Init
-                0x0000000008000b16       0x50 My/STM32_Perif/i2c_ST.o
-                0x0000000008000b16                I2C_Master_Init
+                0x0000000008000b6e       0x50 My/STM32_Perif/i2c_ST.o
+                0x0000000008000b6e                I2C_Master_Init
  .text.I2C_Slave_Init
-                0x0000000008000b66       0x5c My/STM32_Perif/i2c_ST.o
-                0x0000000008000b66                I2C_Slave_Init
+                0x0000000008000bbe       0x5c My/STM32_Perif/i2c_ST.o
+                0x0000000008000bbe                I2C_Slave_Init
  .text.I2C_IT_InterruptDisable
-                0x0000000008000bc2        0xc My/STM32_Perif/i2c_ST.o
-                0x0000000008000bc2                I2C_IT_InterruptDisable
+                0x0000000008000c1a        0xc My/STM32_Perif/i2c_ST.o
+                0x0000000008000c1a                I2C_IT_InterruptDisable
  .text.I2C_IT_InterruptEnable
-                0x0000000008000bce        0xc My/STM32_Perif/i2c_ST.o
-                0x0000000008000bce                I2C_IT_InterruptEnable
- *fill*         0x0000000008000bda        0x2 
+                0x0000000008000c26        0xc My/STM32_Perif/i2c_ST.o
+                0x0000000008000c26                I2C_IT_InterruptEnable
+ *fill*         0x0000000008000c32        0x2 
  .text.I2C_IT_Init
-                0x0000000008000bdc       0xc8 My/STM32_Perif/i2c_ST.o
-                0x0000000008000bdc                I2C_IT_Init
+                0x0000000008000c34       0xc8 My/STM32_Perif/i2c_ST.o
+                0x0000000008000c34                I2C_IT_Init
  .text.I2C_IT_SetpBuf
-                0x0000000008000ca4        0x4 My/STM32_Perif/i2c_ST.o
-                0x0000000008000ca4                I2C_IT_SetpBuf
+                0x0000000008000cfc        0x4 My/STM32_Perif/i2c_ST.o
+                0x0000000008000cfc                I2C_IT_SetpBuf
  .text.I2C_IT_SetDataSize
-                0x0000000008000ca8        0x8 My/STM32_Perif/i2c_ST.o
-                0x0000000008000ca8                I2C_IT_SetDataSize
+                0x0000000008000d00        0x8 My/STM32_Perif/i2c_ST.o
+                0x0000000008000d00                I2C_IT_SetDataSize
+ .text.I2C_IT_SlaveTxCpltCallback
+                0x0000000008000d08        0x2 My/STM32_Perif/i2c_ST.o
+                0x0000000008000d08                I2C_IT_SlaveTxCpltCallback
  .text.I2C_IT_Error
-                0x0000000008000cb0       0x8c My/STM32_Perif/i2c_ST.o
+                0x0000000008000d0a       0x8c My/STM32_Perif/i2c_ST.o
+ *fill*         0x0000000008000d96        0x2 
  .text.I2C_IT_EV_Handler
-                0x0000000008000d3c      0x100 My/STM32_Perif/i2c_ST.o
-                0x0000000008000d3c                I2C_IT_EV_Handler
+                0x0000000008000d98      0x100 My/STM32_Perif/i2c_ST.o
+                0x0000000008000d98                I2C_IT_EV_Handler
  .text.I2C_IT_ER_Handler
-                0x0000000008000e3c       0x1c My/STM32_Perif/i2c_ST.o
-                0x0000000008000e3c                I2C_IT_ER_Handler
- .text.IWDG_Init
-                0x0000000008000e58       0x3c My/STM32_Perif/iwdg_ST.o
-                0x0000000008000e58                IWDG_Init
- .text.IWDG_Reset
-                0x0000000008000e94       0x10 My/STM32_Perif/iwdg_ST.o
-                0x0000000008000e94                IWDG_Reset
- .text.IWDG_Stop
-                0x0000000008000ea4       0x18 My/STM32_Perif/iwdg_ST.o
-                0x0000000008000ea4                IWDG_Stop
+                0x0000000008000e98       0x1c My/STM32_Perif/i2c_ST.o
+                0x0000000008000e98                I2C_IT_ER_Handler
  .text.SysTick_Handler
-                0x0000000008000ebc        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ebc                SysTick_Handler
+                0x0000000008000eb4        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eb4                SysTick_Handler
  .text.WWDG_IRQHandler
-                0x0000000008000ebe        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ebe                WWDG_IRQHandler
+                0x0000000008000eb6        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eb6                WWDG_IRQHandler
  .text.PVD_IRQHandler
-                0x0000000008000ec0        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ec0                PVD_IRQHandler
+                0x0000000008000eb8        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eb8                PVD_IRQHandler
  .text.TAMPER_IRQHandler
-                0x0000000008000ec2        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ec2                TAMPER_IRQHandler
+                0x0000000008000eba        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eba                TAMPER_IRQHandler
  .text.RTC_IRQHandler
-                0x0000000008000ec4        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ec4                RTC_IRQHandler
+                0x0000000008000ebc        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ebc                RTC_IRQHandler
  .text.FLASH_IRQHandler
-                0x0000000008000ec6        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ec6                FLASH_IRQHandler
+                0x0000000008000ebe        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ebe                FLASH_IRQHandler
  .text.RCC_IRQHandler
-                0x0000000008000ec8        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ec8                RCC_IRQHandler
+                0x0000000008000ec0        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ec0                RCC_IRQHandler
  .text.EXTI0_IRQHandler
-                0x0000000008000eca        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000eca                EXTI0_IRQHandler
+                0x0000000008000ec2        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ec2                EXTI0_IRQHandler
  .text.EXTI1_IRQHandler
-                0x0000000008000ecc        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ecc                EXTI1_IRQHandler
+                0x0000000008000ec4        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ec4                EXTI1_IRQHandler
  .text.EXTI2_IRQHandler
-                0x0000000008000ece        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ece                EXTI2_IRQHandler
+                0x0000000008000ec6        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ec6                EXTI2_IRQHandler
  .text.EXTI3_IRQHandler
-                0x0000000008000ed0        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ed0                EXTI3_IRQHandler
+                0x0000000008000ec8        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ec8                EXTI3_IRQHandler
  .text.EXTI4_IRQHandler
-                0x0000000008000ed2        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ed2                EXTI4_IRQHandler
+                0x0000000008000eca        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eca                EXTI4_IRQHandler
  .text.DMA1_Channel1_IRQHandler
-                0x0000000008000ed4        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ed4                DMA1_Channel1_IRQHandler
+                0x0000000008000ecc        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ecc                DMA1_Channel1_IRQHandler
  .text.DMA1_Channel2_IRQHandler
-                0x0000000008000ed6        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ed6                DMA1_Channel2_IRQHandler
+                0x0000000008000ece        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ece                DMA1_Channel2_IRQHandler
  .text.DMA1_Channel3_IRQHandler
-                0x0000000008000ed8        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ed8                DMA1_Channel3_IRQHandler
+                0x0000000008000ed0        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ed0                DMA1_Channel3_IRQHandler
  .text.DMA1_Channel4_IRQHandler
-                0x0000000008000eda        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000eda                DMA1_Channel4_IRQHandler
+                0x0000000008000ed2        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ed2                DMA1_Channel4_IRQHandler
  .text.DMA1_Channel5_IRQHandler
-                0x0000000008000edc        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000edc                DMA1_Channel5_IRQHandler
+                0x0000000008000ed4        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ed4                DMA1_Channel5_IRQHandler
  .text.DMA1_Channel6_IRQHandler
-                0x0000000008000ede        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ede                DMA1_Channel6_IRQHandler
+                0x0000000008000ed6        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ed6                DMA1_Channel6_IRQHandler
  .text.DMA1_Channel7_IRQHandler
-                0x0000000008000ee0        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ee0                DMA1_Channel7_IRQHandler
+                0x0000000008000ed8        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ed8                DMA1_Channel7_IRQHandler
  .text.ADC1_2_IRQHandler
-                0x0000000008000ee2        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ee2                ADC1_2_IRQHandler
+                0x0000000008000eda        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eda                ADC1_2_IRQHandler
  .text.USB_HP_CAN_TX_IRQHandler
-                0x0000000008000ee4        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ee4                USB_HP_CAN_TX_IRQHandler
+                0x0000000008000edc        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000edc                USB_HP_CAN_TX_IRQHandler
  .text.USB_LP_CAN_RX0_IRQHandler
-                0x0000000008000ee6        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ee6                USB_LP_CAN_RX0_IRQHandler
+                0x0000000008000ede        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ede                USB_LP_CAN_RX0_IRQHandler
  .text.CAN_RX1_IRQHandler
-                0x0000000008000ee8        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ee8                CAN_RX1_IRQHandler
+                0x0000000008000ee0        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ee0                CAN_RX1_IRQHandler
  .text.CAN_SCE_IRQHandler
-                0x0000000008000eea        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000eea                CAN_SCE_IRQHandler
+                0x0000000008000ee2        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ee2                CAN_SCE_IRQHandler
  .text.EXTI9_5_IRQHandler
-                0x0000000008000eec        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000eec                EXTI9_5_IRQHandler
+                0x0000000008000ee4        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ee4                EXTI9_5_IRQHandler
  .text.TIM1_BRK_IRQHandler
-                0x0000000008000eee        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000eee                TIM1_BRK_IRQHandler
+                0x0000000008000ee6        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ee6                TIM1_BRK_IRQHandler
  .text.TIM1_UP_IRQHandler
-                0x0000000008000ef0        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ef0                TIM1_UP_IRQHandler
+                0x0000000008000ee8        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ee8                TIM1_UP_IRQHandler
  .text.TIM1_TRG_COM_IRQHandler
-                0x0000000008000ef2        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ef2                TIM1_TRG_COM_IRQHandler
+                0x0000000008000eea        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eea                TIM1_TRG_COM_IRQHandler
  .text.TIM1_CC_IRQHandler
-                0x0000000008000ef4        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ef4                TIM1_CC_IRQHandler
+                0x0000000008000eec        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eec                TIM1_CC_IRQHandler
  .text.TIM2_IRQHandler
-                0x0000000008000ef6        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ef6                TIM2_IRQHandler
+                0x0000000008000eee        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000eee                TIM2_IRQHandler
  .text.TIM3_IRQHandler
-                0x0000000008000ef8        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000ef8                TIM3_IRQHandler
+                0x0000000008000ef0        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ef0                TIM3_IRQHandler
  .text.TIM4_IRQHandler
-                0x0000000008000efa        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000efa                TIM4_IRQHandler
+                0x0000000008000ef2        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ef2                TIM4_IRQHandler
  .text.I2C1_EV_IRQHandler
-                0x0000000008000efc        0xc My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000efc                I2C1_EV_IRQHandler
+                0x0000000008000ef4        0xc My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000ef4                I2C1_EV_IRQHandler
  .text.I2C1_ER_IRQHandler
-                0x0000000008000f08        0xc My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f08                I2C1_ER_IRQHandler
+                0x0000000008000f00        0xc My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f00                I2C1_ER_IRQHandler
  .text.I2C2_EV_IRQHandler
-                0x0000000008000f14        0xc My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f14                I2C2_EV_IRQHandler
+                0x0000000008000f0c        0xc My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f0c                I2C2_EV_IRQHandler
  .text.I2C2_ER_IRQHandler
-                0x0000000008000f20        0xc My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f20                I2C2_ER_IRQHandler
+                0x0000000008000f18        0xc My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f18                I2C2_ER_IRQHandler
  .text.SPI1_IRQHandler
-                0x0000000008000f2c        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f2c                SPI1_IRQHandler
+                0x0000000008000f24        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f24                SPI1_IRQHandler
  .text.SPI2_IRQHandler
-                0x0000000008000f2e        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f2e                SPI2_IRQHandler
+                0x0000000008000f26        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f26                SPI2_IRQHandler
  .text.USART1_IRQHandler
-                0x0000000008000f30        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f30                USART1_IRQHandler
+                0x0000000008000f28        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f28                USART1_IRQHandler
  .text.USART2_IRQHandler
-                0x0000000008000f32        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f32                USART2_IRQHandler
+                0x0000000008000f2a        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f2a                USART2_IRQHandler
  .text.USART3_IRQHandler
-                0x0000000008000f34        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f34                USART3_IRQHandler
+                0x0000000008000f2c        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f2c                USART3_IRQHandler
  .text.EXTI15_10_IRQHandler
-                0x0000000008000f36        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f36                EXTI15_10_IRQHandler
+                0x0000000008000f2e        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f2e                EXTI15_10_IRQHandler
  .text.RTCAlarm_IRQHandler
-                0x0000000008000f38        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f38                RTCAlarm_IRQHandler
+                0x0000000008000f30        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f30                RTCAlarm_IRQHandler
  .text.TIM8_BRK_IRQHandler
-                0x0000000008000f3a        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f3a                TIM8_BRK_IRQHandler
+                0x0000000008000f32        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f32                TIM8_BRK_IRQHandler
  .text.TIM8_UP_IRQHandler
-                0x0000000008000f3c        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f3c                TIM8_UP_IRQHandler
+                0x0000000008000f34        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f34                TIM8_UP_IRQHandler
  .text.TIM8_TRG_COM_IRQHandler
-                0x0000000008000f3e        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f3e                TIM8_TRG_COM_IRQHandler
+                0x0000000008000f36        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f36                TIM8_TRG_COM_IRQHandler
  .text.TIM8_CC_IRQHandler
-                0x0000000008000f40        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f40                TIM8_CC_IRQHandler
+                0x0000000008000f38        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f38                TIM8_CC_IRQHandler
  .text.ADC3_IRQHandler
-                0x0000000008000f42        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f42                ADC3_IRQHandler
+                0x0000000008000f3a        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f3a                ADC3_IRQHandler
  .text.FSMC_IRQHandler
-                0x0000000008000f44        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f44                FSMC_IRQHandler
+                0x0000000008000f3c        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f3c                FSMC_IRQHandler
  .text.SDIO_IRQHandler
-                0x0000000008000f46        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f46                SDIO_IRQHandler
+                0x0000000008000f3e        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f3e                SDIO_IRQHandler
  .text.TIM5_IRQHandler
-                0x0000000008000f48        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f48                TIM5_IRQHandler
+                0x0000000008000f40        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f40                TIM5_IRQHandler
  .text.SPI3_IRQHandler
-                0x0000000008000f4a        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f4a                SPI3_IRQHandler
+                0x0000000008000f42        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f42                SPI3_IRQHandler
  .text.UART4_IRQHandler
-                0x0000000008000f4c        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f4c                UART4_IRQHandler
+                0x0000000008000f44        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f44                UART4_IRQHandler
  .text.UART5_IRQHandler
-                0x0000000008000f4e        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f4e                UART5_IRQHandler
+                0x0000000008000f46        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f46                UART5_IRQHandler
  .text.TIM6_IRQHandler
-                0x0000000008000f50        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f50                TIM6_IRQHandler
+                0x0000000008000f48        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f48                TIM6_IRQHandler
  .text.TIM7_IRQHandler
-                0x0000000008000f52        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f52                TIM7_IRQHandler
+                0x0000000008000f4a        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f4a                TIM7_IRQHandler
  .text.DMA2_Channel1_IRQHandler
-                0x0000000008000f54        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f54                DMA2_Channel1_IRQHandler
+                0x0000000008000f4c        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f4c                DMA2_Channel1_IRQHandler
  .text.DMA2_Channel2_IRQHandler
-                0x0000000008000f56        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f56                DMA2_Channel2_IRQHandler
+                0x0000000008000f4e        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f4e                DMA2_Channel2_IRQHandler
  .text.DMA2_Channel3_IRQHandler
-                0x0000000008000f58        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f58                DMA2_Channel3_IRQHandler
+                0x0000000008000f50        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f50                DMA2_Channel3_IRQHandler
  .text.DMA2_Channel4_5_IRQHandler
-                0x0000000008000f5a        0x2 My/STM32_Perif/stm32f10x_it.o
-                0x0000000008000f5a                DMA2_Channel4_5_IRQHandler
+                0x0000000008000f52        0x2 My/STM32_Perif/stm32f10x_it.o
+                0x0000000008000f52                DMA2_Channel4_5_IRQHandler
  .text.STM32_Clock_Init
-                0x0000000008000f5c       0xc0 My/STM32_Perif/sys_ST.o
-                0x0000000008000f5c                STM32_Clock_Init
+                0x0000000008000f54       0xc0 My/STM32_Perif/sys_ST.o
+                0x0000000008000f54                STM32_Clock_Init
  .text.Reset_Handler
-                0x000000000800101c       0x50 My/Startup/startup_stm32f103c8tx.o
-                0x000000000800101c                Reset_Handler
+                0x0000000008001014       0x50 My/Startup/startup_stm32f103c8tx.o
+                0x0000000008001014                Reset_Handler
  .text.Default_Handler
-                0x000000000800106c        0x2 My/Startup/startup_stm32f103c8tx.o
-                0x000000000800106c                DebugMon_Handler
-                0x000000000800106c                HardFault_Handler
-                0x000000000800106c                PendSV_Handler
-                0x000000000800106c                NMI_Handler
-                0x000000000800106c                UsageFault_Handler
-                0x000000000800106c                Default_Handler
-                0x000000000800106c                MemManage_Handler
-                0x000000000800106c                SVC_Handler
-                0x000000000800106c                BusFault_Handler
- *fill*         0x000000000800106e        0x2 
+                0x0000000008001064        0x2 My/Startup/startup_stm32f103c8tx.o
+                0x0000000008001064                DebugMon_Handler
+                0x0000000008001064                HardFault_Handler
+                0x0000000008001064                PendSV_Handler
+                0x0000000008001064                NMI_Handler
+                0x0000000008001064                UsageFault_Handler
+                0x0000000008001064                Default_Handler
+                0x0000000008001064                MemManage_Handler
+                0x0000000008001064                SVC_Handler
+                0x0000000008001064                BusFault_Handler
+ *fill*         0x0000000008001066        0x2 
  .text.__libc_init_array
-                0x0000000008001070       0x48 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp\libc_nano.a(lib_a-init.o)
-                0x0000000008001070                __libc_init_array
+                0x0000000008001068       0x48 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp\libc_nano.a(lib_a-init.o)
+                0x0000000008001068                __libc_init_array
  *(.glue_7)
- .glue_7        0x00000000080010b8        0x0 linker stubs
+ .glue_7        0x00000000080010b0        0x0 linker stubs
  *(.glue_7t)
- .glue_7t       0x00000000080010b8        0x0 linker stubs
+ .glue_7t       0x00000000080010b0        0x0 linker stubs
  *(.eh_frame)
- .eh_frame      0x00000000080010b8        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+ .eh_frame      0x00000000080010b0        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
  *(.init)
- .init          0x00000000080010b8        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crti.o
-                0x00000000080010b8                _init
- .init          0x00000000080010bc        0x8 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtn.o
+ .init          0x00000000080010b0        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crti.o
+                0x00000000080010b0                _init
+ .init          0x00000000080010b4        0x8 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtn.o
  *(.fini)
- .fini          0x00000000080010c4        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crti.o
-                0x00000000080010c4                _fini
- .fini          0x00000000080010c8        0x8 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtn.o
-                0x00000000080010d0                . = ALIGN (0x4)
-                0x00000000080010d0                _etext = .
+ .fini          0x00000000080010bc        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crti.o
+                0x00000000080010bc                _fini
+ .fini          0x00000000080010c0        0x8 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtn.o
+                0x00000000080010c8                . = ALIGN (0x4)
+                0x00000000080010c8                _etext = .
 
-.vfp11_veneer   0x00000000080010d0        0x0
- .vfp11_veneer  0x00000000080010d0        0x0 linker stubs
+.vfp11_veneer   0x00000000080010c8        0x0
+ .vfp11_veneer  0x00000000080010c8        0x0 linker stubs
 
-.v4_bx          0x00000000080010d0        0x0
- .v4_bx         0x00000000080010d0        0x0 linker stubs
+.v4_bx          0x00000000080010c8        0x0
+ .v4_bx         0x00000000080010c8        0x0 linker stubs
 
-.iplt           0x00000000080010d0        0x0
- .iplt          0x00000000080010d0        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+.iplt           0x00000000080010c8        0x0
+ .iplt          0x00000000080010c8        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
 
-.rel.dyn        0x00000000080010d0        0x0
- .rel.iplt      0x00000000080010d0        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+.rel.dyn        0x00000000080010c8        0x0
+ .rel.iplt      0x00000000080010c8        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
 
-.rodata         0x00000000080010d0        0x0
-                0x00000000080010d0                . = ALIGN (0x4)
+.rodata         0x00000000080010c8        0x0
+                0x00000000080010c8                . = ALIGN (0x4)
  *(.rodata)
  *(.rodata*)
-                0x00000000080010d0                . = ALIGN (0x4)
+                0x00000000080010c8                . = ALIGN (0x4)
 
-.ARM.extab      0x00000000080010d0        0x0
-                0x00000000080010d0                . = ALIGN (0x4)
+.ARM.extab      0x00000000080010c8        0x0
+                0x00000000080010c8                . = ALIGN (0x4)
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x00000000080010d0                . = ALIGN (0x4)
+                0x00000000080010c8                . = ALIGN (0x4)
 
-.ARM            0x00000000080010d0        0x0
-                0x00000000080010d0                . = ALIGN (0x4)
-                0x00000000080010d0                __exidx_start = .
+.ARM            0x00000000080010c8        0x0
+                0x00000000080010c8                . = ALIGN (0x4)
+                0x00000000080010c8                __exidx_start = .
  *(.ARM.exidx*)
-                0x00000000080010d0                __exidx_end = .
-                0x00000000080010d0                . = ALIGN (0x4)
+                0x00000000080010c8                __exidx_end = .
+                0x00000000080010c8                . = ALIGN (0x4)
 
-.preinit_array  0x00000000080010d0        0x0
-                0x00000000080010d0                . = ALIGN (0x4)
-                0x00000000080010d0                PROVIDE (__preinit_array_start = .)
+.preinit_array  0x00000000080010c8        0x0
+                0x00000000080010c8                . = ALIGN (0x4)
+                0x00000000080010c8                PROVIDE (__preinit_array_start = .)
  *(.preinit_array*)
-                0x00000000080010d0                PROVIDE (__preinit_array_end = .)
-                0x00000000080010d0                . = ALIGN (0x4)
+                0x00000000080010c8                PROVIDE (__preinit_array_end = .)
+                0x00000000080010c8                . = ALIGN (0x4)
 
-.init_array     0x00000000080010d0        0x4
-                0x00000000080010d0                . = ALIGN (0x4)
-                0x00000000080010d0                PROVIDE (__init_array_start = .)
+.init_array     0x00000000080010c8        0x4
+                0x00000000080010c8                . = ALIGN (0x4)
+                0x00000000080010c8                PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  *(.init_array*)
- .init_array    0x00000000080010d0        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
-                0x00000000080010d4                PROVIDE (__init_array_end = .)
-                0x00000000080010d4                . = ALIGN (0x4)
+ .init_array    0x00000000080010c8        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+                0x00000000080010cc                PROVIDE (__init_array_end = .)
+                0x00000000080010cc                . = ALIGN (0x4)
 
-.fini_array     0x00000000080010d4        0x4
-                0x00000000080010d4                . = ALIGN (0x4)
+.fini_array     0x00000000080010cc        0x4
+                0x00000000080010cc                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array*)
- .fini_array    0x00000000080010d4        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+ .fini_array    0x00000000080010cc        0x4 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
                 [!provide]                        PROVIDE (__fini_array_end = .)
-                0x00000000080010d8                . = ALIGN (0x4)
-                0x00000000080010d8                _sidata = LOADADDR (.data)
+                0x00000000080010d0                . = ALIGN (0x4)
+                0x00000000080010d0                _sidata = LOADADDR (.data)
 
-.data           0x0000000020000000        0x0 load address 0x00000000080010d8
-                0x0000000020000000                . = ALIGN (0x4)
-                0x0000000020000000                _sdata = .
+.data           0x0000000020000100        0x0 load address 0x00000000080010d0
+                0x0000000020000100                . = ALIGN (0x4)
+                0x0000000020000100                _sdata = .
  *(.data)
  *(.data*)
  *(.RamFunc)
  *(.RamFunc*)
-                0x0000000020000000                . = ALIGN (0x4)
-                0x0000000020000000                _edata = .
+                0x0000000020000100                . = ALIGN (0x4)
+                0x0000000020000100                _edata = .
 
-.igot.plt       0x0000000020000000        0x0 load address 0x00000000080010d8
- .igot.plt      0x0000000020000000        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
-                0x0000000020000000                . = ALIGN (0x4)
+.igot.plt       0x0000000020000100        0x0 load address 0x00000000080010d0
+ .igot.plt      0x0000000020000100        0x0 c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+                0x0000000020000100                . = ALIGN (0x4)
 
-.bss            0x0000000020000000      0x454 load address 0x00000000080010d8
-                0x0000000020000000                _sbss = .
-                0x0000000020000000                __bss_start__ = _sbss
+.bss            0x0000000020000100      0x454 load address 0x00000000080010d0
+                0x0000000020000100                _sbss = .
+                0x0000000020000100                __bss_start__ = _sbss
  *(.bss)
- .bss           0x0000000020000000       0x1c c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+ .bss           0x0000000020000100       0x1c c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
  *(.bss*)
- .bss.I2c       0x000000002000001c       0x20 BootLoader/bootLoader.o
- .bss.bootBuf   0x000000002000003c      0x410 BootLoader/bootLoader.o
+ .bss.I2c       0x000000002000011c       0x20 BootLoader/bootLoader.o
+ .bss.bootBuf   0x000000002000013c      0x410 BootLoader/bootLoader.o
  .bss.i2c1_IT_Define
-                0x000000002000044c        0x4 My/STM32_Perif/i2c_ST.o
+                0x000000002000054c        0x4 My/STM32_Perif/i2c_ST.o
  .bss.i2c2_IT_Define
-                0x0000000020000450        0x4 My/STM32_Perif/i2c_ST.o
+                0x0000000020000550        0x4 My/STM32_Perif/i2c_ST.o
  *(COMMON)
-                0x0000000020000454                . = ALIGN (0x4)
-                0x0000000020000454                _ebss = .
-                0x0000000020000454                __bss_end__ = _ebss
+                0x0000000020000554                . = ALIGN (0x4)
+                0x0000000020000554                _ebss = .
+                0x0000000020000554                __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x0000000020000454      0x404 load address 0x00000000080010d8
-                0x0000000020000458                . = ALIGN (0x8)
- *fill*         0x0000000020000454        0x4 
+                0x0000000020000554      0x404 load address 0x00000000080010d0
+                0x0000000020000558                . = ALIGN (0x8)
+ *fill*         0x0000000020000554        0x4 
                 [!provide]                        PROVIDE (end = .)
                 [!provide]                        PROVIDE (_end = .)
-                0x0000000020000458                . = (. + _Min_Heap_Size)
-                0x0000000020000858                . = (. + _Min_Stack_Size)
- *fill*         0x0000000020000458      0x400 
-                0x0000000020000858                . = ALIGN (0x8)
+                0x0000000020000558                . = (. + _Min_Heap_Size)
+                0x0000000020000958                . = (. + _Min_Stack_Size)
+ *fill*         0x0000000020000558      0x400 
+                0x0000000020000958                . = ALIGN (0x8)
 
 /DISCARD/
  libc.a(*)
@@ -927,21 +949,21 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
  .ARM.attributes
                 0x000000000000004a       0x2d BootLoader/bootLoader.o
  .ARM.attributes
-                0x0000000000000077       0x2d My/Application/Delay.o
+                0x0000000000000077       0x2d BootLoader/sharedMemory.o
  .ARM.attributes
-                0x00000000000000a4       0x2d My/CMSIS/system_stm32f1xx.o
+                0x00000000000000a4       0x2d My/Application/Delay.o
  .ARM.attributes
-                0x00000000000000d1       0x2d My/Main/main.o
+                0x00000000000000d1       0x2d My/CMSIS/system_stm32f1xx.o
  .ARM.attributes
-                0x00000000000000fe       0x2d My/STM32_Perif/crc_ST.o
+                0x00000000000000fe       0x2d My/Main/main.o
  .ARM.attributes
-                0x000000000000012b       0x2d My/STM32_Perif/flash_ST.o
+                0x000000000000012b       0x2d My/STM32_Perif/crc_ST.o
  .ARM.attributes
-                0x0000000000000158       0x2d My/STM32_Perif/gpio_ST.o
+                0x0000000000000158       0x2d My/STM32_Perif/flash_ST.o
  .ARM.attributes
-                0x0000000000000185       0x2d My/STM32_Perif/i2c_ST.o
+                0x0000000000000185       0x2d My/STM32_Perif/gpio_ST.o
  .ARM.attributes
-                0x00000000000001b2       0x2d My/STM32_Perif/iwdg_ST.o
+                0x00000000000001b2       0x2d My/STM32_Perif/i2c_ST.o
  .ARM.attributes
                 0x00000000000001df       0x2d My/STM32_Perif/stm32f10x_it.o
  .ARM.attributes
@@ -961,6 +983,7 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
 .comment        0x0000000000000000       0x53
  .comment       0x0000000000000000       0x53 BootLoader/bootLoader.o
                                          0x54 (size before relaxing)
+ .comment       0x0000000000000053       0x54 BootLoader/sharedMemory.o
  .comment       0x0000000000000053       0x54 My/Application/Delay.o
  .comment       0x0000000000000053       0x54 My/CMSIS/system_stm32f1xx.o
  .comment       0x0000000000000053       0x54 My/Main/main.o
@@ -968,7 +991,6 @@ LOAD c:/st/stm32cubeide_1.5.0/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.exte
  .comment       0x0000000000000053       0x54 My/STM32_Perif/flash_ST.o
  .comment       0x0000000000000053       0x54 My/STM32_Perif/gpio_ST.o
  .comment       0x0000000000000053       0x54 My/STM32_Perif/i2c_ST.o
- .comment       0x0000000000000053       0x54 My/STM32_Perif/iwdg_ST.o
  .comment       0x0000000000000053       0x54 My/STM32_Perif/stm32f10x_it.o
  .comment       0x0000000000000053       0x54 My/STM32_Perif/sys_ST.o
 

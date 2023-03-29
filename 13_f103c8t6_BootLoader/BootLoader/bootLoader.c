@@ -32,7 +32,8 @@ static void _waitEndRx(void){
 	while(I2c.state != I2C_IT_STATE_STOP)	//Ждем завершения чтения данных
 	{
 		//Сброс сторожевого таймера
-		IWDG_Reset();
+		//IWDG_Reset();
+		//WWDG_Reset();
 		//Мигаем...
 		if((DELAY_microSecCount() - micros) >= 500000)
 		{
@@ -375,8 +376,8 @@ uint8_t _cmd_WM(void){
 	// - Flash memory registers - 0x4002 2000 - 0x4002 2023 (36 bytes)
 	// - Peripheral				- 0x4000 0000 - 0x4FFF FFFF
 
-	//Main memory
-	if(startAddr >= APP_PROGRAM_START_ADDR)
+	//Пишем фо FLASH - Main memory.
+	if(startAddr >= APP_METADATA_ADDR)
 	{
 		//Записываем полученные данные во флэш-память
 		STM32_Flash_Unlock();
@@ -695,9 +696,9 @@ void I2C_IT_SlaveRxCpltCallback(I2C_IT_t *i2cIt){
 	BOOT_INDICATOR_Toggle();	//мигнем светодиодом
 }
 //************************************************************
-void I2C_IT_SlaveTxCpltCallback(I2C_IT_t *i2cIt){
-
-}
+//void I2C_IT_SlaveTxCpltCallback(I2C_IT_t *i2cIt){
+//
+//}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -836,7 +837,8 @@ void BOOT_GoToApp(volatile uint32_t appAddr){
 	if(!BOOT_AppAvailableCheck(appAddr)) return;
 
 	//Останавливаем сторожевой таймер
-	IWDG_Stop();
+	//IWDG_Stop();
+	//WWDG_Stop();
 
 	//Деинициализация всей периферии
 	BOOT_DeinitAll();
@@ -861,22 +863,22 @@ void BOOT_GoToApp(volatile uint32_t appAddr){
 //				 APP_CRC_ERR 			0xAAAA001F	//ошибка CRC
 // RetVal        None
 //*****************************************
-void BOOT_SetAppLaunch(uint32_t launch){
-
-//	STM32_Flash_Unlock();
-//	STM32_Flash_WriteWord(APP_LAUNCH_CONDITIONS_ADDR, launch);
-//	STM32_Flash_Lock();
-}
+//void BOOT_SetAppLaunch(uint32_t launch){
+//
+////	STM32_Flash_Unlock();
+////	STM32_Flash_WriteWord(APP_LAUNCH_CONDITIONS_ADDR, launch);
+////	STM32_Flash_Lock();
+//}
 //**********************************************************
 // Function      BOOTLOADER_GetAppLaunch()
 // Description   получение условие запуска приложения
 // Parameters    None
 // RetVal        None
 //*****************************************
-uint32_t BOOT_GetAppLaunch(void){
-
-//	return STM32_Flash_ReadWord(APP_LAUNCH_CONDITIONS_ADDR);
-}
+//uint32_t BOOT_GetAppLaunch(void){
+//
+////	return STM32_Flash_ReadWord(APP_LAUNCH_CONDITIONS_ADDR);
+//}
 //**********************************************************
 // Function      BOOTLOADER_CalcAppCrc()
 // Description   расчет контрольной суммы записанного приложения
@@ -895,10 +897,10 @@ uint32_t BOOT_CalcCrc(uint32_t *addr, uint32_t size){
 // Parameters	 None
 // RetVal        crc приложения
 //*****************************************
-uint32_t BOOT_ReadAppCrc(void){
-
-//	return STM32_Flash_ReadWord(APP_CRC_ADDR);
-}
+//uint32_t BOOT_ReadAppCrc(void){
+//
+////	return STM32_Flash_ReadWord(APP_CRC_ADDR);
+//}
 //**********************************************************
 // Function      BOOT_CalcAndWriteAppCrc()
 // Description	 расчет и запись во флеш контрольной суммы приложения
@@ -907,8 +909,8 @@ uint32_t BOOT_ReadAppCrc(void){
 //*****************************************
 void BOOT_CalcAndWriteAppCrc(void){
 
-	uint32_t appSize = BOOT_GetAppSize();
-	uint32_t appCrc  = BOOT_CalcCrc((uint32_t*)APP_PROGRAM_START_ADDR ,appSize);
+//	uint32_t appSize = BOOT_GetAppSize();
+//	uint32_t appCrc  = BOOT_CalcCrc((uint32_t*)APP_PROGRAM_START_ADDR ,appSize);
 
 	//запись во флеш контрольной суммы приложения
 //	STM32_Flash_Unlock();
@@ -922,12 +924,12 @@ void BOOT_CalcAndWriteAppCrc(void){
 // Parameters    None
 // RetVal        None
 //*****************************************
-void BOOT_ErasePageAppState(){
-
-//	STM32_Flash_Unlock();
-//	STM32_Flash_ErasePage(APP_STATE_ADDR);
-//	STM32_Flash_Lock();
-}
+//void BOOT_ErasePageAppState(){
+//
+////	STM32_Flash_Unlock();
+////	STM32_Flash_ErasePage(APP_STATE_ADDR);
+////	STM32_Flash_Lock();
+//}
 //**********************************************************
 // Function		BOOT_Loop()
 // Descriptio	Основной цикл работы загрузчика. В нем производится обработка
@@ -944,15 +946,16 @@ void BOOT_Loop(void){
 	//Кадр команды состояит из кода команды и инверсии кода команды.
 	//После чего хост ждет ACK или NACK.
 	//0-й байт - код команды. 1-й байт - инверсия кода команды
-	if((bootBuf[0]^0xFF) != bootBuf[1])
+	uint8_t inv = ~bootBuf[0];
+	if(inv != bootBuf[1])
 	{
 		_sendByte(CMD_NACK);	//передаем NACK
-		//bootBuf[0] = 0;		//Сброс приемного буфера
-		//bootBuf[1] = 0;
+		bootBuf[0] = 0;			//Сброс приемного буфера
+		bootBuf[1] = 0;
 		return;
 	}
-	//Команда верна! Обработаем команду.
-	switch(bootBuf[0])	//Выполнение принятой команды
+	//Команда верна! Выполнение принятой команды
+	switch(bootBuf[0])
 	{
 		//-------------------
 	 	//Команда Get позволяет узнать версию bootloader и поддерживаемые команды.

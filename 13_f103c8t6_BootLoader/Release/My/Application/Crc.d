@@ -13,7 +13,8 @@ My/Application/Crc.o: ../My/Application/Crc.c ../My/Application/Crc.h \
  D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/BootLoader/bootLoader.h \
  D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/i2c_ST.h \
  D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/flash_ST.h \
- D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/crc_ST.h
+ D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/crc_ST.h \
+ D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/BootLoader/sharedMemory.h
 
 ../My/Application/Crc.h:
 
@@ -46,3 +47,5 @@ D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/i2c_ST.h:
 D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/flash_ST.h:
 
 D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/My/STM32_Perif/crc_ST.h:
+
+D:/04_Git/Git_Board_F103C8T6/13_f103c8t6_BootLoader/BootLoader/sharedMemory.h:
