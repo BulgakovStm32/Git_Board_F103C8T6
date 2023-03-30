@@ -57,11 +57,11 @@ typedef enum{
 //*******************************************************************************************
 //*******************************************************************************************
 //Общие функции.
-I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr);
+//I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr);
 I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte);
 I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 void		I2C_Stop(I2C_TypeDef *i2c);
-I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
+//I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 
 //************************************

@@ -109,7 +109,8 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //*******************************************************************************************
 //*******************************************************************************************
 //**************************Общие функции для работы с I2C***********************************
-//I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
+// !!! НЕОТЛАЖЕНО !!!
+I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr){
 //
 //	//Формирование Start condition.
 //	i2c->CR1 |= I2C_CR1_START;
@@ -128,8 +129,8 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //	}
 //	(void)i2c->SR1;	//сбрасываем бит ADDR (чтением SR1 и SR2):
 //	(void)i2c->SR2;	//
-//	return I2C_OK;
-//}
+	return I2C_OK;
+}
 ////**********************************************************
 //I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte){
 //
@@ -138,7 +139,8 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //	return I2C_OK;
 //}
 ////**********************************************************
-//I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
+// !!! НЕОТЛАЖЕНО !!!
+I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 //
 //	//receiving 1 byte
 //	if(len == 1)
@@ -180,8 +182,8 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //		*(pBuf + i + 2) = i2c->DR;//Read DataN
 //		i2c->CR1 |= I2C_CR1_ACK;
 //	}
-//	return I2C_OK;
-//}
+	return I2C_OK;
+}
 ////**********************************************************
 //void I2C_Stop(I2C_TypeDef *i2c){
 //
@@ -190,7 +192,8 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //	i2c->CR1 |= I2C_CR1_STOP;		 //Формируем Stop
 //}
 ////**********************************************************
-//I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
+// !!! НЕОТЛАЖЕНО !!!
+I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
 //
 //	for(uint32_t i = 0; i < len; i++)
 //	{
@@ -198,19 +201,20 @@ static void _i2c_SetSpeed(I2C_TypeDef *i2c, uint32_t speed){
 //		i2c->DR = *(pBuf + i);
 //	}
 //	I2C_Stop(i2c);	 //Формируем Stop
-//	return I2C_OK;
-//}
-////**********************************************************
-//I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
-//
-//	for(uint32_t i = 0; i < len; i++)
-//	{
-//		if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения буфера
-//		i2c->DR = *(pBuf + i);
-//	}
-//	//if(_i2c_LongWait(i2c, I2C_SR1_BTF)) return I2C_ERR_BTF;
-//	return I2C_OK;
-//}
+	return I2C_OK;
+}
+//**********************************************************
+// !!! НЕОТЛАЖЕНО !!!
+I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len){
+
+	for(uint32_t i = 0; i < len; i++)
+	{
+		if(_i2c_LongWait(i2c, I2C_SR1_TXE)) return I2C_ERR_TX_BYTE;//Ждем освобождения буфера
+		i2c->DR = *(pBuf + i);
+	}
+	//if(_i2c_LongWait(i2c, I2C_SR1_BTF)) return I2C_ERR_BTF;
+	return I2C_OK;
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
