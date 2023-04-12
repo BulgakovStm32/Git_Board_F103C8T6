@@ -102,8 +102,8 @@ static uint8_t _singleWire_ReadByte(GPIO_TypeDef *port, uint32_t pin){
 //*******************************************************************************************
 void DHT22_Init(void){
 
-	dht22.port = GPIOB;
-	dht22.pin  = 12;
+	dht22.port = DHT22_GPIO_PORT; 	//GPIOB;
+	dht22.pin  = DHT22_GPIO_PIN; 	//12;
 	GPIO_InitForOutputOpenDrain(dht22.port, dht22.pin);
 	//dht22.state = DHT22_STATE_INIT;
 	dht22.state = DHT22_STATE_WAITING_MEAS;

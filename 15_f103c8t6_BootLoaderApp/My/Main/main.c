@@ -79,10 +79,11 @@ int32_t map_I32(int32_t value, int32_t in_min, int32_t in_max, int32_t out_min, 
 //************************************************************
 void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 
+	const char txt_DS18B20[] = "DS18B20";
 	int32_t temperature = sensor->temperature;
 	//-------------------
 	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_PrintBig("Sens");
+	Lcd_PrintBig((char*)txt_DS18B20);
 	Lcd_BinToDec(sensor->sensNumber, 1, LCD_CHAR_SIZE_BIG);
 	Lcd_PrintBig("= ");
 
@@ -271,6 +272,8 @@ void Task_AHT10_ReadData(void){
 	AHT10_ReadData();
 }
 //************************************************************
+const char txt_AHT10[] = "BOOT_APPv02";//"_AHT10_";
+
 void Task_AHT10_Display(void){
 
 	int32_t temp = 0;
@@ -278,10 +281,11 @@ void Task_AHT10_Display(void){
 	Lcd_ClearVideoBuffer();
 	//Шапка
 	Lcd_SetCursor(1, 1);
-	Lcd_Print("_AHT10_");
+	Lcd_Print((char*)txt_AHT10);
 	//Вывод времени.
 	Time_Display(14, 1);
 	//-------------------
+	//Датчик DS18B20
 	Temperature_Display(TEMPERATURE_SENSE_GetSens(1), 1, 2);
 
 	//-------------------
@@ -427,7 +431,7 @@ void Task_LcdPageSelection(void){
 			Lcd_SetCursor(1, 1);
 			Lcd_Print(" PAGE 2 ");
 
-			if(ENCODER_GetButton(&encoder) == PRESSED) encodTemp = 0;
+			if(ENCODER_GetButton(&encoder) == ENCODER_BUT_PRESSED) encodTemp = 0;
 
 			ENCODER_IncDecParam(&encoder, &encodTemp, 1, 0, 99);
 			Lcd_SetCursor(1, 2);
@@ -458,10 +462,10 @@ void Task_LedBlink(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //Метаданные приложения
-appMetadata_t appMetadata __attribute__((section(".image_hdr"))) = {
+appMetadata_t appMetadata __attribute__((section(".app_metadata"))) = {
 
 	.metadataVersion	= 0x1234,
-	.appMagic		 	= APP_MAGIC,
+	.appMagic		 	= METADATA_MAGIC,
 	.appType 			= 0x56,
 	.appVectorAddr 		= 0x08002800,   //вектор сброса приложения
 	.appVersion_major	= 0x07,
@@ -483,9 +487,7 @@ int main(void){
 
 	//***********************************************
 	//Это необходимо для работы с загрузчиком.
-	__disable_irq();				//Запрещаем прерывания
-	SCB->VTOR = FLASH_BASE + 0x2800;//Перенос таблицы векторов прерываний
-	SharedMemory_Init();			//Разделяемая с загрузчиком память.
+	BOOT_Init();
 	//***********************************************
 	STM32_Clock_Init();
 	SYS_TICK_Init();
@@ -521,7 +523,7 @@ int main(void){
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 100,   20);
+	RTOS_SetTask(Task_LcdPageSelection, 100,   10); //20);
 	RTOS_SetTask(Task_TemperatureRead,    0, 1000);
 	RTOS_SetTask(Task_AHT10_ReadData,     0, 1000);
 	RTOS_SetTask(Task_DHT22_ReadData,  2000,    0);

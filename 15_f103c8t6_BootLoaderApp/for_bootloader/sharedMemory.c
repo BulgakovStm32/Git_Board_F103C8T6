@@ -11,7 +11,7 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-const uint32_t MAGIC = 0xbadcafe;
+const  uint32_t SHARED_MEM_MAGIC = 0xbadcafe;
 static sharedMemory_t sharedMemory __attribute__((section(".shared_memory")));
 
 //*******************************************************************************************
@@ -21,10 +21,10 @@ static sharedMemory_t sharedMemory __attribute__((section(".shared_memory")));
 void SharedMemory_Init(void){
 
 	//Если первое включение, то инициализация
-    if(sharedMemory.magic != MAGIC)
+    if(sharedMemory.magic != SHARED_MEM_MAGIC)
     {
         memset(&sharedMemory, 0, sizeof(sharedMemory_t));
-        sharedMemory.magic = MAGIC;
+        sharedMemory.magic = SHARED_MEM_MAGIC;
     }
 }
 //**********************************************************

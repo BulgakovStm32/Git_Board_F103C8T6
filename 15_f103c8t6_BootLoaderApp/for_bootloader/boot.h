@@ -1,53 +1,34 @@
 /*
- * sharedMemory.h
+ * boot.h
  *
- *  Created on: 29 мар. 2023 г.
+ *  Created on: 11 апр. 2023 г.
  *      Author: belyaev
  */
 
-#ifndef SHARED_MEMORY_H_
-#define SHARED_MEMORY_H_
+#ifndef FOR_BOOTLOADER_BOOT_H_
+#define FOR_BOOTLOADER_BOOT_H_
 //*******************************************************************************************
 //*******************************************************************************************
 
-#include "stdint.h"
-#include "string.h"
+#include "stm32f103xb.h"
+#include "sharedMemory.h"
+#include "metaData.h"
 
 //*******************************************************************************************
 //*******************************************************************************************
-typedef struct __attribute__((packed)){
-    uint32_t 	magic;
-    uint32_t 	flags;
-    uint32_t	boot_counter;
-}sharedMemory_t;
-//*********************************
-//Флаги
-#define	DFU_REQUESTED_FLAG (uint32_t)(1 << 0)
+#define BOOT_SIZE			(9 * 1024)						//размер загрузчика, в байтах
+#define METADATA_ADDR		(FLASH_BASE + BOOT_SIZE)		//начальный адрес матаданных
+#define APP_START_ADDR		(METADATA_ADDR + METADATA_SIZE)	//начальный адрес приложения
 
 //*******************************************************************************************
 //*******************************************************************************************
-void 		SharedMemory_Init(void);
+void BOOT_Init(void);
 
-uint32_t 	SharedMemory_GetFlags(void);
-void 		SharedMemory_SetFlag(uint32_t flag);
-void 		SharedMemory_ClearFlag(uint32_t flag);
-
-void 		SharedMemory_IncrementBootCounter(void);
-void 		SharedMemory_ClearBootCounter(void);
-uint32_t 	SharedMemory_GetBootCounter(void);
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
-#endif /* FOR_BOOTLOADER_METADATA_H_ */
-
-
-
-
-
-
-
-
+#endif /* FOR_BOOTLOADER_BOOT_H_ */
 
 
 

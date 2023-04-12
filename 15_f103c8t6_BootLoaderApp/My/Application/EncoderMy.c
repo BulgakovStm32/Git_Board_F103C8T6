@@ -51,8 +51,8 @@ void ENCODER_Init(Encoder_t *encoder){
 	_encoder_GpioInit(encoder->GpioPort_A,      encoder->GpioPin_A);
 	_encoder_GpioInit(encoder->GpioPort_B,      encoder->GpioPin_B);
 	_encoder_GpioInit(encoder->GpioPort_BUTTON, encoder->GpioPin_BUTTON);
-	encoder->encoderState = ENCODER_NO_TURN;
-	encoder->buttonState  = RELEASED;
+	encoder->encoderState = ENCODER_STATE_NO_TURN;
+	encoder->buttonState  = ENCODER_BUT_RELEASED;
 }
 //**********************************************************
 /**
@@ -80,8 +80,8 @@ void ENCODER_ScanLoop(Encoder_t *encoder){
 		//если не равно, то сдвигаем и сохраняем
 		oldState = (oldState << 2) | currentState;
 		//сравниваем получившуюся последовательность
-		if(oldState == 0b11100001) encoder->encoderState = ENCODER_TURN_RIGHT;
-		if(oldState == 0b11010010) encoder->encoderState = ENCODER_TURN_LEFT;
+		if(oldState == 0b11100001) encoder->encoderState = ENCODER_STATE_TURN_RIGHT;
+		if(oldState == 0b11010010) encoder->encoderState = ENCODER_STATE_TURN_LEFT;
 	}
 	//--------------------
 	//Опрос кнопки энкодера.
@@ -98,8 +98,8 @@ void ENCODER_ScanLoop(Encoder_t *encoder){
 	oldStateButton = (oldStateButton << 1) | currentState;
 
 	//сравниваем получившуюся последовательность
-	if(oldStateButton == 0b00000000) encoder->buttonState = PRESSED;
-	if(oldStateButton == 0b11111111) encoder->buttonState = RELEASED;
+	if(oldStateButton == 0b00000000) encoder->buttonState = ENCODER_BUT_PRESSED;
+	if(oldStateButton == 0b11111111) encoder->buttonState = ENCODER_BUT_RELEASED;
 	//--------------------
 }
 //**********************************************************
@@ -117,17 +117,17 @@ void ENCODER_IncDecParam(Encoder_t *encoder, uint32_t *parameter, uint32_t step,
 	switch(encoder->encoderState){
 		//-----------
 		//поворот вправо.
-		case ENCODER_TURN_RIGHT:
+		case ENCODER_STATE_TURN_RIGHT:
 			if ((*parameter) < max)(*parameter)+= step;//Проверка на  максимум.
 			else                   (*parameter) = min; //Закольцовывание редактирования параметра.
-			encoder->encoderState = ENCODER_NO_TURN;
+			encoder->encoderState = ENCODER_STATE_NO_TURN;
 		break;
 		//-----------
 		//поворот влево.
-		case ENCODER_TURN_LEFT:
+		case ENCODER_STATE_TURN_LEFT:
 			if ((*parameter) > min)(*parameter)-= step;//Проверка на минимум.
 			else                   (*parameter) = max; //Закольцовывание редактирования параметра.
-			encoder->encoderState = ENCODER_NO_TURN;
+			encoder->encoderState = ENCODER_STATE_NO_TURN;
 		break;
 		//-----------
 		default:
@@ -143,6 +143,18 @@ EncoderButtonState_t ENCODER_GetButton(Encoder_t *encoder){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
+
+
+
+
+
+
+
+
+
 
 
 

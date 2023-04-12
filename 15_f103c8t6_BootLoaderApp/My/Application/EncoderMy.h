@@ -20,17 +20,16 @@
 //**********************************
 //Состояние энкодера.
 typedef enum{
-	ENCODER_NO_TURN = 0,
-	ENCODER_TURN,
-	ENCODER_TURN_RIGHT,
-	ENCODER_TURN_LEFT
+	ENCODER_STATE_NO_TURN = 0,
+	ENCODER_STATE_TURN_RIGHT,
+	ENCODER_STATE_TURN_LEFT
 }EncoderState_t;
 //**********************************
 //Состояние кнопки энкодера.
 typedef enum{
-	RELEASED = 0,
-	PRESSED,
-	TOGGLE,
+	ENCODER_BUT_RELEASED = 0,
+	ENCODER_BUT_PRESSED,
+	ENCODER_BUT_TOGGLE,
 }EncoderButtonState_t;
 //**********************************
 typedef struct{
