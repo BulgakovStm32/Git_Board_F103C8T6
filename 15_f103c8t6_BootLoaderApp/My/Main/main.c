@@ -269,10 +269,25 @@ void Task_DHT22_ReadData(void){
 //************************************************************
 void Task_AHT10_ReadData(void){
 
+	static uint32_t i2cNacCount = 0;
+	//-------------------
 	AHT10_ReadData();
+
+	//Перенициализация I2C после 5ти NAC
+	if(AHT10_GetStatus() == AHTXX_STATUS_ERR_ACK)
+	{
+		if(++i2cNacCount >= 5)
+		{
+			I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+		}
+	}
+	else
+	{
+		i2cNacCount = 0;
+	}
 }
 //************************************************************
-const char txt_AHT10[] = "BOOT_APPv02";//"_AHT10_";
+const char txt_AHT10[] = "BOOT_APPv03";//"_AHT10_";
 
 void Task_AHT10_Display(void){
 
