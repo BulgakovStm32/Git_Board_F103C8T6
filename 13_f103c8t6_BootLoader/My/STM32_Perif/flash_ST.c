@@ -156,7 +156,6 @@ void STM32_Flash_WriteBuf(void* Src, void* Dst, uint32_t size){
 	{
 		*dst = *src;			//пишем во флэш
 		while(!_flash_Ready());	//Ждем завершения записи
-		//while((FLASH->SR & FLASH_SR_BSY) != 0); //Ждем завершения записи
 
 		//Проверка: если не совпадает то что записываем и то что записаловь, то выходим.
 		//if(*dst != *src) goto EndPrg;

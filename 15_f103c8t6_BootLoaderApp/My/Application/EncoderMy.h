@@ -20,32 +20,31 @@
 //**********************************
 //Состояние энкодера.
 typedef enum{
-	ENCODER_NO_TURN = 0,
-	ENCODER_TURN,
-	ENCODER_TURN_RIGHT,
-	ENCODER_TURN_LEFT
+	ENCODER_STATE_NO_TURN = 0,
+	ENCODER_STATE_TURN_RIGHT,
+	ENCODER_STATE_TURN_LEFT
 }EncoderState_t;
 //**********************************
 //Состояние кнопки энкодера.
 typedef enum{
-	RELEASED = 0,
-	PRESSED,
-	TOGGLE,
+	ENCODER_BUT_RELEASED = 0,
+	ENCODER_BUT_PRESSED,
+	ENCODER_BUT_TOGGLE,
 }EncoderButtonState_t;
 //**********************************
 typedef struct{
-	GPIO_TypeDef *GpioPort_A;
-	uint32_t	  GpioPin_A;
+	GPIO_TypeDef 	*GpioPort_A;
+	uint32_t	 	GpioPin_A;
 
-	GPIO_TypeDef *GpioPort_B;
-	uint32_t	  GpioPin_B;
+	GPIO_TypeDef 	*GpioPort_B;
+	uint32_t	  	GpioPin_B;
 
-	GPIO_TypeDef *GpioPort_BUTTON;
-	uint32_t	  GpioPin_BUTTON;
+	GPIO_TypeDef 	*GpioPort_BUTTON;
+	uint32_t	  	GpioPin_BUTTON;
 
-	uint32_t	  		 encoderNumber;
-	EncoderState_t	  	 encoderState;
-	EncoderButtonState_t buttonState;
+	uint32_t	  				encoderNumber;
+	__IO EncoderState_t	  	 	encoderState;
+	__IO EncoderButtonState_t	buttonState;
 }Encoder_t;
 //*******************************************************************************************
 //*******************************************************************************************

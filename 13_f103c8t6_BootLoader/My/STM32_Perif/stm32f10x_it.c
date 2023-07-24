@@ -34,6 +34,12 @@
 *******************************************************************************/
 void NMIException(void){
 
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
+
 }
 /*******************************************************************************
 * Function Name  : HardFaultException
@@ -48,6 +54,7 @@ void HardFaultException(void){
 	while (1)
 	{
 		asm volatile  ("nop");
+		NVIC_SystemReset();
 	}
 }
 
@@ -61,8 +68,11 @@ void HardFaultException(void){
 void MemManageException(void)
 {
   /* Go to infinite loop when Memory Manage exception occurs */
-  while (1)
-  {}
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
 }
 
 /*******************************************************************************
@@ -75,8 +85,11 @@ void MemManageException(void)
 void BusFaultException(void)
 {
   /* Go to infinite loop when Bus Fault exception occurs */
-  while (1)
-  {}
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
 }
 
 /*******************************************************************************
@@ -89,8 +102,11 @@ void BusFaultException(void)
 void UsageFaultException(void)
 {
   /* Go to infinite loop when Usage Fault exception occurs */
-  while (1)
-  {}
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
 }
 
 /*******************************************************************************
@@ -100,8 +116,14 @@ void UsageFaultException(void)
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void DebugMonitor(void)
-{}
+void DebugMonitor(void){
+
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
+}
 
 /*******************************************************************************
 * Function Name  : SVCHandler
@@ -110,8 +132,13 @@ void DebugMonitor(void)
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void SVCHandler(void)
-{
+void SVCHandler(void){
+
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
 }
 
 /*******************************************************************************
@@ -123,6 +150,11 @@ void SVCHandler(void)
 *******************************************************************************/
 void PendSVC(void){
 
+	while (1)
+	{
+		asm volatile  ("nop");
+		NVIC_SystemReset();
+	}
 }
 
 /*******************************************************************************

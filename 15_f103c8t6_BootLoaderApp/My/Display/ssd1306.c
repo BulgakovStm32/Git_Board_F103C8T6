@@ -31,7 +31,6 @@ static void ssd1306_I2C_Init(void){
 static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
 
 	I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
-//	I2C_DMA_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0x40, pData, len);
 }
 //***********************************************************************
 /**
@@ -42,9 +41,9 @@ static void ssd1306_I2C_WriteDataBuf(uint8_t *pData, uint32_t len){
  * @param  data: data to be written
  * @retval None
  */
-static uint32_t ssd1306_I2C_WriteCMD(uint8_t cmd){
+static void ssd1306_I2C_WriteCMD(uint8_t cmd){
 
-	return I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, &cmd, 1);
+	I2C_Master_Write(SSD1306_I2C, SSD1306_I2C_ADDR, 0, &cmd, 1);
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -123,8 +122,8 @@ void SSD1306_UpdateScreen(uint8_t *pBuf, uint32_t size){
 	//-------------------------
 	//Передача видеобуфера за 8 раз по 128 байт.
 	//128 байт передаются за 3.25мС при скорости I2C 400кГц.
-	static uint8_t count = 0;
-		   uint8_t cmd   = 0;
+	static volatile uint8_t count = 0;
+		   volatile uint8_t cmd   = 0;
 
 //	if(I2C_DMA_State() != I2C_DMA_READY) return;
 	if(SSD1306_lcdType == SSD1306_128x64) cmd = 0x02;//смещение вывода изображениея на 2 столбца.
@@ -173,7 +172,7 @@ void SSD1306_Fill(SSD1306_COLOR_t color) {
 	/* Set memory */
 //	memset(SSD1306_Buffer, (color == SSD1306_COLOR_BLACK) ? 0x00 : 0xFF, sizeof(SSD1306_Buffer));
 
-	memset(pVideoBuffer, (color == SSD1306_COLOR_BLACK) ? 0x00 : 0xFF, LCD_VIDEO_BUFFER_SIZE);
+	memset(pVideoBuffer, ((color == SSD1306_COLOR_BLACK) ? 0x00 : 0xFF), LCD_VIDEO_BUFFER_SIZE);
 }
 //***********************************************************************
 void SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color){

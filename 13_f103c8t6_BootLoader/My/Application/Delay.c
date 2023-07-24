@@ -34,8 +34,9 @@ void DELAY_Init(void){
 //**********************************************************
 uint32_t DELAY_microSecCount(void){
 
-	volatile uint32_t temp = DWT->CYCCNT;
-	return (temp / TACTS_FOR_MICROSEC);
+	//volatile uint32_t temp = DWT->CYCCNT;
+	//return (temp / TACTS_FOR_MICROSEC);
+	return (DWT->CYCCNT / TACTS_FOR_MICROSEC);
 }
 //**********************************************************
 //макс. задержка 58 сек. Через 59 сек. происходит переполнение DWT->CTRL.

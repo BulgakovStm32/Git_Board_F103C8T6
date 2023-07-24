@@ -16,9 +16,29 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-Time_t	  	Time;
-Encoder_t 	Encoder;
+const char txt_title[] = "BOOT_APPv04";//"_AHT10_";
+
+Encoder_t 	encoder;
 DS18B20_t 	DS18B20;
+Time_t	  	time = {.hour = 0,
+					.min  = 0,
+					.sec  = 0,
+					.mSec = 0};
+//*******************************************************************************************
+//*******************************************************************************************
+//Структура для обмена данными между приложением и загрузчиком.
+//typedef struct __attribute__((packed)){
+//
+//	uint16_t	applLunch;
+//	char 		str[8];
+//
+//}applLaunch_t;
+////************************************************************
+//applLaunch_t applLaunch __attribute__((section(".launch"))) = {
+//
+//	.applLunch = 0x1234,
+//	.str = "launch"
+//};
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
@@ -60,10 +80,11 @@ int32_t map_I32(int32_t value, int32_t in_min, int32_t in_max, int32_t out_min, 
 //************************************************************
 void Temperature_Display(DS18B20_t *sensor, uint8_t cursor_x, uint8_t cursor_y){
 
+	const char txt_DS18B20[] = "DS18B20";
 	int32_t temperature = sensor->temperature;
 	//-------------------
 	Lcd_SetCursor(cursor_x, cursor_y);
-	Lcd_PrintBig("Sens");
+	Lcd_PrintBig((char*)txt_DS18B20);
 	Lcd_BinToDec(sensor->sensNumber, 1, LCD_CHAR_SIZE_BIG);
 	Lcd_PrintBig("= ");
 
@@ -203,13 +224,13 @@ void Time_Display(uint8_t cursor_x, uint8_t cursor_y){
 	//Вывод времени.
 	Lcd_SetCursor(cursor_x, cursor_y);
 //	Lcd_Print("Time: ");
-	Lcd_BinToDec(Time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
+	Lcd_BinToDec(time.hour, 2, LCD_CHAR_SIZE_NORM);//часы
 	Lcd_Chr(':');
-	Lcd_BinToDec(Time.min,  2, LCD_CHAR_SIZE_NORM);//минуты
+	Lcd_BinToDec(time.min,  2, LCD_CHAR_SIZE_NORM);//минуты
 	//Lcd_Chr(':');
-	if(Time.sec & 1) Lcd_Chr(':');//Мигание разделительным знаком
+	if(time.sec & 1) Lcd_Chr(':');//Мигание разделительным знаком
 	else			 Lcd_Chr(' ');
-	Lcd_BinToDec(Time.sec,  2, LCD_CHAR_SIZE_NORM);//секунды
+	Lcd_BinToDec(time.sec,  2, LCD_CHAR_SIZE_NORM);//секунды
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -241,7 +262,7 @@ void Task_DHT22_ReadData(void){
 	//Ждем 18 мс
 	if(DHT22_State() == DHT22_STATE_WAITING_PRESENCE)
 	{
-		RTOS_SetTask(Task_DHT22_ReadData, 0, 18);
+		RTOS_SetTask(Task_DHT22_ReadData, 18, 0);
 	}
 	//Следующее измерение чере 2 сек.
 	else RTOS_SetTask(Task_DHT22_ReadData, 2000, 0);
@@ -249,57 +270,92 @@ void Task_DHT22_ReadData(void){
 //************************************************************
 void Task_AHT10_ReadData(void){
 
+	static uint32_t i2cNacCount = 0;
+	//-------------------
 	AHT10_ReadData();
+
+	//Перенициализация I2C после 5ти NAC
+	if(AHT10_GetStatus() == AHTXX_STATUS_ERR_ACK)
+	{
+		if(++i2cNacCount >= 5)
+		{
+			I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
+		}
+	}
+	else
+	{
+		i2cNacCount = 0;
+	}
 }
 //************************************************************
 void Task_AHT10_Display(void){
 
+	int32_t temp = 0;
 	//-------------------
 	Lcd_ClearVideoBuffer();
 	//Шапка
 	Lcd_SetCursor(1, 1);
-	Lcd_Print("_AHT10_");
+	Lcd_Print((char*)txt_title);
 	//Вывод времени.
 	Time_Display(14, 1);
 	//-------------------
+	//Датчик DS18B20
 	Temperature_Display(TEMPERATURE_SENSE_GetSens(1), 1, 2);
 
-	//Температура
-	int32_t temp = AHT10_GetTemperature();
-	Lcd_SetCursor(1, 4);
-	Lcd_Print("AHT10_Temp =");
-	if(temp < 0)
-	{
-		temp = -temp;
-		Lcd_Chr('-');
-	}
-	else Lcd_Chr('+');
-	Lcd_BinToDec(temp/100, 2, LCD_CHAR_SIZE_NORM);
-	Lcd_Chr('.');
-	Lcd_BinToDec(temp%100, 2, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" C");
-
-	//Влажность
-	Lcd_SetCursor(1, 5);
-	Lcd_Print("AHT10_Hum  = ");
-	Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
-	Lcd_Print(" %");
 	//-------------------
-	//Датчик DHT11
-	if(DHT22_State() == DHT22_STATE_WAITING_MEAS)
+	//Датчик AHT10
+	if(AHT10_GetStatus() != AHTXX_STATUS_OK)
+	{
+		//Проблемы с датчиком...
+		Lcd_SetCursor(1, 4);
+		Lcd_Print("AHT10 problem...");
+	}
+	else
+	{
+		//Температура
+		temp = AHT10_GetTemperature();
+		Lcd_SetCursor(1, 4);
+		Lcd_Print("AHT10_Temp =");
+		if(temp < 0)
+		{
+			temp = -temp;
+			Lcd_Chr('-');
+		}
+		else Lcd_Chr('+');
+		Lcd_BinToDec(temp/100, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Chr('.');
+		Lcd_BinToDec(temp%100, 2, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" C");
+
+		//Влажность
+		Lcd_SetCursor(1, 5);
+		Lcd_Print("AHT10_Hum  = ");
+		Lcd_BinToDec(AHT10_GetHumidity(), 3, LCD_CHAR_SIZE_NORM);
+		Lcd_Print(" %");
+	}
+	//-------------------
+	//Датчик DHT22
+	Dht22_State_t state = DHT22_State();
+
+	if(state == DHT22_STATE_WAITING_MEAS)
 	{
 		//Ожидание завершения измерения
 		Lcd_SetCursor(1, 7);
-		Lcd_Print("DHT22 waiting...");
+		Lcd_Print("DHT22 measuring...");
 	}
-	else if(DHT22_State() == DHT22_STATE_PRESENCE_ERR ||
-			DHT22_State() == DHT22_STATE_CHECKSUM_ERR)
+	else if(state == DHT22_STATE_PRESENCE_ERR)
 	{
 		//Ошибка датчика...
 		Lcd_SetCursor(1, 7);
-		Lcd_Print("DHT22 Err!!!");
+		Lcd_Print("DHT22 presence err...");
 	}
-	else //if(DHT22_State() == DHT22_STATE_OK)
+	else if(state == DHT22_STATE_CHECKSUM_ERR)
+	{
+		//Ошибка датчика...
+		Lcd_SetCursor(1, 7);
+		Lcd_Print("DHT22 crc err...");
+	}
+	else //if(state == DHT22_STATE_OK)
 	{
 		//Температура
 		temp = DHT22_Temperature();
@@ -324,33 +380,17 @@ void Task_AHT10_Display(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+void Task_GoToBoot(void){
+
+	SharedMemory_SetFlag(DFU_REQUESTED_FLAG);
+	NVIC_SystemReset();
+}
+//************************************************************
 void Task_TemperatureRead(void){
 
 	TEMPERATURE_SENSE1_ReadTemperature();
 }
 //************************************************************
-
-
-
-
-
-
-//void IncrementOnEachPass(uint32_t *var, uint32_t event, uint32_t step, uint32_t max){
-//
-//		   uint32_t riseReg  = 0;
-//	static uint32_t oldState = 0;
-//	//-------------------
-//	riseReg  = (oldState ^ event) & event;
-//	oldState = event;
-////	if(riseReg) (*var)++;
-//	if(riseReg)
-//	{
-//		if(step == 0) step = 1;
-//		if((*var) < max) (*var)+= step;//Проверка на  максимум.
-//		else             (*var) = 0;   //Закольцовывание редактирования параметра.
-//	}
-//}
-
 //Длительное нажатие на кнопку энкодера.
 uint32_t BUTTON_LongPress(uint32_t butState, uint32_t delay){
 
@@ -383,10 +423,10 @@ void Task_LcdPageSelection(void){
 	else 					  LED_PC13_Off();
 
 	//Перевод из мС в ЧЧ:ММ:СС
-	TIME_Calculation(&Time, RTOS_GetTickCount());
+	TIME_Calculation(&time, RTOS_GetTickCount());
 
 	//Длительное нажатие на кнопку энкодера.
-	if(BUTTON_LongPress(ENCODER_GetButton(&Encoder), 2000)) pageIndex ^= 1;
+	if(BUTTON_LongPress(ENCODER_GetButton(&encoder), 100)) pageIndex ^= 1;
 
 	//Если на какой-то странице производится редактирование то выбор страницы запрешен
 	//if(!redaction) ENCODER_IncDecParam(&Encoder, &pageIndex, 1, 0, 3);//Выбор сраницы
@@ -405,11 +445,14 @@ void Task_LcdPageSelection(void){
 			Lcd_SetCursor(1, 1);
 			Lcd_Print(" PAGE 2 ");
 
-			if(ENCODER_GetButton(&Encoder) == PRESSED) encodTemp = 0;
+			if(ENCODER_GetButton(&encoder) == ENCODER_BUT_PRESSED) encodTemp = 0;
 
-			ENCODER_IncDecParam(&Encoder, &encodTemp, 1, 0, 99);
+			ENCODER_IncDecParam(&encoder, &encodTemp, 1, 0, 99);
 			Lcd_SetCursor(1, 2);
 			Lcd_BinToDec(encodTemp, 6, LCD_CHAR_SIZE_NORM);
+
+			//!!! ОТЛАДКА !!!
+			RTOS_SetTask(Task_GoToBoot, 0, 0);
 		break;
 		//--------------------
 		default:
@@ -432,48 +475,68 @@ void Task_LedBlink(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+//Метаданные приложения
+appMetadata_t appMetadata __attribute__((section(".app_metadata"))) = {
+
+	.metadataVersion  = 0x1234,
+	.appMagic		  = METADATA_MAGIC,
+	.appType 		  = 0x56,
+	.appVectorAddr 	  = 0x08002800,   //вектор сброса приложения
+	.appVersion_major = 0x07,
+	.appVersion_minor = 0x08,
+	.appVersion_patch = 0x09,
+
+	// GIT_SHA is generated by Makefile
+	.git_sha = "12345678",
+
+	// populated as part of a post compilation step
+	.appSize = 0x12345678,
+	.appCrc  = 0xabcdefde,
+};
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 int main(void){
 
-	__disable_irq();				//Запрещаем прерывания
-	SCB->VTOR = FLASH_BASE + 0x2800;//переносим таблицу векторов прерываний на адреса, соответствующие основной программе
 	//***********************************************
-	//Drivers.
+	//Это необходимо для работы с загрузчиком.
+	BOOT_Init();
+	//***********************************************
 	STM32_Clock_Init();
 	SYS_TICK_Init();
 	GPIO_Init();
 	I2C_Master_Init(I2C1, I2C_GPIO_NOREMAP, 400000);
-
 	DELAY_Init();
+
 	DELAY_milliS(100);//Эта задержка нужна для стабилизации напряжения питания.
-					  //Без задержки LCD-дисплей не работает.
 	//***********************************************
 	//Чтение настроек
 	//Config_Init();
 
-	//Инициализация OLED SSD1306 (I2C1).
-	Lcd_Init();
-
-	//Инициализация DS18B20
-	TEMPERATURE_SENSE_Init();
-
-	//Инициализация DHT22
-	DHT22_Init();
+	Lcd_Init();					//Инициализация OLED SSD1306 (I2C1).
+	TEMPERATURE_SENSE_Init();	//Инициализация DS18B20
+	AHT10_Init();				//Инициализация AHT10
+	DHT22_Init();				//Инициализация DHT22
 	//***********************************************
 	//Инициализация Энкодера.
-	Encoder.GpioPort_A 	 	= GPIOC;
-	Encoder.GpioPin_A       = 15;
-	Encoder.GpioPort_B 	 	= GPIOC;
-	Encoder.GpioPin_B  	 	= 14;
-	Encoder.GpioPort_BUTTON = GPIOA;
-	Encoder.GpioPin_BUTTON  = 0;
-	ENCODER_Init(&Encoder);
+	encoder.GpioPort_A 	 	= GPIOC;
+	encoder.GpioPin_A       = 15;
+	encoder.GpioPort_B 	 	= GPIOC;
+	encoder.GpioPin_B  	 	= 14;
+	encoder.GpioPort_BUTTON = GPIOA;
+	encoder.GpioPin_BUTTON  = 0;
+	ENCODER_Init(&encoder);
 	//***********************************************
 	//Инициализация диспетчера.
 	RTOS_Init();
-	RTOS_SetTask(Task_LcdPageSelection, 0, 5);
-	RTOS_SetTask(Task_TemperatureRead,  0, 1000);
-	RTOS_SetTask(Task_AHT10_ReadData,   0, 500);
-	RTOS_SetTask(Task_DHT22_ReadData,   2000, 0);
+	RTOS_SetTask(Task_LcdPageSelection, 100,   10); //20);
+	RTOS_SetTask(Task_TemperatureRead,    0, 1000);
+	RTOS_SetTask(Task_AHT10_ReadData,     0, 1000);
+	RTOS_SetTask(Task_DHT22_ReadData,  2000,    0);
+
+	//!!! ОТЛАДКА !!!
+	//RTOS_SetTask(Task_GoToBoot,  5000, 0);
 	//***********************************************
 	SYS_TICK_Control(SYS_TICK_ON);
 	__enable_irq();
@@ -487,13 +550,29 @@ int main(void){
 }
 //*******************************************************************************************
 //*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
 //Прерывание каждую милисекунду.
 void SysTick_IT_Handler(void){
 
 	RTOS_TimerServiceLoop();
 	msDelay_Loop();
 	Blink_Loop();
-	ENCODER_ScanLoop(&Encoder);
+	ENCODER_ScanLoop(&encoder);
 }
 //*******************************************************************************************
-//******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+
+
+
+
+
+
+
+
+
+
+
+

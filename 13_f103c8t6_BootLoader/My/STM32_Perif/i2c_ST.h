@@ -57,11 +57,11 @@ typedef enum{
 //*******************************************************************************************
 //*******************************************************************************************
 //Общие функции.
-I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr);
+//I2C_State_t I2C_StartAndSendDeviceAddr(I2C_TypeDef *i2c, uint8_t deviceAddr);
 I2C_State_t I2C_SendByte(I2C_TypeDef *i2c, uint8_t byte);
 I2C_State_t I2C_ReadData(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 void		I2C_Stop(I2C_TypeDef *i2c);
-I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
+//I2C_State_t I2C_SendDataWithStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 I2C_State_t I2C_SendDataWithoutStop(I2C_TypeDef *i2c, uint8_t *pBuf, uint32_t len);
 
 //************************************
@@ -146,6 +146,9 @@ typedef struct{
 //*******************************************************************************************
 void 	 I2C_IT_Init(I2C_IT_t *i2c);
 void 	 I2C_IT_DeInit(I2C_IT_t *i2cIt);
+void	 I2C_IT_InterruptDisable(I2C_IT_t *i2cIt);
+void 	 I2C_IT_InterruptEnable(I2C_IT_t *i2cIt);
+
 void 	 I2C_IT_SetTxSize(I2C_IT_t *i2cIt, uint32_t size);
 void 	 I2C_IT_SetpBuf(I2C_IT_t *i2cIt, uint8_t *pBuf);
 void 	 I2C_IT_SetDataSize(I2C_IT_t *i2cIt, uint32_t size);

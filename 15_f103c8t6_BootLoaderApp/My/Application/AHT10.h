@@ -53,24 +53,32 @@
 #define AHTXX_START_MEASUREMENT_CTRL_NOP  0x00  //NOP control, send after any "AHTXX_START_MEASUREMENT_CTRL..."
 
 /* sensor delays */
-#define AHTXX_CMD_DELAY          10      //delay between commands, in milliseconds
-#define AHTXX_MEASUREMENT_DELAY  80      //wait for measurement to complete, in milliseconds
-#define AHT1X_POWER_ON_DELAY     40      //wait for AHT1x to initialize after power-on, in milliseconds
-#define AHT2X_POWER_ON_DELAY     100     //wait for AHT2x to initialize after power-on, in milliseconds
-#define AHTXX_SOFT_RESET_DELAY   20      //less than 20 milliseconds
+#define AHTXX_CMD_DELAY          			10  //delay between commands, in milliseconds
+#define AHTXX_MEASUREMENT_DELAY  			80	//wait for measurement to complete, in milliseconds
+#define AHT1X_POWER_ON_DELAY     			40	//wait for AHT1x to initialize after power-on, in milliseconds
+#define AHT2X_POWER_ON_DELAY     			100	//wait for AHT2x to initialize after power-on, in milliseconds
+#define AHTXX_SOFT_RESET_DELAY   			20	//less than 20 milliseconds
 
 /* misc */
-#define AHTXX_I2C_SPEED_HZ       100000  //sensor I2C speed 100KHz..400KHz, in Hz
-#define AHTXX_I2C_STRETCH_USEC   1000    //I2C stretch time, in usec
-#define AHTXX_FORCE_READ_DATA    true    //force to read data via I2C
-#define AHTXX_USE_READ_DATA      false   //force to use data from previous read
+#define AHTXX_I2C_SPEED_HZ       			100000  //sensor I2C speed 100KHz..400KHz, in Hz
+#define AHTXX_I2C_STRETCH_USEC   			1000    //I2C stretch time, in usec
+#define AHTXX_FORCE_READ_DATA    			true    //force to read data via I2C
+#define AHTXX_USE_READ_DATA      			false   //force to use data from previous read
 
-#define AHTXX_NO_ERROR           0x00    //success, no errors
-#define AHTXX_BUSY_ERROR         0x01    //sensor is busy
-#define AHTXX_ACK_ERROR          0x02    //sensor didn't return ACK (not connected, broken, long wires (reduce speed), bus locked by slave (increase stretch limit))
-#define AHTXX_DATA_ERROR         0x03    //received data smaller than expected
-#define AHTXX_CRC8_ERROR         0x04    //computed CRC8 not match received CRC8, for AHT2x only
-#define AHTXX_ERROR              0xFF    //other errors
+//#define AHTXX_NO_ERROR           0x00    //success, no errors
+//#define AHTXX_BUSY_ERROR         0x01    //sensor is busy
+//#define AHTXX_ACK_ERROR          0x02    //sensor didn't return ACK (not connected, broken, long wires (reduce speed), bus locked by slave (increase stretch limit))
+//#define AHTXX_DATA_ERROR         0x03    //received data smaller than expected
+//#define AHTXX_CRC8_ERROR         0x04    //computed CRC8 not match received CRC8, for AHT2x only
+//#define AHTXX_ERROR              0xFF    //other errors
+
+typedef enum{
+	AHTXX_STATUS_RESET = 0,
+	AHTXX_STATUS_INIT,
+	AHTXX_STATUS_OK,
+	AHTXX_STATUS_BUSY,
+	AHTXX_STATUS_ERR_ACK,
+}AHT10_Status_t;
 //************************************************************
 typedef struct{
 	 int16_t temperature;
@@ -81,6 +89,7 @@ typedef struct{
 void 	 AHT10_Init(void);
 void 	 AHT10_SoftReset(void);
 void 	 AHT10_ReadData(void);
+AHT10_Status_t AHT10_GetStatus(void);
 int32_t  AHT10_GetTemperature(void);
 uint32_t AHT10_GetHumidity(void);
 //*******************************************************************************************

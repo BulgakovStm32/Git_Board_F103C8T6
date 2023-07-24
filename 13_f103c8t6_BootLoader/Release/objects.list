@@ -1,4 +1,5 @@
 "BootLoader/bootLoader.o"
+"BootLoader/sharedMemory.o"
 "My/Application/Crc.o"
 "My/Application/Delay.o"
 "My/CMSIS/system_stm32f1xx.o"

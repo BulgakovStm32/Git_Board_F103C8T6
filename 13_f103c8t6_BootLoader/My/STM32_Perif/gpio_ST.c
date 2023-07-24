@@ -153,8 +153,8 @@ void GPIO_Init(void){
 //	RCC->CFGR |= RCC_CFGR_MCO_PLL;   //Подключение к выводу PA8 частоту PLL/2.
 	//--------------------
 	// LED_PC13 - PC13
-	GPIO_InitForOutputPushPull(LED_PC13_GPIO, LED_PC13_PIN);
-	LED_PC13_Off();
+	//GPIO_InitForOutputPushPull(LED_PC13_GPIO, LED_PC13_PIN);
+	//LED_PC13_Off();
 }
 //**********************************************************
 void GPIO_CheckLoop(void){

@@ -16,8 +16,10 @@
 
 //*******************************************************************************************
 //*******************************************************************************************
-#define  DHT22_PRESENCE		2	//Признак наличия датчика на шине.
+#define DHT22_GPIO_PORT		GPIOB
+#define DHT22_GPIO_PIN		12
 
+#define DHT22_PRESENCE		2	//Признак наличия датчика на шине.
 //****************************************************
 typedef enum {
 	DHT22_STATE_RESET = 0,
@@ -33,11 +35,11 @@ typedef enum {
 //Структура контекста для работы с DHT11.
 //#pragma pack(push, 1)//размер выравнивания в 1 байт
 typedef struct{
-	GPIO_TypeDef	*port;
-	uint32_t		pin;
-	Dht22_State_t	state;
-	uint16_t 		humidity;
-	int16_t 		temperature;
+	GPIO_TypeDef		*port;
+	uint32_t			pin;
+	__IO Dht22_State_t	state;
+	uint16_t 			humidity;
+	int16_t 			temperature;
 }Dht22_t;
 //#pragma pack(pop)//вернули предыдущую настройку.
 //*******************************************************************************************

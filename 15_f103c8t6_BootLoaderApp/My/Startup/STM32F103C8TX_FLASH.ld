@@ -33,16 +33,41 @@ _estack = ORIGIN(RAM) + LENGTH(RAM);	/* end of "RAM" Ram type memory */
 _Min_Heap_Size  = 0x0;   /*0x200;	/* required amount of heap  */
 _Min_Stack_Size = 0x200; /*0x400;	/* required amount of stack */
 
+/***************************************************/
+/***************************************************/
+TARGET_STM32_RAM_SIZE   = 20K;
+TARGET_STM32_FLASH_SIZE = 64K;
+
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)   : ORIGIN = 0x20000000,                 LENGTH = 20K
-  FLASH  (rx)    : ORIGIN =(0x08000000 + 1024 * 10),    LENGTH = 64K-10K
+	/* STM32 RAM */
+	SHARED_RAM	(rw)	: ORIGIN = 0x20000000,								LENGTH = 256
+  	RAM			(xrw)	: ORIGIN = ORIGIN(SHARED_RAM) + LENGTH(SHARED_RAM),	LENGTH = TARGET_STM32_RAM_SIZE - LENGTH(SHARED_RAM)
+  	
+  	/* STM32 FLASH */ 
+ 	/*Адрес и размер ЗАГРУЗЧИКА*/
+ 	BOOT	(rx) 	: ORIGIN = 0x08000000,					LENGTH = 9K	
+ 	/*Адрес и размер МЕТАДАННЫХ*/
+ 	META 	(r)		: ORIGIN = ORIGIN(BOOT) + LENGTH(BOOT),	LENGTH = 1K	
+ 	/*Адрес и размер ПРИЛОЖЕНИЯ*/
+ 	FLASH	(rx)	: ORIGIN = ORIGIN(META) + LENGTH(META),	LENGTH = TARGET_STM32_FLASH_SIZE - LENGTH(BOOT) - LENGTH(META) 
 }
-
+/***************************************************/
+/***************************************************/
+SECTIONS
+{
+	.app_metadata :
+	{
+		KEEP (*(.app_metadata))
+	} >META
+}
+/***************************************************/
+/***************************************************/
 /* Sections */
 SECTIONS
 {
+
   /* The startup code into "FLASH" Rom type memory */
   .isr_vector :
   {
@@ -119,7 +144,14 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
   } >FLASH
-
+  
+  
+	.shared_memory (NOLOAD) :
+  	{
+   		KEEP(*(.shared_memory))
+    } >SHARED_RAM
+  
+  
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
