@@ -432,9 +432,17 @@ void DBG_UsartCmdCheck(void){
 //************************************************************
 void DBG_MotorRotate(void){
 
+	static uint32_t flag = 0;
+	int32_t angle;
+
 	//LedPC13Toggel();
-	MOTOR_SetTargetPosition(360000 * 10);
+
+	if(flag == 0) angle = -1 * (360000 * 5);
+	else     	  angle =  1 * (360000 * 5);
+
+	MOTOR_SetTargetPosition(angle);
 	MOTOR_CalcAndStartRotation();
+	flag ^= 1;
 }
 //*******************************************************************************************
 //*******************************************************************************************
@@ -504,7 +512,7 @@ int main(void){
 	//Отладочные задачи.
 	RTOS_SetTask(DBG_SendDebugInfo,	0, 500);	//Передача отладочной информации.
 	RTOS_SetTask(DBG_UsartCmdCheck, 0, 50);		//Парсинг команд каждые 50 мс
-	RTOS_SetTask(DBG_MotorRotate,	500, 10000);	//Вращение мотора
+	RTOS_SetTask(DBG_MotorRotate,	500, 15000);	//Вращение мотора
 	//--------------------------
 	SysTick_Init();
 	SettingInterruptPriorities();//Приоритеты прерываний

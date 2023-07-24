@@ -17,9 +17,9 @@
 //*******************************************************************************************
 #define MOTOR_TIMER					TIM1		  //базовый таймер для генерации шагов
 //#define MOTOR_TIMER_FREQ_Hz			(1000 * 1000U)//частота тактироваия базового таймера в Гц.
-//#define MOTOR_TIMER_FREQ_Hz			(2000 * 1000U)
+#define MOTOR_TIMER_FREQ_Hz			(uint32_t)(2000 * 1000U)
 //#define MOTOR_TIMER_FREQ_Hz			(4000 * 1000U)
-#define MOTOR_TIMER_FREQ_Hz			(8000 * 1000U)
+//#define MOTOR_TIMER_FREQ_Hz			(8000 * 1000U)
 
 #define MOTOR_ONE_FULL_STEP_DEGREE	1.8f 										  //угол поворота мотора за один полный шаг.
 #define MOTOR_FULL_STEPS_PER_TURN	(uint32_t)(360.0 / MOTOR_ONE_FULL_STEP_DEGREE)//Кол-во полных шагов ШД на оборот.
@@ -35,9 +35,9 @@
 //**********************************
 //Заводские настройки.
 #define MOTOR_DEFAULT_MICROSTEP		STEP_32	//количество микрошагов
-#define MOTOR_DEFAULT_REDUCER_RATE	1 		//передаточное число редуктора
-#define MOTOR_DEFAULT_ACCEL_TIME_mS	1500	//время ускорения/замедлениия в мС
-#define MOTOR_DEFAULT_RPM			120		//скорость в RPM
+#define MOTOR_DEFAULT_REDUCER_RATE	6 		//передаточное число редуктора
+#define MOTOR_DEFAULT_ACCEL_TIME_mS	2000	//время ускорения/замедлениия в мС
+#define MOTOR_DEFAULT_RPM			30		//скорость в RPM
 //**********************************
 //максимальные и минимальные значения параметров.
 #define MOTOR_REDUCER_RATE_MAX		120  	//передаточное число редуктора
