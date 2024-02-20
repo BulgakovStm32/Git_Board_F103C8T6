@@ -758,7 +758,12 @@ int main(void){
 	//**************************************************************
 
 	/* Create the 'check' task, which is also defined within this file. */
-	xTaskCreate( prvCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, 0, NULL );
+	xTaskCreate( prvCheckTask,
+				"Check",
+				configMINIMAL_STACK_SIZE,
+				NULL,
+				0,
+				NULL);
 
 	/* Start the scheduler. */
 	vTaskStartScheduler();
