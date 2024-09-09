@@ -113,12 +113,22 @@ int main(void){
 //		if(Blink(INTERVAL_50_mS)) LedPC13On();
 //		else					  LedPC13Off();
 
-		if(Blink_WithVariablePeriod(RTOS_GetTickCount(), 1000, 5)) 	LedPC13On();
-		else 														LedPC13Off();
+//		if(Blink_WithVariablePeriod(RTOS_GetTickCount(), 1000, 5)) 	LedPC13On();
+//		else 														LedPC13Off();
+
+		LedPC13Toggel();
+
+		st7735_fill(50, 80, 50, 80, ST77XX_BLACK);
+		st7735_fill(50, 80, 50, 80, ST77XX_CYAN);
+		DELAY_mS(1000);
+
+		st7735_fill(50, 80, 50, 80, ST77XX_BLACK);
+		st7735_fill(50, 60, 50, 60, ST77XX_CYAN);
+		DELAY_mS(1000);
 
 
-		if(Blink(INTERVAL_1000_mS)) st7735_fill(50, 80, 50, 80, ST77XX_CYAN);
-		else					    st7735_fill(50, 60, 50, 60, ST77XX_CYAN);
+//		if(Blink(INTERVAL_1000_mS)) st7735_fill(50, 80, 50, 80, ST77XX_CYAN);
+//		else					    st7735_fill(50, 60, 50, 60, ST77XX_CYAN);
 	}
 	//**************************************************************
 }
