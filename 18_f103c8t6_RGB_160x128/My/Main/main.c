@@ -82,14 +82,6 @@ int main(void){
 	DELAY_mS(100); //Задержка для стабилизации напряжения патания.
 	//--------------------------
 	//Инициализация дисплея
-	STM32_GPIO_InitForOutputPushPull(GPIOB, RST);
-	STM32_GPIO_InitForOutputPushPull(GPIOB, BL);
-	STM32_GPIO_InitForOutputPushPull(GPIOB, DC);
-
-	STM32_GPIO_InitForOutputPushPull(GPIOA, CS);
-	STM32_GPIO_InitForOutputPushPull(GPIOA, CLK);
-	STM32_GPIO_InitForOutputPushPull(GPIOA, DIN);
-
 	st7735_init(ST77XX_BLACK);
 
 	//--------------------------
@@ -118,13 +110,13 @@ int main(void){
 
 		LedPC13Toggel();
 
-		st7735_fill(50, 80, 50, 80, ST77XX_BLACK);
-		st7735_fill(50, 80, 50, 80, ST77XX_CYAN);
-		DELAY_mS(1000);
+		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
+		st7735_fill(5, 80, 5, 80, ST77XX_ORANGE);
+		DELAY_mS(500);
 
-		st7735_fill(50, 80, 50, 80, ST77XX_BLACK);
-		st7735_fill(50, 60, 50, 60, ST77XX_CYAN);
-		DELAY_mS(1000);
+		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
+		st7735_fill(5, 60, 5, 60, ST77XX_ORANGE);
+		DELAY_mS(500);
 
 
 //		if(Blink(INTERVAL_1000_mS)) st7735_fill(50, 80, 50, 80, ST77XX_CYAN);
