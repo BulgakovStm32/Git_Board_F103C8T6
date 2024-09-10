@@ -109,18 +109,68 @@ int main(void){
 //		else 														LedPC13Off();
 
 		LedPC13Toggel();
+		DELAY_mS(1000);
 
-		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
-		st7735_fill(5, 80, 5, 80, ST77XX_ORANGE);
-		DELAY_mS(500);
+//		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
+//		st7735_fill(5, 80, 5, 80, ST77XX_ORANGE);
+//		DELAY_mS(500);
+//
+//		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
+//		st7735_fill(5, 60, 5, 60, ST77XX_ORANGE);
+//		DELAY_mS(500);
 
-		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
-		st7735_fill(5, 60, 5, 60, ST77XX_ORANGE);
-		DELAY_mS(500);
 
+//		st7735_clear(ST77XX_BLACK);
+//		DELAY_mS(1000);
+//		//println("begin");
+//		st7735_rectangle(0,50,5,50,ST77XX_RED);
+//		st7735_rectangle(30,50,55,50,ST77XX_GREEN);
+//		st7735_rectangle(70,50,105,50,ST77XX_BLUE);
+//		st7735_point(30,130,ST77XX_WHITE);
+//		st7735_line_horizont(5,154,118,2,ST7735_WHITE);
+//		st7735_line_horizont(5,5,118,2,ST7735_WHITE);
+//		st7735_line_vertical(5,5,150,1,ST7735_WHITE);
+//		st7735_line_vertical(123,5,150,1,ST7735_WHITE);
+//		//println("end");
+//		//gpio_reset(GPIOC,LED);
+//		DELAY_mS(3000);
 
-//		if(Blink(INTERVAL_1000_mS)) st7735_fill(50, 80, 50, 80, ST77XX_CYAN);
-//		else					    st7735_fill(50, 60, 50, 60, ST77XX_CYAN);
+//		st7735_clear(ST77XX_BLACK);
+//		st7735_line_horizont(5,154,118,2,ST7735_WHITE);
+//		st7735_line_horizont(5,5,118,2,ST7735_WHITE);
+//		st7735_line_vertical(5,5,150,1,ST7735_WHITE);
+//		st7735_line_vertical(123,5,150,1,ST7735_WHITE);
+//
+//		DELAY_mS(2000);
+
+		//st7735_clear(ST77XX_BLACK);
+		//st7735_WriteChar(1, 1, 'A', Font_11x18, ST7735_YELLOW, ST7735_RED);
+
+		//-------------------------------
+		//Тест : Вывод текстовых строк и значений счетчиков - Работает!!!
+		static uint32_t count = 0;
+		count++;
+
+		//Строка 1.
+		char str1[] = "Count1 = ";
+		uint16_t pos1_x = (sizeof(str1)-1) * Font_7x10.width;
+
+		st7735_WriteString(0, 0, str1, Font_7x10, ST77XX_ORANGE, ST77XX_BLACK);
+		st7735_BinToDec(pos1_x, 0, count, 4, Font_7x10, ST77XX_ORANGE, ST77XX_BLACK);
+
+		//Строка 2.
+		char str2[] = "Count2=";
+		uint16_t pos2_x = (sizeof(str2)-1) * Font_11x18.width;
+		uint16_t pos2_y = Font_7x10.height;
+
+		st7735_WriteString(0, pos2_y, str2, Font_11x18, ST77XX_GREEN, ST77XX_RED);
+		st7735_BinToDec(pos2_x, pos2_y, count+1, 4, Font_11x18, ST77XX_GREEN, ST77XX_RED);
+
+		//Вертикальная зеленая линия
+		st7735_line_vertical(10, Font_11x18.height+pos2_y+3, 100, 2, ST77XX_GREEN);
+		//-------------------------------
+		//Тест : Вывод картинки - Не работает.
+		//st7735_DrawImage(0, 0, 128, 128, Font_11x18.data);
 	}
 	//**************************************************************
 }

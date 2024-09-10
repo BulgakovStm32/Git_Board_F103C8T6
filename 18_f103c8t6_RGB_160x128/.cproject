@@ -50,6 +50,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_RGB_160x128/My/Startup}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_RGB_160x128/My/STM32_Perif}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_RGB_160x128/My/RGB_160x128}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f103c8t6_RGB_160x128/My/RGB_160x128/st7735v2}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.854868648" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>

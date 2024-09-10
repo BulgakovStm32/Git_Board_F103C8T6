@@ -153,8 +153,7 @@ void st7735_init(uint16_t color){
     st7735_clear(color);
 }
 //***********************************************************
-void st7735_send(uint8_t dc, uint8_t data)
-{
+void st7735_send(uint8_t dc, uint8_t data){
 
    if (dc == ST7735_DATA) ST7735_RS_High;	//gpio_set(GPIOB,DC);	//данные
    else					  ST7735_RS_Low; 	//gpio_reset(GPIOB,DC);	//команда
@@ -178,6 +177,16 @@ void st7735_send(uint8_t dc, uint8_t data)
 #endif
 }
 //***********************************************************
+void st7735_WriteDataBuf(uint8_t *buff, size_t buff_size) {
+
+	while(buff_size > 0)
+	{
+		st7735_send(ST7735_DATA, *buff);
+		buff++;
+		buff_size--;
+	}
+}
+//***********************************************************
 void st7735_fill(uint8_t x0, uint8_t x1, uint8_t y0, uint8_t y1, uint16_t color){
 
    //chip_select_enable();
@@ -197,7 +206,8 @@ void st7735_fill(uint8_t x0, uint8_t x1, uint8_t y0, uint8_t y1, uint16_t color)
 
    st7735_send(ST7735_CMD,  ST77XX_RAMWR);
 
-   uint16_t len=(uint16_t)((uint16_t)(x1-x0+1)*(uint16_t)(y1-y0+1));
+   //количество пикселей заданной области
+   uint16_t len = (uint16_t)((uint16_t)(x1-x0+1) * (uint16_t)(y1-y0+1));
 
 #ifdef HW_SPI
 
@@ -233,9 +243,132 @@ void st7735_fill(uint8_t x0, uint8_t x1, uint8_t y0, uint8_t y1, uint16_t color)
    ST7735_CS_High;
 #endif
 }
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+//*******************************************************************************************
+void st7735_SetAddressWindow(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
+
+    // column address set
+    //ST7735_WriteCommand(ST7735_CASET);
+	st7735_send(ST7735_CMD, ST77XX_CASET);
+    uint8_t data[] = { 0x00, x0 + ST7735_XSTART, 0x00, x1 + ST7735_XSTART };
+    st7735_WriteDataBuf(data, sizeof(data));
+
+    // row address set
+    //ST7735_WriteCommand(ST7735_RASET);
+    st7735_send(ST7735_CMD, ST77XX_RASET);
+    data[1] = y0 + ST7735_YSTART;
+    data[3] = y1 + ST7735_YSTART;
+    st7735_WriteDataBuf(data, sizeof(data));
+
+    // write to RAM
+    //ST7735_WriteCommand(ST7735_RAMWR);
+    st7735_send(ST7735_CMD, ST77XX_RAMWR);
+}
 //***********************************************************
+void st7735_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor) {
 
+	uint32_t i, b, j;
 
+	st7735_SetAddressWindow(x, y, x+font.width-1, y+font.height-1);
+
+    for(i = 0; i < font.height; i++) {
+        b = font.data[(ch - 32) * font.height + i];
+        for(j = 0; j < font.width; j++) {
+            if((b << j) & 0x8000)  {
+                uint8_t data[] = { color >> 8, color & 0xFF };
+                //ST7735_WriteData(data, sizeof(data));
+                st7735_WriteDataBuf(data, sizeof(data));
+            } else {
+                uint8_t data[] = { bgcolor >> 8, bgcolor & 0xFF };
+                //ST7735_WriteData(data, sizeof(data));
+                st7735_WriteDataBuf(data, sizeof(data));
+            }
+        }
+    }
+}
+//***********************************************************
+void st7735_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor) {
+
+	//chip_select_enable();
+	ST7735_CS_Low;
+
+    while(*str)
+    {
+        if(x + font.width >= ST7735_WIDTH)
+        {
+            x = 0;
+            y += font.height;
+            if(y + font.height >= ST7735_HEIGHT)
+            {
+                break;
+            }
+
+            if(*str == ' ')
+            {
+                // skip spaces in the beginning of the new line
+                str++;
+                continue;
+            }
+        }
+
+        st7735_WriteChar(x, y, *str, font, color, bgcolor);
+        x += font.width;
+        str++;
+    }
+
+    //chip_select_disable();
+    ST7735_CS_High;
+}
+//***********************************************************
+uint32_t st7735_BinToDec(uint16_t x, uint16_t y, uint32_t var, uint32_t numDigit, FontDef font, uint16_t color, uint16_t bgcolor){
+
+	#define DEC_ARR_SIZE 10
+
+	uint8_t  decArray[DEC_ARR_SIZE];
+	uint32_t div = 1000000000;
+	uint16_t pos_x = x;
+	//--------------------
+	//Преобразование числа в строку.
+	for(uint32_t i = DEC_ARR_SIZE; i > 0; i--)
+	{
+		decArray[i-1] = (uint8_t)(var/div);
+		var %= div;
+		div /= 10;
+	}
+	//--------------------
+	//Вывод на дисплей
+
+	ST7735_CS_Low;//chip_select_enable
+	for(uint8_t i = 0; i < numDigit; i++)
+	{
+		var = 0x30 + decArray[(numDigit - 1) - i];
+
+		st7735_WriteChar(pos_x, y, (char)var, font, color, bgcolor);
+
+		pos_x = pos_x + font.width;
+	}
+	ST7735_CS_High; //chip_select_disable
+
+	return numDigit+1;
+}
+//***********************************************************
+void st7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data) {
+
+    if((x >= ST7735_WIDTH) || (y >= ST7735_HEIGHT)) return;
+    if((x + w - 1) >= ST7735_WIDTH)  return;
+    if((y + h - 1) >= ST7735_HEIGHT) return;
+
+    //ST7735_Select();
+    ST7735_CS_Low;
+
+    st7735_SetAddressWindow(x, y, x+w-1, y+h-1);
+    st7735_WriteDataBuf((uint8_t*)data, sizeof(uint16_t)*w*h);
+
+    //ST7735_Unselect();
+    ST7735_CS_High;
+}
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************

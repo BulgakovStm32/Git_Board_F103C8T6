@@ -14,8 +14,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "fonts.h"
+
 //*******************************************************************************************
 //*******************************************************************************************
+//#define HW_SPI
+
+
 //SCK - SPI SCK
 #define ST7735_SCK_GPIO_PORT	GPIOA
 #define ST7735_SCK_GPIO_PIN		1
@@ -57,14 +62,15 @@
 #define ST7735_LED_Low			GPIO_PIN_Low(ST7735_LED_GPIO_PORT, ST7735_LED_GPIO_PIN)
 #define ST7735_LED_High			GPIO_PIN_High(ST7735_LED_GPIO_PORT, ST7735_LED_GPIO_PIN)
 
-
 #define	ST7735_Delay_mS(delay)		DELAY_mS(delay)
+
 //************************************
 #define ST7735_CMD 	0x00	//LCD_C     0x00
 #define ST7735_DATA	0x01	//LCD_D     0x01
 
-#define LCD_X     	128
-#define LCD_Y     	160
+#define ST7735_RES_X     	128
+#define ST7735_RES_Y     	160
+
 #define LCD_LEN   	(uint16_t)((LCD_X * LCD_Y) / 8)
 
 //************************************
@@ -106,15 +112,15 @@
 #define ST7735_GMCTRN1 	0xE1
 
 // Some ready-made 16-bit ('565') color settings:
-#define ST7735_BLACK 	ST77XX_BLACK
-#define ST7735_WHITE 	ST77XX_WHITE
-#define ST7735_RED 		ST77XX_RED
-#define ST7735_GREEN 	ST77XX_GREEN
-#define ST7735_BLUE 	ST77XX_BLUE
-#define ST7735_CYAN 	ST77XX_CYAN
-#define ST7735_MAGENTA	ST77XX_MAGENTA
-#define ST7735_YELLOW 	ST77XX_YELLOW
-#define ST7735_ORANGE 	ST77XX_ORANGE
+//#define ST7735_BLACK 	ST77XX_BLACK
+//#define ST7735_WHITE 	ST77XX_WHITE
+//#define ST7735_RED 		ST77XX_RED
+//#define ST7735_GREEN 	ST77XX_GREEN
+//#define ST7735_BLUE 	ST77XX_BLUE
+//#define ST7735_CYAN 	ST77XX_CYAN
+//#define ST7735_MAGENTA	ST77XX_MAGENTA
+//#define ST7735_YELLOW 	ST77XX_YELLOW
+//#define ST7735_ORANGE 	ST77XX_ORANGE
 
 #define ST_CMD_DELAY 		0x80 // special signifier for command lists
 
@@ -166,10 +172,19 @@
 #define ST77XX_ORANGE	0xFC00
 
 //************************************
-#define st7735_clear(x) 				st7735_fill(0,0x7f,0,0x9f,x)
-#define st7735_rectangle(a,b,c,d,e) 	st7735_fill(a,a+b-1,c,c+d-1,e)
-#define st7735_point(x,y,c) 			st7735_fill(x,x,y,y,c)
+//Макрос заливки всего экрана
+#define st7735_clear(x) 			st7735_fill(0, ST7735_RES_X, 0, ST7735_RES_Y, x)
+
+//Макрос для рисования прямоугольников, с заданием начальной точки, ширины и высоты
+#define st7735_rectangle(a,b,c,d,e)	st7735_fill(a,a+b-1,c,c+d-1,e)
+
+//Макрос рисования точки
+#define st7735_point(x,y,c)			st7735_fill(x,x,y,y,c)
+
+//Макрос рисования вертикальной линии
 #define st7735_line_vertical(x,y,l,d,c) st7735_fill(x,x+d-1,y,y+l-1,c)
+
+//Макрос рисования горизонтальной линии
 #define st7735_line_horizont(x,y,l,d,c)	st7735_fill(x,x+l-1,y,y+d-1,c)
 
 //*******************************************************************************************
@@ -180,6 +195,10 @@ void st7735_fill(uint8_t x0, uint8_t x1, uint8_t y0, uint8_t y1, uint16_t color)
 //void pcd8544_display_fb();
 //void st7735_off();
 
+void st7735_WriteChar  (uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
+void st7735_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor);
+uint32_t st7735_BinToDec(uint16_t x, uint16_t y, uint32_t var, uint32_t numDigit, FontDef font, uint16_t color, uint16_t bgcolor);
+void st7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
 //*******************************************************************************************
 //*******************************************************************************************
 #endif      // __ST7735_H__
