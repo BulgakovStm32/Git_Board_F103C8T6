@@ -32,7 +32,7 @@ void Lcd_Update(void){
 
 //	Lm6063LcdUpdate(LcdCache);
 //	Lcd_TIC32_SendData(LcdCache);
-	SSD1306_UpdateScreen(lcdVideoBuffer);
+//	SSD1306_UpdateScreen(lcdVideoBuffer);
 }
 //*****************************************************************************
 uint8_t* Lcd_pVideoBuffer(void){

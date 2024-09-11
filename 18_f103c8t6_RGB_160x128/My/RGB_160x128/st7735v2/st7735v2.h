@@ -2,7 +2,7 @@
 #ifndef __ST7735v2_H__
 #define __ST7735v2_H__
 
-#include "fonts.h"
+#include <fonts_16bit.h>
 #include <stdbool.h>
 
 #define ST7735_MADCTL_MY  0x80

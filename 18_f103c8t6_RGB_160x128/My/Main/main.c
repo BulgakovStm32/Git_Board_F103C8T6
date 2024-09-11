@@ -148,11 +148,12 @@ int main(void){
 
 		//-------------------------------
 		//Тест : Вывод текстовых строк и значений счетчиков - Работает!!!
+
 		static uint32_t count = 0;
 		count++;
 
 		//Строка 1.
-		char str1[] = "Count1 = ";
+		char str1[] = "Count1=";
 		uint16_t pos1_x = (sizeof(str1)-1) * Font_7x10.width;
 
 		st7735_WriteString(0, 0, str1, Font_7x10, ST77XX_ORANGE, ST77XX_BLACK);
@@ -160,17 +161,28 @@ int main(void){
 
 		//Строка 2.
 		char str2[] = "Count2=";
-		uint16_t pos2_x = (sizeof(str2)-1) * Font_11x18.width;
+		uint16_t pos2_x = (sizeof(str2)-1) * Font_9x16.width;
 		uint16_t pos2_y = Font_7x10.height;
 
-		st7735_WriteString(0, pos2_y, str2, Font_11x18, ST77XX_GREEN, ST77XX_RED);
-		st7735_BinToDec(pos2_x, pos2_y, count+1, 4, Font_11x18, ST77XX_GREEN, ST77XX_RED);
+		st7735_WriteString(0, pos2_y, str2, Font_9x16, ST77XX_GREEN, ST77XX_BLACK);
+		st7735_BinToDec(pos2_x, pos2_y, count+1, 4, Font_9x16, ST77XX_GREEN, ST77XX_BLACK);
+
+
+		st7735_WriteString(0, 26, "Vcc=123456", Font_11x18, ST77XX_BLUE, ST77XX_BLACK);
+
+
+		st7735_WriteString(0, 44, "Vcc=123456", Font_7x10, ST77XX_GREEN, ST77XX_BLACK);
+
+		st7735_WriteString(0, 55, "Vcc=123456", Font_16x26, ST77XX_GREEN, ST77XX_BLACK);
+
 
 		//Вертикальная зеленая линия
-		st7735_line_vertical(10, Font_11x18.height+pos2_y+3, 100, 2, ST77XX_GREEN);
+		//st7735_line_vertical(10, Font_11x18.height+pos2_y+3, 100, 2, ST77XX_GREEN);
 		//-------------------------------
 		//Тест : Вывод картинки - Не работает.
-		//st7735_DrawImage(0, 0, 128, 128, Font_11x18.data);
+		#include "testimg.h"
+
+		//st7735_DrawImage(0, 0, 128, 128, test_img_128x128);
 	}
 	//**************************************************************
 }
