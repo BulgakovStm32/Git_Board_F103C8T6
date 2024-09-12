@@ -173,32 +173,35 @@
 
 //************************************
 //Макрос заливки всего экрана
-#define st7735_clear(x) 			st7735_fill(0, ST7735_RES_X, 0, ST7735_RES_Y, x)
+#define st7735_clear(x) 			st7735_Fill(0, 0, ST7735_RES_X, ST7735_RES_Y, x)
 
 //Макрос для рисования прямоугольников, с заданием начальной точки, ширины и высоты
-#define st7735_rectangle(a,b,c,d,e)	st7735_fill(a,a+b-1,c,c+d-1,e)
+#define st7735_rectangle(a,b,c,d,e)	st7735_Fill(a, c, a+b-1, c+d-1, e)
 
 //Макрос рисования точки
-#define st7735_point(x,y,c)			st7735_fill(x,x,y,y,c)
+#define st7735_point(x,y,c)			st7735_Fill(x, y, x, y, c)
 
 //Макрос рисования вертикальной линии
-#define st7735_line_vertical(x,y,l,d,c) st7735_fill(x,x+d-1,y,y+l-1,c)
+#define st7735_line_vertical(x,y,l,d,c) st7735_Fill(x, y, x+d-1, y+l-1, c)
 
 //Макрос рисования горизонтальной линии
-#define st7735_line_horizont(x,y,l,d,c)	st7735_fill(x,x+l-1,y,y+d-1,c)
+#define st7735_line_horizont(x,y,l,d,c)	st7735_Fill(x, y, x+l-1, y+d-1, c)
 
 //*******************************************************************************************
 //*******************************************************************************************
-void st7735_init(uint16_t color);
-void st7735_fill(uint8_t x0, uint8_t x1, uint8_t y0, uint8_t y1, uint16_t color);
-//void pcd8544_fill_fb(uint8_t value);
-//void pcd8544_display_fb();
-//void st7735_off();
+void st7735_Init(uint16_t color);
 
-void st7735_WriteChar  (uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
-void st7735_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor);
+void st7735_SetAddressWindow(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1);
+
+void st7735_Fill(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint16_t color);
+
+void 	 st7735_WriteChar  (uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
+void 	 st7735_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor);
 uint32_t st7735_BinToDec(uint16_t x, uint16_t y, uint32_t var, uint32_t numDigit, FontDef font, uint16_t color, uint16_t bgcolor);
-void st7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
+void 	 st7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
+void 	 st7735_Circle(uint8_t center_x, uint8_t center_y, uint8_t radius, uint16_t color);
+void 	 st7735_Line(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+
 //*******************************************************************************************
 //*******************************************************************************************
 #endif      // __ST7735_H__

@@ -54,7 +54,55 @@ static void SettingInterruptPriorities(void){
 //*******************************************************************************************
 //*******************************************************************************************
 //*******************************************************************************************
+//стрелочный индикатор
+#define ANALOG_SCALE_ANGLE_MIN	50
+#define ANALOG_SCALE_ANGLE_MAX	132
 
+/*
+ * Параметры:
+ * angle :угол на который нужно повернуть стрелку (слева направо)
+ *		  мин. уол  - 50  градусов.
+ *		  макс.угол - 132 градуса.
+ */
+void Lcd_AnalogScale(uint8_t angle){
+
+	const uint8_t markRadius = 64;// Радиус шкалы.
+	int16_t x0 = 64;		  	  // Х-координата центра шкалы
+	int16_t y0 = 150; 	  		  // Y-координата центра шкалы.
+	float cos;
+	float sin;
+	//-------------------
+	//Рисуем риски-метки шкалы
+	for(float i = 0; i < M_PI_2; i += M_PI_2/8)
+	{
+		cos = cosf(i + M_PI_4);
+		sin = sinf(i + M_PI_4);
+		st7735_Line(x0 +  markRadius    * cos,	//x1
+				 	y0 +  markRadius    * sin,	//y1
+					x0 + (markRadius-6) * cos, //x2
+					y0 + (markRadius-6) * sin, //y2
+					ST77XX_GREEN);
+	}
+	//Стрелка.
+	angle = (180 - angle); 	     	   //Это нужно чтобы стрелка двигалась слева направо.
+	float rad = angle * (M_PI / 180.0);//перевод углов в радианы
+	cos = cosf(rad);
+	sin = sinf(rad);
+	//x0 += 1; //небольшое смещение по Х что бы стрелка точно поподала в среднюю риску.
+	y0 += 5; //небольшое смещение по Y что бы стрелка поподала в риски.
+//	st7735_Line(x0 + markRadius * cos,
+//			 	y0 + markRadius * sin,
+//				x0 + 1 * cos,
+//				y0 + 1 * sin,
+//				ST77XX_GREEN);
+
+	st7735_Line(x0,
+				y0,
+				x0 - markRadius * cos,
+				y0 - markRadius * sin,
+				ST77XX_GREEN);
+
+}
 
 
 
@@ -82,7 +130,7 @@ int main(void){
 	DELAY_mS(100); //Задержка для стабилизации напряжения патания.
 	//--------------------------
 	//Инициализация дисплея
-	st7735_init(ST77XX_BLACK);
+	st7735_Init(ST77XX_BLACK);
 
 	//--------------------------
 	//Ини-я диспетчера.
@@ -109,42 +157,11 @@ int main(void){
 //		else 														LedPC13Off();
 
 		LedPC13Toggel();
-		DELAY_mS(1000);
+		DELAY_mS(500);
+		//-------------------------------
 
-//		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
-//		st7735_fill(5, 80, 5, 80, ST77XX_ORANGE);
-//		DELAY_mS(500);
-//
-//		st7735_fill(5, 80, 5, 80, ST77XX_BLACK);
-//		st7735_fill(5, 60, 5, 60, ST77XX_ORANGE);
-//		DELAY_mS(500);
-
-
-//		st7735_clear(ST77XX_BLACK);
-//		DELAY_mS(1000);
-//		//println("begin");
-//		st7735_rectangle(0,50,5,50,ST77XX_RED);
-//		st7735_rectangle(30,50,55,50,ST77XX_GREEN);
-//		st7735_rectangle(70,50,105,50,ST77XX_BLUE);
-//		st7735_point(30,130,ST77XX_WHITE);
-//		st7735_line_horizont(5,154,118,2,ST7735_WHITE);
-//		st7735_line_horizont(5,5,118,2,ST7735_WHITE);
-//		st7735_line_vertical(5,5,150,1,ST7735_WHITE);
-//		st7735_line_vertical(123,5,150,1,ST7735_WHITE);
-//		//println("end");
-//		//gpio_reset(GPIOC,LED);
-//		DELAY_mS(3000);
-
-//		st7735_clear(ST77XX_BLACK);
-//		st7735_line_horizont(5,154,118,2,ST7735_WHITE);
-//		st7735_line_horizont(5,5,118,2,ST7735_WHITE);
-//		st7735_line_vertical(5,5,150,1,ST7735_WHITE);
-//		st7735_line_vertical(123,5,150,1,ST7735_WHITE);
-//
-//		DELAY_mS(2000);
-
-		//st7735_clear(ST77XX_BLACK);
-		//st7735_WriteChar(1, 1, 'A', Font_11x18, ST7735_YELLOW, ST7735_RED);
+		//Очищаем дисплей.
+		st7735_clear(ST77XX_BLACK);
 
 		//-------------------------------
 		//Тест : Вывод текстовых строк и значений счетчиков - Работает!!!
@@ -167,17 +184,42 @@ int main(void){
 		st7735_WriteString(0, pos2_y, str2, Font_9x16, ST77XX_GREEN, ST77XX_BLACK);
 		st7735_BinToDec(pos2_x, pos2_y, count+1, 4, Font_9x16, ST77XX_GREEN, ST77XX_BLACK);
 
-
 		st7735_WriteString(0, 26, "Vcc=123456", Font_11x18, ST77XX_BLUE, ST77XX_BLACK);
-
 
 		st7735_WriteString(0, 44, "Vcc=123456", Font_7x10, ST77XX_GREEN, ST77XX_BLACK);
 
 		st7735_WriteString(0, 55, "Vcc=123456", Font_16x26, ST77XX_GREEN, ST77XX_BLACK);
 
+		st7735_point(64, 130, ST77XX_WHITE);
+
 
 		//Вертикальная зеленая линия
 		//st7735_line_vertical(10, Font_11x18.height+pos2_y+3, 100, 2, ST77XX_GREEN);
+
+
+		//-------------------------------
+		//Тест - рисуем окружности.
+		static uint8_t radius = 5;
+
+		radius += 2;
+		if(radius >= 28) radius = 5;
+
+		st7735_Circle(64, 130, radius, ST77XX_WHITE);
+		//-------------------------------
+		//Тест : рисуем наклонную линию
+
+		st7735_Line(1  , 160, 128, 1, ST77XX_WHITE);
+		st7735_Line(128, 160,   1, 1, ST77XX_WHITE);
+
+		//-------------------------------
+		//Тест : рисуем шкалу и стрелку
+		static uint8_t angle = 0;
+
+		angle += 5;
+		if(angle >= 180) angle = 0;
+
+		Lcd_AnalogScale(angle);
+
 		//-------------------------------
 		//Тест : Вывод картинки - Не работает.
 		#include "testimg.h"
