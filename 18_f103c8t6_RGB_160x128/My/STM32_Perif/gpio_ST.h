@@ -105,8 +105,8 @@
 //************************************
 #define LedPC13_GPIO	GPIOC
 #define LedPC13_PIN		13
-#define LedPC13On()     GPIO_PIN_High(LedPC13_GPIO, LedPC13_PIN)	//(GPIOC->BSRR = GPIO_BSRR_BS13)
-#define LedPC13Off()    GPIO_PIN_Low(LedPC13_GPIO, LedPC13_PIN) 	//(GPIOC->BSRR = GPIO_BSRR_BR13)
+#define LedPC13On()     GPIO_PIN_Low(LedPC13_GPIO, LedPC13_PIN)		//(GPIOC->BSRR = GPIO_BSRR_BS13)
+#define LedPC13Off()    GPIO_PIN_High(LedPC13_GPIO, LedPC13_PIN) 	//(GPIOC->BSRR = GPIO_BSRR_BR13)
 #define LedPC13Toggel() GPIO_PIN_Toggel(LedPC13_GPIO, LedPC13_PIN)	//(GPIOC->ODR ^= GPIO_ODR_ODR13)
 
 //*******************************************************************************************
@@ -118,7 +118,7 @@ void STM32_GPIO_InitForInputPullDown(GPIO_TypeDef *port, uint32_t pin);
 void STM32_GPIO_InitForFloatingInput(GPIO_TypeDef *port, uint32_t pin);
 void STM32_GPIO_InitForAnalogInput(GPIO_TypeDef *port, uint32_t pin);
 
-void     STM32_GPIO_Init     (void);
+void     STM32_GPIO_SWD_Init(void);
 void     STM32_GPIO_CheckLoop(void);
 uint32_t STM32_GPIO_GetPortState(GPIO_TypeDef *port);
 uint32_t STM32_GPIO_GetPinState(GPIO_TypeDef *port, uint32_t pin);

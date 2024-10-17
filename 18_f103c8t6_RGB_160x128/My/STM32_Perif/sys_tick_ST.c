@@ -14,9 +14,9 @@
 //Инициализация системного таймера SysTick.
 void SysTick_Init(void){
 
-	SysTick->LOAD = TimerTick;	//Загрузка значения.
-	SysTick->VAL  = TimerTick;	//Обнуление таймера. 
-                                //При записи любого значения этот регист обнуляется, с обнулением флага COUNTFLAG.
+	SysTick->LOAD = SYS_TICK_LOAD;	//Загрузка значения.
+	SysTick->VAL  = SYS_TICK_LOAD;	//Обнуление таймера. При записи любого значения этот регист обнуляется, с обнулением флага COUNTFLAG.
+
 	/* Set SysTick interrupt preemption priority to 3 */
 	//NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
 

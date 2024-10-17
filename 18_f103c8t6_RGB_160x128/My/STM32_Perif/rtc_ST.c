@@ -10,40 +10,56 @@
 //result   1 - инициализация выполнена; 0 - часы уже были инициализированы 
 void RTC_Init(void){
   
- //разрешить тактирование модулей управления питанием и управлением резервной областью
-  RCC->APB1ENR |= RCC_APB1ENR_PWREN | RCC_APB1ENR_BKPEN;
-  //разрешить доступ к области резервных данных
-  PWR->CR |= PWR_CR_DBP;
-  //--------------------
-  //если часы выключены - инициализировать их
-  if ((RCC->BDCR & RCC_BDCR_RTCEN) != RCC_BDCR_RTCEN)
-    {
-      //выполнить сброс области резервных данных
-      RCC->BDCR |=  RCC_BDCR_BDRST;
-      RCC->BDCR &= ~RCC_BDCR_BDRST;
-   
-      //выбрать источником тактовых импульсов внешний кварц 32768 и подать тактирование
-      RCC->BDCR |=  RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_HSE; //RCC_BDCR_RTCSEL_LSE;
-   
-      RTC->CRL  |=  RTC_CRL_CNF;
-      RTC->PRLL  = 0x7FFF;         //регистр деления на 32768
-      RTC->CRL  &=  ~RTC_CRL_CNF;
-   
-      //установить бит разрешения работы и дождаться установки бита готовности
-      RCC->BDCR |= RCC_BDCR_LSEON;
-      while ((RCC->BDCR & RCC_BDCR_LSEON) != RCC_BDCR_LSEON){}
-   
-      RTC->CRL &= (uint16_t)~RTC_CRL_RSF;
-      while((RTC->CRL & RTC_CRL_RSF) != RTC_CRL_RSF){}
-    }
-  //--------------------
-  RTC->CRL |=  RTC_CRL_CNF;  //разрешить конфигурирование регистров RTC
-  RTC->CRH  =  RTC_CRH_SECIE;//разрешить прерывание от секундных импульсов
-  //RTC->CRH  =  RTC_CRH_ALRIE;//разрешить прерывание при совпадении счетного и сигнального регистра
-  //RTC->CRH  =  RTC_CRH_OWIE; //разрешить прерывание при переполнении счетного регистра
-  RTC->CRL &= ~RTC_CRL_CNF;  //выйти из режима конфигурирования 
-  NVIC_EnableIRQ (RTC_IRQn); //вызвать функцию, которая разрешит прерывание от модуля RTC    
-  //--------------------  
+	RCC->APB1ENR |= (RCC_APB1ENR_PWREN | 	//Power interface clock enable
+					 RCC_APB1ENR_BKPEN);	//Backup interface clock enable
+	//разрешить доступ к области резервных данных
+	PWR->CR |= PWR_CR_DBP;					//Disable Backup Domain write protection
+	//--------------------
+	//если часы выключены - инициализировать их
+//	if ((RCC->BDCR & RCC_BDCR_RTCEN) != RCC_BDCR_RTCEN)
+//	{
+		RCC->BDCR |=  RCC_BDCR_BDRST;				//Backup domain software reset
+		RCC->BDCR &= ~RCC_BDCR_BDRST;
+
+		RCC->BDCR |= RCC_BDCR_LSEON;			 	//External Low Speed oscillator enable
+		while (!(RCC->BDCR & RCC_BDCR_LSERDY)){};	//1:LSE oscillator ready
+
+		RCC->BDCR |= RCC_BDCR_RTCSEL_LSE; 			//LSE oscillator clock used as RTC clock
+		//RCC->BDCR |= RCC_BDCR_RTCSEL_LSI;			//LSI oscillator clock used as RTC clock
+		RCC->BDCR |= RCC_BDCR_RTCEN;				//RTC clock enable
+
+		//--------------------
+		RTC->CRL  |= RTC_CRL_CNF;	//разрешить конфигурирование регистров RTC
+
+		//RTC prescaler. F_TR_CLK = F_RTC_CLK/(PRL[19:0]+1)
+		RTC->PRLH  = 0;			//RTC prescaler load register high (RTC_PRLH)
+		RTC->PRLL  = 32768 - 1;	//RTC prescaler load register low  (RTC_PRLL)
+
+		RTC->CRL &= ~RTC_CRL_RSF;	//Registers Synchronized Flag
+		while(!(RTC->CRL & RTC_CRL_RSF)){}
+
+		//Настройка прерывания RTC.
+		//RTC->CRH = RTC_CRH_SECIE;//прерывание от секундных импульсов
+		//RTC->CRH = RTC_CRH_OWIE; //прерывание при переполнении счетного регистра
+
+
+		while(!(RTC->CRL & RTC_CRL_RTOFF)){};	//
+		RTC->CRL |= RTC_CRL_CNF;			 	//разрешить конфигурирование регистров RTC
+
+		RTC->ALRH = 0;
+		RTC->ALRL = 2;
+
+		RTC->CNTH = 0;
+		RTC->CNTL = 0;
+
+		RTC->CRH  = RTC_CRH_ALRIE;			 	//прерывание при совпадении счетного и сигнального регистра
+
+		RTC->CRL &= ~RTC_CRL_CNF;				//выйти из режима конфигурирования
+		while(!(RTC->CRL & RTC_CRL_RTOFF)){};	//
+//	}
+	//--------------------
+	//NVIC_EnableIRQ(RTC_IRQn);			//Разрешение прерывания от модуля RTC
+	//NVIC_EnableIRQ(RTC_Alarm_IRQn);	//RTC Alarm through EXTI Line Interrupt
 }
 //-----------------------------------------------------------------------------
 //function  читает счетчик RTC
@@ -71,27 +87,45 @@ void RTC_SetCounter(uint32_t value){
 }
 //-----------------------------------------------------------------------------
 void RTC_IT_Handler(void){
-  
-  //причина прерывания - переполнение входного делителя (новая секунда)
-  if(RTC->CRL & RTC_CRL_SECF)
-    {
-       RTC->CRL &= ~RTC_CRL_SECF;    //сбросить флаг (обязательно!!!)
-       //выполняем какие-то действия
-       //LC1SostRedLedToggel;
-    }
-  //причина прерывания - совпадение счетного и сигнального регистра
-  if(RTC->CRL & RTC_CRL_ALRF)
-    {
-       RTC->CRL &= ~RTC_CRL_ALRF;    //сбросить флаг (обязательно!!!)
-       //выполняем какие-то действия
-    }
-  //причина прерывания - переполнение счетного регистра
-  if(RTC->CRL & RTC_CRL_OWF)
-    {
-       RTC->CRL &= ~RTC_CRL_OWF;     //сбросить флаг (обязательно!!!)
-       //выполняем какие-то действия
-       //LED_ACT_Toggel();
-    }
+
+	//LedPC13Toggel();
+	//--------------------
+	//причина прерывания - переполнение входного делителя (новая секунда)
+	if(RTC->CRL & RTC_CRL_SECF)
+	{
+		RTC->CRL &= ~RTC_CRL_SECF;    //сбросить флаг (обязательно!!!)
+		//выполняем какие-то действия
+	}
+	//--------------------
+	//причина прерывания - совпадение счетного и сигнального регистра
+	if(RTC->CRL & RTC_CRL_ALRF)
+	{
+		RTC->CRL &= ~RTC_CRL_ALRF;    //сбросить флаг (обязательно!!!)
+
+		//LedPC13Toggel();
+
+		while(!(RTC->CRL & RTC_CRL_RTOFF)){};
+
+		RTC->CRL |= RTC_CRL_CNF;	//разрешить конфигурирование регистров RTC
+
+		RTC->CNTH = 0;
+		RTC->CNTL = 0;
+
+		RTC->CRL &= ~RTC_CRL_CNF;	//выйти из режима конфигурирования
+
+		while(!(RTC->CRL & RTC_CRL_RTOFF)){};
+
+		//выполняем какие-то действия
+	}
+	//--------------------
+	//причина прерывания - переполнение счетного регистра
+	if(RTC->CRL & RTC_CRL_OWF)
+	{
+		RTC->CRL &= ~RTC_CRL_OWF;     //сбросить флаг (обязательно!!!)
+		//выполняем какие-то действия
+		//LED_ACT_Toggel();
+	}
+	//--------------------
 }
 //-----------------------------------------------------------------------------
 

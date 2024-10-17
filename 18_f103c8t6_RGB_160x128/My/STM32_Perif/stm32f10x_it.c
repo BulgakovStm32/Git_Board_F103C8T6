@@ -216,6 +216,14 @@ void RCC_IRQHandler(void){
 *******************************************************************************/
 void EXTI0_IRQHandler(void){
 
+	EXTI->PR = EXTI_PR_PR0; //Сбрасываем флаг прерывания
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	asm("nop");
+
+	//LedPC13Toggel();
 }
 
 /*******************************************************************************
@@ -606,6 +614,26 @@ void EXTI15_10_IRQHandler(void){
 *******************************************************************************/
 void RTCAlarm_IRQHandler(void){
 
+	EXTI->PR = EXTI_PR_PR17; //Сбрасываем флаг прерывания
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	asm("nop");
+
+	LedPC13Toggel();
+
+
+	while(!(RTC->CRL & RTC_CRL_RTOFF)){};
+
+	RTC->CRL |= RTC_CRL_CNF;	//разрешить конфигурирование регистров RTC
+
+	RTC->CNTH = 0;
+	RTC->CNTL = 0;
+
+	RTC->CRL &= ~RTC_CRL_CNF;	//выйти из режима конфигурирования
+
+	while(!(RTC->CRL & RTC_CRL_RTOFF)){};
 }
 
 /*******************************************************************************

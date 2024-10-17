@@ -284,28 +284,30 @@ void Lcd_StringBold (unsigned char x, unsigned char y){
 //Displays a character at current cursor location and increment cursor location
 void Lcd_ChrBig (int ch){
   
-  unsigned char i;
-  unsigned char a = 0, b = 0, c = 0;
-  //-------------------- 
-  for ( i = 0; i < 5; i++ )
-    {
-      c = TabAscii[(ch*5+i)];		//выделяем столбец из символа
+	unsigned char i;
+	unsigned char a = 0, b = 0, c = 0;
+	//--------------------
+	for ( i = 0; i < 5; i++ )
+	{
+		c = TabAscii[(ch*5+i)];		//выделяем столбец из символа
 
-      b  = (c & 0x01) * 3;            //"растягиваем" столбец на два байта 
-      b |= (c & 0x02) * 6;
-      b |= (c & 0x04) * 12;
-      b |= (c & 0x08) * 24;
+		b  = (c & 0x01) * 3; 		//"растягиваем" столбец на два байта
+		b |= (c & 0x02) * 6;
+		b |= (c & 0x04) * 12;
+		b |= (c & 0x08) * 24;
 
-      c >>= 4;
-      a  = (c & 0x01) * 3;
-      a |= (c & 0x02) * 6;
-      a |= (c & 0x04) * 12;
-      a |= (c & 0x08) * 24;
-      lcdVideoBuffer[LcdCacheIdx] = b;
-      lcdVideoBuffer[LcdCacheIdx+128] = a;
-      LcdCacheIdx = LcdCacheIdx+1;
-    }
-  lcdVideoBuffer[LcdCacheIdx++] = 0x00;
+		c >>= 4;
+		a  = (c & 0x01) * 3;
+		a |= (c & 0x02) * 6;
+		a |= (c & 0x04) * 12;
+		a |= (c & 0x08) * 24;
+
+		lcdVideoBuffer[LcdCacheIdx] = b;
+		lcdVideoBuffer[LcdCacheIdx+128] = a;
+		LcdCacheIdx = LcdCacheIdx+1;
+	}
+
+	lcdVideoBuffer[LcdCacheIdx++] = 0x00;
 }
 //*****************************************************************************
 //Displays a string at current cursor location

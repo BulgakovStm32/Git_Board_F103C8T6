@@ -15,50 +15,50 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
+extern const uint16_t testImg[];
 //*******************************************************************************************
 //*******************************************************************************************
-//#define HW_SPI
+#define HW_SPI
 
+#define ST7735_SPI				SPI1
 
+//************************************
 //SCK - SPI SCK
-#define ST7735_SCK_GPIO_PORT	GPIOA
-#define ST7735_SCK_GPIO_PIN		1
+#define ST7735_SCK_GPIO_PORT	GPIOB
+#define ST7735_SCK_GPIO_PIN		13
 #define ST7735_SCK_Low			GPIO_PIN_Low(ST7735_SCK_GPIO_PORT, ST7735_SCK_GPIO_PIN)
 #define ST7735_SCK_High			GPIO_PIN_High(ST7735_SCK_GPIO_PORT, ST7735_SCK_GPIO_PIN)
-//#define SCK  5	//GPIO_Pin_5
 
 //SDA - SPI MOSI
-#define ST7735_SDA_GPIO_PORT	GPIOA
-#define ST7735_SDA_GPIO_PIN		2
+#define ST7735_SDA_GPIO_PORT	GPIOB
+#define ST7735_SDA_GPIO_PIN		15
 #define ST7735_SDA_Low			GPIO_PIN_Low(ST7735_SDA_GPIO_PORT, ST7735_SDA_GPIO_PIN)
 #define ST7735_SDA_High			GPIO_PIN_High(ST7735_SDA_GPIO_PORT, ST7735_SDA_GPIO_PIN)
-//#define DIN  6	//GPIO_Pin_7
 
 //RST (RES) - сигнал сброса
 #define ST7735_RST_GPIO_PORT	GPIOA
-#define ST7735_RST_GPIO_PIN		3
+#define ST7735_RST_GPIO_PIN		4
 #define ST7735_RST_Low			GPIO_PIN_Low(ST7735_RST_GPIO_PORT, ST7735_RST_GPIO_PIN)
 #define ST7735_RST_High			GPIO_PIN_High(ST7735_RST_GPIO_PORT, ST7735_RST_GPIO_PIN)
-//#define RST  4	//GPIO_Pin_4
 
 //RS (DC) - сигнал выбора передачи данных или команд
 #define ST7735_RS_GPIO_PORT		GPIOA
-#define ST7735_RS_GPIO_PIN		4
+#define ST7735_RS_GPIO_PIN		3
 #define ST7735_RS_Low			GPIO_PIN_Low(ST7735_RS_GPIO_PORT, ST7735_RS_GPIO_PIN)
 #define ST7735_RS_High			GPIO_PIN_High(ST7735_RS_GPIO_PORT, ST7735_RS_GPIO_PIN)
-//#define DC   3//6	//GPIO_Pin_6
 
 //CS - Chip Select
 #define ST7735_CS_GPIO_PORT		GPIOA
-#define ST7735_CS_GPIO_PIN		5
+#define ST7735_CS_GPIO_PIN		2
 #define ST7735_CS_Low			GPIO_PIN_Low(ST7735_CS_GPIO_PORT, ST7735_CS_GPIO_PIN)
 #define ST7735_CS_High			GPIO_PIN_High(ST7735_CS_GPIO_PORT, ST7735_CS_GPIO_PIN)
-//#define CS   4	//GPIO_Pin_4
+
+#define ST7735_SELECT			ST7735_CS_Low
+#define ST7735_UNSELECT			ST7735_CS_High
 
 //LED - подсветка
 #define ST7735_LED_GPIO_PORT	GPIOA
-#define ST7735_LED_GPIO_PIN		6
+#define ST7735_LED_GPIO_PIN		1
 #define ST7735_LED_Low			GPIO_PIN_Low(ST7735_LED_GPIO_PORT, ST7735_LED_GPIO_PIN)
 #define ST7735_LED_High			GPIO_PIN_High(ST7735_LED_GPIO_PORT, ST7735_LED_GPIO_PIN)
 
@@ -68,10 +68,10 @@
 #define ST7735_CMD 	0x00	//LCD_C     0x00
 #define ST7735_DATA	0x01	//LCD_D     0x01
 
-#define ST7735_RES_X     	128
-#define ST7735_RES_Y     	160
+#define ST7735_WIDTH  		128	//кол-во пикселей по ширине (по Х)
+#define ST7735_HEIGHT 		160	//кол-во пикселей по высоте (по Y)
 
-#define LCD_LEN   	(uint16_t)((LCD_X * LCD_Y) / 8)
+//#define LCD_LEN   	(uint16_t)((LCD_X * LCD_Y) / 8)
 
 //************************************
 #define FONT_SIZE_1 	(uint8_t)0x01
@@ -161,22 +161,22 @@
 #define ST77XX_RDID4 		0xDD
 
 // Some ready-made 16-bit ('565') color settings:
-#define ST77XX_BLACK 	0x0000
-#define ST77XX_WHITE 	0xFFFF
-#define ST77XX_RED 		0xF800
-#define ST77XX_GREEN 	0x07E0
-#define ST77XX_BLUE 	0x001F
-#define ST77XX_CYAN 	0x07FF
-#define ST77XX_MAGENTA 	0xF81F
-#define ST77XX_YELLOW 	0xFFE0
-#define ST77XX_ORANGE	0xFC00
+#define ST77XX_COLOR_BLACK 		0x0000
+#define ST77XX_COLOR_WHITE 		0xFFFF
+#define ST77XX_COLOR_RED 		0xF800
+#define ST77XX_COLOR_GREEN 		0x07E0
+#define ST77XX_COLOR_BLUE 		0x001F
+#define ST77XX_COLOR_CYAN 		0x07FF
+#define ST77XX_COLOR_MAGENTA 	0xF81F
+#define ST77XX_COLOR_YELLOW 	0xFFE0
+#define ST77XX_COLOR_ORANGE		0xFC00
 
 //************************************
 //Макрос заливки всего экрана
-#define st7735_clear(x) 			st7735_Fill(0, 0, ST7735_RES_X, ST7735_RES_Y, x)
+#define st7735_clear(color) 			st7735_Fill(0, 0, ST7735_WIDTH, ST7735_HEIGHT, color)
 
 //Макрос для рисования прямоугольников, с заданием начальной точки, ширины и высоты
-#define st7735_rectangle(a,b,c,d,e)	st7735_Fill(a, c, a+b-1, c+d-1, e)
+#define st7735_rectangle(x0, y0, w, h, c)	st7735_Fill(x0, y0, x0+w, y0+h, c)
 
 //Макрос рисования точки
 #define st7735_point(x,y,c)			st7735_Fill(x, y, x, y, c)
@@ -195,12 +195,15 @@ void st7735_SetAddressWindow(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1);
 
 void st7735_Fill(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint16_t color);
 
-void 	 st7735_WriteChar  (uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
-void 	 st7735_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor);
-uint32_t st7735_BinToDec(uint16_t x, uint16_t y, uint32_t var, uint32_t numDigit, FontDef font, uint16_t color, uint16_t bgcolor);
-void 	 st7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
-void 	 st7735_Circle(uint8_t center_x, uint8_t center_y, uint8_t radius, uint16_t color);
-void 	 st7735_Line(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+void st7735_PrintChar  (uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
+void st7735_PrintString(uint16_t x, uint16_t y, char* str, FontDef font, uint16_t color, uint16_t bgcolor);
+
+void st7735_BinToDec(uint16_t x, uint16_t y, uint32_t var, uint32_t numDigit, FontDef font, uint16_t color, uint16_t bgcolor);
+void st7735_BinToDec2(uint16_t x, uint16_t y, uint32_t num, FontDef font, uint16_t color, uint16_t bgcolor);
+
+void st7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
+void st7735_DrawCircle(uint8_t center_x, uint8_t center_y, uint8_t radius, uint16_t color);
+void st7735_DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 
 //*******************************************************************************************
 //*******************************************************************************************

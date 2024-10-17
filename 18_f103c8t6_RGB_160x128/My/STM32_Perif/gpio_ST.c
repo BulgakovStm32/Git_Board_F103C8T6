@@ -167,15 +167,17 @@ void STM32_GPIO_InitForAnalogInput(GPIO_TypeDef *port, uint32_t pin){
 }
 //**********************************************************
 //Инициализация переферии.
-void STM32_GPIO_Init(void){
+void STM32_GPIO_SWD_Init(void){
   
 	//Включаем тактирование порта A, B, C, D и модуля альтернативных функций.
-	RCC->APB2ENR |= (RCC_APB2ENR_IOPAEN |
-				   	 RCC_APB2ENR_IOPBEN |
-				     RCC_APB2ENR_IOPCEN |
-				     RCC_APB2ENR_IOPDEN |
-				     RCC_APB2ENR_AFIOEN);
+//	RCC->APB2ENR |= (RCC_APB2ENR_IOPAEN |
+//				   	 RCC_APB2ENR_IOPBEN |
+//				     RCC_APB2ENR_IOPCEN |
+//				     RCC_APB2ENR_IOPDEN |
+//				     RCC_APB2ENR_AFIOEN);
 
+
+	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
 	//Включаем модуля альтернативных функций.
 	RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
 	//Отключение JTAG-D от порта PA15, отладка через SWD активна.
